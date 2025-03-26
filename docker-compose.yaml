@@ -1,0 +1,25 @@
+services:
+  db:
+    image: mysql/mysql-server:latest
+    container_name: wpd-mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: 'WPD'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: '12345678'
+      MYSQL_ROOT_PASSWORD: root # กำหนด user ของ root mysql
+    volumes:
+      - 'mysql:/var/lib/mysql'
+    ports:
+      - '3306:3306'
+    # healthcheck:
+    #   test:
+    #     ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uuser", "-p12345678"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+volumes:
+  mysql:
+    driver: local
