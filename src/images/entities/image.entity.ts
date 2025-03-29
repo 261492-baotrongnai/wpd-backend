@@ -1,29 +1,23 @@
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
   CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
-export class User {
+export class Image {
   @PrimaryGeneratedColumn()
   id: number;
-
   @Column()
-  internalId: string;
-
-  @Column({ default: true })
-  isActive: boolean;
-
+  name: string;
   @CreateDateColumn()
   createdAt: Date;
-
   @UpdateDateColumn()
   updatedAt: Date;
 
-  constructor(user: Partial<User>) {
-    Object.assign(this, user);
+  constructor(image: Partial<Image>) {
+    Object.assign(this, image);
   }
 }

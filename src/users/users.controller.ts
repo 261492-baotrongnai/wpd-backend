@@ -15,6 +15,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Post('verify')
+  verifyIDToken(@Body() { idToken }: { idToken: string }) {
+    return this.usersService.verifyIDToken(idToken);
+  }
+
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
