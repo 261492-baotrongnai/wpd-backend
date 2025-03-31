@@ -4,7 +4,9 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Image } from 'src/images/entities/image.entity';
 
 @Entity()
 export class User {
@@ -22,6 +24,9 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Image, (image) => image.user)
+  images: Image[];
 
   constructor(user: Partial<User>) {
     Object.assign(this, user);
