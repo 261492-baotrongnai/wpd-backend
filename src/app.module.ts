@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { ImagesModule } from './images/images.module';
 import { UsersModule } from './users/users.module';
+import { WebhooksController } from './webhooks/webhooks.controller';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
@@ -11,7 +12,7 @@ import { UsersModule } from './users/users.module';
     ImagesModule,
     UsersModule,
   ],
-  controllers: [],
+  controllers: [WebhooksController],
   providers: [],
 })
 export class AppModule {}
