@@ -1,4 +1,7 @@
-export const GreetingFlex = {
+import { messagingApi } from '@line/bot-sdk';
+
+// FlexMessage type มันโดน deprecated ไปแล้วให้เรียก type ผ่าน messagingApi เท่านั้น (แต่ doc ไม่เขียนไว้ จะบ้า)
+export const GreetingFlex: messagingApi.FlexMessage = {
   type: 'flex',
   altText: 'โปรดเลือกประเภทผู้ใช้ของคุณ',
   contents: {

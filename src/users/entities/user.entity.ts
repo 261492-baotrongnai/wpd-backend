@@ -28,6 +28,9 @@ export class User {
   @OneToMany(() => Image, (image) => image.user)
   images: Image[];
 
+  @Column({ nullable: true })
+  program_code: string;
+
   constructor(user: Partial<User>) {
     Object.assign(this, user);
   }
