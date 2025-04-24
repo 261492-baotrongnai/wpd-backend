@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { GreetingFlex } from './flex-message';
 
 @Injectable()
 export class WebhooksService {
@@ -11,12 +12,7 @@ export class WebhooksService {
     };
     const body = {
       replyToken,
-      messages: [
-        {
-          type: 'text',
-          text: message,
-        },
-      ],
+      messages: [message],
     };
 
     try {
@@ -38,12 +34,7 @@ export class WebhooksService {
     };
     const body = {
       replyToken,
-      messages: [
-        {
-          type: 'text',
-          text: 'Thank you for following!',
-        },
-      ],
+      messages: [GreetingFlex],
     };
 
     try {

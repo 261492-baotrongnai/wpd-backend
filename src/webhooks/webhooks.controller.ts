@@ -19,9 +19,9 @@ export class WebhooksController {
       };
     },
   ) {
-    console.log('Received webhook headers:', req.headers);
-    console.log('Received webhook body:', req.body);
-    console.log('LINE Channel Secret:', process.env.LINE_CHANNEL_SECRET);
+    // console.log('Received webhook headers:', req.headers);
+    // console.log('Received webhook body:', req.body);
+    // console.log('LINE Channel Secret:', process.env.LINE_CHANNEL_SECRET);
 
     // Verify the signature
     const isValid = verifySignature(
@@ -46,10 +46,7 @@ export class WebhooksController {
       }
       if (event.type === 'follow') {
         const replyToken = event.replyToken;
-        await this.webhookService.replyMessage(
-          replyToken,
-          'Thank you for following!',
-        );
+        await this.webhookService.replyFollow(replyToken);
       }
     }
 

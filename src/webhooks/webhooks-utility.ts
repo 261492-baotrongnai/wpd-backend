@@ -7,7 +7,7 @@ export function verifySignature(
   signature: string,
 ): boolean {
   console.log('Verifying signature...');
-  console.log('Channel Secret:', channelSecret);
+  //   console.log('Channel Secret:', channelSecret);
   const hash = crypto
     .createHmac('SHA256', channelSecret)
     .update(body)
