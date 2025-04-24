@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { ImagesModule } from './images/images.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksController } from './webhooks/webhooks.controller';
+import { WebhooksService } from './webhooks/webhooks.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
@@ -13,6 +14,6 @@ import { WebhooksController } from './webhooks/webhooks.controller';
     UsersModule,
   ],
   controllers: [WebhooksController],
-  providers: [],
+  providers: [WebhooksService],
 })
 export class AppModule {}
