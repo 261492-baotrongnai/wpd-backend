@@ -12,7 +12,12 @@ export class WebhooksService {
     };
     const body = {
       replyToken,
-      messages: [message],
+      messages: [
+        {
+          type: 'text',
+          text: message,
+        },
+      ],
     };
 
     try {

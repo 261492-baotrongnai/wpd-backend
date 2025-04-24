@@ -34,39 +34,44 @@ export const getInternalId = async (
   idToken: string,
   clientId: string,
   secretKey: string,
+  userId?: string,
 ): Promise<string | { status: number; message: string }> => {
   try {
     // Verify the token with LINE API
-    const response = await axios.post<VerifyResponse>(
-      'https://api.line.me/oauth2/v2.1/verify',
-      new URLSearchParams({
-        id_token: idToken,
-        client_id: clientId,
-      }).toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    let uid = userId;
+    if (!uid) {
+      const response = await axios.post<VerifyResponse>(
+        'https://api.line.me/oauth2/v2.1/verify',
+        new URLSearchParams({
+          id_token: idToken,
+          client_id: clientId,
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         },
-      },
-    );
-
-    const { sub } = response.data;
-
-    if (!sub) {
-      console.error(
-        'Error: `sub` field is missing in the response:',
-        response.data,
       );
-      return {
-        status: 400,
-        message: 'Please login again',
-      };
-    }
 
+      const { sub } = response.data;
+
+      uid = sub;
+
+      if (!uid) {
+        console.error(
+          'Error: `sub` field is missing in the response:',
+          response.data,
+        );
+        return {
+          status: 400,
+          message: 'Please login again',
+        };
+      }
+    }
     // Create a one-way HMAC hash of the LINE sub
     const derivedId = crypto
       .createHmac('sha256', secretKey)
-      .update(sub)
+      .update(uid)
       .digest('hex');
 
     return derivedId;
