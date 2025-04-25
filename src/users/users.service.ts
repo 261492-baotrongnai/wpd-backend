@@ -17,10 +17,10 @@ export class UsersService {
   async verifyIDToken(idToken: string) {
     const clientId: string = process.env.LINE_CLIENT_ID || '';
     const secretKey: string = process.env.INTERNAL_ID_SECRET || '';
-    const result = await getInternalId(idToken, clientId, secretKey);
+    const result = await getInternalId(secretKey, idToken, clientId);
     if (typeof result !== 'string') {
       // Check if result is an error
-      throw new Error(`Failed to get internal ID: ${result.message}`);
+      throw new Error(`Failed to get internal ID: ${result}`);
     }
     const internalId: string = result;
     const user = await this.usersRepository.findOneBy({ internalId });
@@ -32,8 +32,16 @@ export class UsersService {
     }
   }
 
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user: ' + JSON.stringify(createUserDto);
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.usersRepository.findOneBy({
+      internalId: createUserDto.internalId,
+    });
+    if (user) {
+      return user;
+    }
+    const newUser = new User(createUserDto);
+    await this.entityManager.save(newUser);
+    return newUser;
   }
 
   async findAll() {

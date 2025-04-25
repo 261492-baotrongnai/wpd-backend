@@ -1,32 +1,26 @@
-import { Body, Controller, Post, Req } from '@nestjs/common';
-import { verifySignature } from './webhooks-utility';
+import { Controller, Post, Req } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
+import * as line from '@line/bot-sdk';
 
 @Controller('webhooks')
 export class WebhooksController {
+  private readonly client: line.messagingApi.MessagingApiClient;
   constructor(readonly webhookService: WebhooksService) {}
+
   @Post('')
   async getWebhook(
     @Req()
     req: {
       headers: { [key: string]: string };
       body: {
-        events: Array<{
-          type: string;
-          replyToken: string;
-          message: { type: string; text: string };
-        }>;
+        events: line.WebhookEvent[];
       };
     },
   ) {
-    console.log('Received webhook headers:', req.headers);
-    console.log('Received webhook body:', req.body);
-    console.log('LINE Channel Secret:', process.env.LINE_CHANNEL_SECRET);
-
     // Verify the signature
-    const isValid = verifySignature(
-      process.env.LINE_CHANNEL_SECRET || '',
+    const isValid = line.validateSignature(
       JSON.stringify(req.body),
+      process.env.LINE_CHANNEL_SECRET || '',
       req.headers['x-line-signature'],
     );
     if (!isValid) {
@@ -35,20 +29,26 @@ export class WebhooksController {
 
     // Process the events
     const events = req.body.events;
+
     for (const event of events) {
-      if (event.type === 'message' && event.message.type === 'text') {
-        const replyToken = event.replyToken;
-        const userMessage = event.message.text;
-        await this.webhookService.replyMessage(
-          replyToken,
-          `You said: ${userMessage}`,
-        );
-      }
-      if (event.type === 'follow') {
-        const replyToken = event.replyToken;
-        await this.webhookService.replyMessage(
-          replyToken,
-          'Thank you for following!',
+      try {
+        if (event.type === 'message' && event.message?.type === 'text') {
+          await this.webhookService.handleTextMessage(
+            event.replyToken,
+            event.message.text,
+          );
+        } else if (event.type === 'follow') {
+          await this.webhookService.handleFollowEvent(
+            event.replyToken,
+            event.source.userId ?? '',
+          );
+        } else {
+          console.warn(`Unsupported event type: ${event.type}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error processing event: ${JSON.stringify(event)}`,
+          error,
         );
       }
     }

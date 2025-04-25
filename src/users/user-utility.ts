@@ -31,50 +31,45 @@ interface VerifyResponse {
  * ```
  */
 export const getInternalId = async (
-  idToken: string,
-  clientId: string,
   secretKey: string,
-): Promise<string | { status: number; message: string }> => {
+  idToken?: string,
+  clientId?: string,
+  userId?: string,
+): Promise<string | undefined> => {
   try {
     // Verify the token with LINE API
-    const response = await axios.post<VerifyResponse>(
-      'https://api.line.me/oauth2/v2.1/verify',
-      new URLSearchParams({
-        id_token: idToken,
-        client_id: clientId,
-      }).toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    let uid = userId;
+    if (!uid) {
+      console.log('no userId, verifying ID token');
+      const response = await axios.post<VerifyResponse>(
+        'https://api.line.me/oauth2/v2.1/verify',
+        new URLSearchParams(
+          idToken && clientId ? { id_token: idToken, client_id: clientId } : {},
+        ).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         },
-      },
-    );
-
-    const { sub } = response.data;
-
-    if (!sub) {
-      console.error(
-        'Error: `sub` field is missing in the response:',
-        response.data,
       );
-      return {
-        status: 400,
-        message: 'Please login again',
-      };
-    }
 
+      const { sub } = response.data;
+
+      uid = sub;
+
+      if (!uid) {
+        throw new Error('User ID is missing in the response');
+      }
+    }
     // Create a one-way HMAC hash of the LINE sub
     const derivedId = crypto
       .createHmac('sha256', secretKey)
-      .update(sub)
+      .update(uid)
       .digest('hex');
 
     return derivedId;
   } catch (error) {
     console.error('Error verifying ID token:', error);
-    return {
-      status: 400,
-      message: 'Please login again',
-    };
+    return undefined;
   }
 };
