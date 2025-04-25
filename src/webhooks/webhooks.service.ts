@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { GreetingFlex } from './flex-message';
+import { ClassifyFlex, GreetingFlex } from './flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
 import { getInternalId } from 'src/users/user-utility';
+
+const secretKey = process.env.INTERNAL_ID_SECRET;
 
 @Injectable()
 export class WebhooksService {
@@ -17,6 +19,15 @@ export class WebhooksService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
+  async isUserExist(userId: string) {
+    if (!secretKey) throw new Error('INTERNAL_ID_SECRET is not defined');
+    const iid = await getInternalId(undefined, userId);
+    if (typeof iid !== 'string') {
+      throw new Error(`Failed to get internal ID at webhooks service`);
+    }
+    return this.userService.findUserByInternalId(iid) != null ? true : false;
+  }
+
   async handleTextMessage(replyToken: string, userMessage: string) {
     console.log('Received message:', userMessage);
     await this.client.replyMessage({
@@ -25,38 +36,12 @@ export class WebhooksService {
     });
   }
 
-  async handleFollowEvent(replyToken: string, userId: string) {
+  async handleFollowEvent(replyToken: string) {
     try {
-      // Validate environment variable
-      const secretKey = process.env.INTERNAL_ID_SECRET;
-      if (!secretKey) throw new Error('INTERNAL_ID_SECRET is not defined');
-      if (!userId) throw new Error('User ID is missing in the follow event');
-
-      console.log(`Processing follow event for userId: ${userId}`);
-
-      // Retrieve internal ID
-      const internalId = await getInternalId(
-        secretKey,
-        undefined,
-        undefined,
-        userId,
-      );
-      if (typeof internalId !== 'string') {
-        throw new Error(
-          `Failed to retrieve internalId:${JSON.stringify(internalId)}`,
-        );
-      }
-
-      // Create or find user
-      const user = await this.userService.create({
-        internalId: internalId,
-      });
-      console.log('User created or found:', user);
-
-      // Send a greeting flex message
+      // Send a greeting flex messages
       await this.client.replyMessage({
         replyToken,
-        messages: [GreetingFlex],
+        messages: [GreetingFlex, ClassifyFlex],
       });
       console.log('Welcome message sent successfully');
     } catch (error) {
