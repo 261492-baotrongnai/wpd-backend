@@ -1,12 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-// import fs from 'fs';
 
 async function bootstrap() {
-  // const httpsOptions = {
-  //   key: fs.readFileSync('server.key'),
-  //   cert: fs.readFileSync('server.cert'),
-  // };
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: '*',
