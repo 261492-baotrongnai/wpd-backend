@@ -36,7 +36,7 @@ export class UsersService {
   }
 
   async verifyLineIDToken(idToken: string) {
-    const result = await getInternalId(idToken);
+    const result = await getInternalId(idToken, undefined);
     if (typeof result !== 'string') {
       // Check if result is an error
       throw new Error(`Failed to get internal ID`);
@@ -54,7 +54,7 @@ export class UsersService {
 
   async create(registerDto: RegisterDto) {
     try {
-      const iid = await getInternalId(registerDto.idToken);
+      const iid = await getInternalId(registerDto.idToken, undefined);
       if (typeof iid !== 'string') {
         throw new Error(`Failed to get internal ID at create user`);
       }
