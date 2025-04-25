@@ -31,12 +31,12 @@ interface VerifyResponse {
  * ```
  */
 export const getInternalId = async (
-  secretKey: string,
   idToken?: string,
-  clientId?: string,
   userId?: string,
-): Promise<string | undefined> => {
+): Promise<string | { statusCode: number; message: string }> => {
   try {
+    const clientId: string = process.env.LINE_CLIENT_ID || '';
+    const secretKey: string = process.env.INTERNAL_ID_SECRET || '';
     // Verify the token with LINE API
     let uid = userId;
     if (!uid) {
@@ -69,7 +69,10 @@ export const getInternalId = async (
 
     return derivedId;
   } catch (error) {
-    console.error('Error verifying ID token:', error);
-    return undefined;
+    return {
+      statusCode: 500,
+      message:
+        error instanceof Error ? error.message : 'An unknown error occurred',
+    };
   }
 };

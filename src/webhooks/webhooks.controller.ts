@@ -37,11 +37,11 @@ export class WebhooksController {
             event.replyToken,
             event.message.text,
           );
-        } else if (event.type === 'follow') {
-          await this.webhookService.handleFollowEvent(
-            event.replyToken,
-            event.source.userId ?? '',
-          );
+        } else if (
+          event.type === 'follow' &&
+          'isUnblocked' in event['follow'] === false
+        ) {
+          await this.webhookService.handleFollowEvent(event.replyToken);
         } else {
           console.warn(`Unsupported event type: ${event.type}`);
         }

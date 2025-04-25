@@ -18,7 +18,7 @@ export class Image {
   createdAt: Date;
   @UpdateDateColumn()
   updatedAt: Date;
-  @ManyToOne(() => User, (user) => user.images)
+  @ManyToOne(() => User, (user) => user.images, { onDelete: 'CASCADE' })
   user: User;
 
   constructor(image: Partial<Image>) {
