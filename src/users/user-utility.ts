@@ -9,68 +9,53 @@ interface VerifyResponse {
   iat: number;
 }
 
-/**
- * Retrieves an internal ID by verifying an ID token with the LINE API and generating
- * a one-way HMAC hash of the `sub` field from the response.
- *
- * @param idToken - The ID token to be verified with the LINE API.
- * @param clientId - The client ID associated with the LINE API.
- * @param secretKey - The secret key used to generate the HMAC hash.
- * @returns A promise that resolves to either:
- *          - A string representing the derived internal ID, or
- *          - An object containing a status code and an error message if verification fails.
- *
- * @example
- * ```typescript
- * const internalId = await getInternalId(idToken, clientId, secretKey);
- * if (typeof internalId === 'string') {
- *   console.log('Derived internal ID:', internalId);
- * } else {
- *   console.error('Error:', internalId.message);
- * }
- * ```
- */
-export const getInternalId = async (
-  idToken?: string,
-  userId?: string,
-): Promise<string | { statusCode: number; message: string }> => {
-  try {
-    const clientId: string = process.env.LINE_CLIENT_ID || '';
-    const secretKey: string = process.env.INTERNAL_ID_SECRET || '';
-    // Verify the token with LINE API
-    let uid = userId;
-    if (!uid) {
-      const response = await axios.post<VerifyResponse>(
-        'https://api.line.me/oauth2/v2.1/verify',
-        new URLSearchParams(
-          idToken && clientId ? { id_token: idToken, client_id: clientId } : {},
-        ).toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        },
-      );
-      const { sub } = response.data;
-
-      uid = sub;
-
-      if (!uid) {
-        throw new Error('User ID is missing in the response');
-      }
-    }
-    // Create a one-way HMAC hash of the LINE sub
-    const derivedId = crypto
-      .createHmac('sha256', secretKey)
-      .update(uid)
-      .digest('hex');
-
-    return derivedId;
-  } catch (error) {
-    return {
-      statusCode: 500,
-      message:
-        error instanceof Error ? error.message : 'An unknown error occurred',
-    };
+export const verifyIdToken = async (idToken: string) => {
+  const clientId: string = process.env.LINE_CLIENT_ID || '';
+  if (!clientId) {
+    throw new Error('LINE_CLIENT_ID environment variable is not set');
   }
+  try {
+    const response = await axios.post<VerifyResponse>(
+      'https://api.line.me/oauth2/v2.1/verify',
+      new URLSearchParams(
+        idToken && clientId ? { id_token: idToken, client_id: clientId } : {},
+      ).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+    );
+    const { sub } = response.data;
+    if (!sub) {
+      throw new Error('User ID is missing in the response');
+    }
+    return sub;
+  } catch (error) {
+    console.error('Error verifying LINE ID token:', error);
+    throw new Error(
+      error instanceof Error ? error.message : 'An unknown error occurred',
+    );
+  }
+};
+
+export const getInternalId = async (idToken?: string, userId?: string) => {
+  const secretKey: string = process.env.INTERNAL_ID_SECRET || '';
+  // Verify the token with LINE API
+  let uid = userId;
+  if (!uid) {
+    if (!idToken) {
+      throw new Error('idToken is required but was not provided');
+    }
+
+    // Verify the ID token and get the LINE user ID
+    uid = await verifyIdToken(idToken);
+  }
+  // Create a one-way HMAC hash of the LINE sub
+  const derivedId = crypto
+    .createHmac('sha256', secretKey)
+    .update(uid)
+    .digest('hex');
+
+  return derivedId;
 };

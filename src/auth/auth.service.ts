@@ -27,24 +27,6 @@ export class AuthService {
     }>(token, { secret: secretKey });
   }
 
-  // async validateUser(LineIdToken: string) {
-  //   const result = await getInternalId(LineIdToken, undefined);
-  //   if (typeof result !== 'string') {
-  //     // Check if result is an error
-  //     console.error('Error verifying ID token:');
-  //     throw new Error(`Failed to get internal ID at validateUser`);
-  //   }
-  //   const internalId: string = result;
-  //   const user = await this.usersService.findUserByInternalId(internalId);
-  //   if (!user) {
-  //     throw new Error(
-  //       `please classify and agree terms and conditions before using`,
-  //     );
-  //   } else {
-  //     return user;
-  //   }
-  // }
-
   async validateUser(LineIdToken: string) {
     try {
       const result = await getInternalId(LineIdToken, undefined);

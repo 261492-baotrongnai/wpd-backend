@@ -6,10 +6,11 @@ import { JwtModule } from '@nestjs/jwt';
 // import { LocalStrategy } from './strategies/local.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { WebhooksService } from 'src/webhooks/webhooks.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, WebhooksService],
   imports: [
     UsersModule,
     JwtModule.register({

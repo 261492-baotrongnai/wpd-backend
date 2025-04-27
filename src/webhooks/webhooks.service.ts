@@ -49,4 +49,23 @@ export class WebhooksService {
       throw error;
     }
   }
+
+  async handleNonRegisteredUser(userId: string) {
+    try {
+      await this.client.pushMessage({
+        to: userId,
+        messages: [
+          {
+            type: 'text',
+            text: `คุณยังไม่ได้ลงทะเบียนในระบบ กรุณาเลือกประเภทผู้ใช้งาน และยอมรับเงื่อนไขการใช้งาน`,
+          },
+          ClassifyFlex,
+        ],
+      });
+      console.log('Welcome message sent successfully');
+    } catch (error) {
+      console.error('Error handling non-registered user:', error);
+      throw error;
+    }
+  }
 }

@@ -5,10 +5,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { WebhooksService } from 'src/webhooks/webhooks.service';
+import { verifyIdToken } from 'src/users/user-utility';
 
 @Injectable()
 export class IdTokenAuthGuard implements CanActivate {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly webhookService: WebhooksService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
@@ -23,6 +28,8 @@ export class IdTokenAuthGuard implements CanActivate {
     const user = await this.authService.validateUser(idToken);
 
     if (!user) {
+      const userId = await verifyIdToken(idToken);
+      await this.webhookService.handleNonRegisteredUser(userId);
       throw new UnauthorizedException(
         `Invalid idToken, please classify and agree terms and conditions before using`,
       );

@@ -1,10 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Body, Injectable, InternalServerErrorException } from '@nestjs/common';
 // import { UpdateUserDto } from './dto/update-user.dto';
-import { getInternalId } from './user-utility';
+import { getInternalId, verifyIdToken } from './user-utility';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { EntityManager, Repository } from 'typeorm';
-import { warn } from 'console';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 
@@ -36,39 +35,34 @@ export class UsersService {
   }
 
   async verifyLineIDToken(idToken: string) {
-    const result = await getInternalId(idToken, undefined);
-    if (typeof result !== 'string') {
-      // Check if result is an error
-      console.error('Error verifying ID token:');
-      throw new Error(`Failed to get internal ID at verifyLineIDToken`);
-    }
-    const internalId: string = result;
-    const user = await this.usersRepository.findOneBy({ internalId });
-    if (!user) {
-      throw new warn(
-        `please classify and agree terms and conditions before using`,
+    try {
+      await verifyIdToken(idToken);
+      return true;
+    } catch (error) {
+      console.error('Error verifying LINE ID token:', error);
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'An unknown error occurred',
       );
-    } else {
-      return user;
     }
   }
 
-  async create(registerDto: RegisterDto) {
+  async create(@Body() registerDto: RegisterDto) {
+    // console.log('Registering user:', registerDto);
     try {
       const iid = await getInternalId(registerDto.idToken, undefined);
-      if (typeof iid !== 'string') {
-        throw new Error(`Failed to get internal ID at create user`);
-      }
+
       const user = await this.usersRepository.findOneBy({ internalId: iid });
       if (user) {
-        return user;
+        const acct = await this.generateToken(user.internalId);
+        return { type: 'User', access_token: acct };
       }
       const newUser = new User({
         internalId: iid,
         program_code: registerDto.program_code,
       });
       await this.entityManager.save(newUser);
-      return newUser;
+      const acct = await this.generateToken(newUser.internalId);
+      return { type: 'NewUser', access_token: acct };
     } catch (error) {
       console.error('Error creating user:', error);
       throw new InternalServerErrorException(

@@ -17,6 +17,11 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Post('verify')
+  async verifyLineIDToken(@Body('idToken') idToken: string) {
+    return this.usersService.verifyLineIDToken(idToken);
+  }
+
   @Post('register')
   async create(@Body() registerDto: RegisterDto) {
     return this.usersService.create(registerDto);
