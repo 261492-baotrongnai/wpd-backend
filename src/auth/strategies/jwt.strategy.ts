@@ -14,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: jwtSecret,
     });
   }
-
+  // Validate the JWT payload
   validate(payload: { internalId: string }) {
     return { internalId: payload.internalId };
   }
