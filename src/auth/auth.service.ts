@@ -1,26 +1,71 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { UsersService } from 'src/users/users.service';
+import { JwtService } from '@nestjs/jwt';
+import { getInternalId } from 'src/users/user-utility';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
+  async generateToken(internalId: string): Promise<string> {
+    const secretKey = process.env.JWT_SECRET;
+    return await this.jwtService.signAsync(
+      { internalId, role: 'user' },
+      { secret: secretKey, expiresIn: '1h' },
+    );
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async decodeToken(
+    token: string,
+  ): Promise<{ internalId: string; role: string }> {
+    const secretKey = process.env.JWT_SECRET;
+    return await this.jwtService.verifyAsync<{
+      internalId: string;
+      role: string;
+    }>(token, { secret: secretKey });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+  // async validateUser(LineIdToken: string) {
+  //   const result = await getInternalId(LineIdToken, undefined);
+  //   if (typeof result !== 'string') {
+  //     // Check if result is an error
+  //     console.error('Error verifying ID token:');
+  //     throw new Error(`Failed to get internal ID at validateUser`);
+  //   }
+  //   const internalId: string = result;
+  //   const user = await this.usersService.findUserByInternalId(internalId);
+  //   if (!user) {
+  //     throw new Error(
+  //       `please classify and agree terms and conditions before using`,
+  //     );
+  //   } else {
+  //     return user;
+  //   }
+  // }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+  async validateUser(LineIdToken: string) {
+    try {
+      const result = await getInternalId(LineIdToken, undefined);
+      if (typeof result !== 'string') {
+        console.error(
+          'Error verifying ID token: Invalid result type from getInternalId in validateUser',
+        );
+        return null; // Return null for invalid tokens
+      }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+      const internalId: string = result;
+      const user = await this.usersService.findUserByInternalId(internalId);
+      if (!user) {
+        console.error('User not found or terms not agreed');
+        return null; // Return null if user is not found
+      }
+
+      return user; // Return the user if validation is successful
+    } catch (error) {
+      console.error('Error during user validation:', error);
+      return null; // Return null for any unexpected errors
+    }
   }
 }

@@ -40,7 +40,6 @@ export const getInternalId = async (
     // Verify the token with LINE API
     let uid = userId;
     if (!uid) {
-      console.log('no userId, verifying ID token');
       const response = await axios.post<VerifyResponse>(
         'https://api.line.me/oauth2/v2.1/verify',
         new URLSearchParams(
@@ -52,7 +51,6 @@ export const getInternalId = async (
           },
         },
       );
-
       const { sub } = response.data;
 
       uid = sub;

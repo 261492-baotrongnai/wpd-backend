@@ -39,7 +39,8 @@ export class UsersService {
     const result = await getInternalId(idToken, undefined);
     if (typeof result !== 'string') {
       // Check if result is an error
-      throw new Error(`Failed to get internal ID`);
+      console.error('Error verifying ID token:');
+      throw new Error(`Failed to get internal ID at verifyLineIDToken`);
     }
     const internalId: string = result;
     const user = await this.usersRepository.findOneBy({ internalId });

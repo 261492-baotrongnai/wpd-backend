@@ -1,22 +1,31 @@
-import { Controller, Post, Get, Body, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 // import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('verify')
-  async verifyUser(@Body() { idToken }: { idToken: string }) {
-    const user = await this.usersService.verifyLineIDToken(idToken);
-    const token = await this.usersService.generateToken(user.internalId);
-    return { token };
-  }
-
   @Post('register')
   async create(@Body() registerDto: RegisterDto) {
     return this.usersService.create(registerDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  getProfile(@Request() req: { user: { internalId: string } }) {
+    return req.user;
   }
 
   @Get()
