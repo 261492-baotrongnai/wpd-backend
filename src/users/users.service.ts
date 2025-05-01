@@ -6,15 +6,23 @@ import { User } from './entities/user.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
+import * as line from '@line/bot-sdk';
 
 @Injectable()
 export class UsersService {
+  private readonly client: line.messagingApi.MessagingApiClient;
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
     private readonly entityManager: EntityManager,
     private readonly jwtService: JwtService,
-  ) {}
+  ) {
+    const config = {
+      channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
+      channelSecret: process.env.LINE_CHANNEL_SECRET || '',
+    };
+    this.client = new line.messagingApi.MessagingApiClient(config);
+  }
 
   async generateToken(internalId: string): Promise<string> {
     const secretKey = process.env.JWT_SECRET;
@@ -50,6 +58,7 @@ export class UsersService {
     // console.log('Registering user:', registerDto);
     try {
       const iid = await getInternalId(registerDto.idToken, undefined);
+      const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
 
       const user = await this.usersRepository.findOneBy({ internalId: iid });
       if (user) {
@@ -62,6 +71,7 @@ export class UsersService {
       });
       await this.entityManager.save(newUser);
       const acct = await this.generateToken(newUser.internalId);
+      await this.handleRegisterSuccess(uid.sub);
       return { type: 'NewUser', access_token: acct };
     } catch (error) {
       console.error('Error creating user:', error);
@@ -94,5 +104,26 @@ export class UsersService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  async handleRegisterSuccess(userId: string) {
+    try {
+      await this.client.pushMessage({
+        to: userId,
+        messages: [
+          {
+            type: 'text',
+            text: `มะลิสวัสดีเจ้าา 🙏
+  มะลิจะช่วยดูแลเรื่องการกินอาหารของคุณ
+  ทุกวันเลยค่ะ เพื่อสุขภาพดี ห่างไกลเบาหวาน
+  กดเมนูด้านล่างเพื่อเริ่มการใช้งานได้เลยนะคะ`,
+          },
+        ],
+      });
+      console.log('Registration success message sent successfully');
+    } catch (error) {
+      console.error('Error handling registration success:', error);
+      throw error;
+    }
   }
 }
