@@ -4,7 +4,7 @@ import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
 import { getInternalId } from 'src/users/user-utility';
 
-const secretKey = process.env.INTERNAL_ID_SECRET;
+// const secretKey = process.env.INTERNAL_ID_SECRET;
 
 @Injectable()
 export class WebhooksService {
@@ -20,12 +20,16 @@ export class WebhooksService {
   }
 
   async isUserExist(userId: string) {
-    if (!secretKey) throw new Error('INTERNAL_ID_SECRET is not defined');
+    const sk = process.env.INTERNAL_ID_SECRET;
+    if (!sk) throw new Error('INTERNAL_ID_SECRET is not defined');
     const iid = await getInternalId(undefined, userId);
+
     if (typeof iid !== 'string') {
       throw new Error(`Failed to get internal ID at webhooks service`);
     }
-    return this.userService.findUserByInternalId(iid) != null ? true : false;
+    const isExist = await this.userService.findUserByInternalId(iid);
+
+    return isExist !== null;
   }
 
   async handleTextMessage(replyToken: string, userMessage: string) {
