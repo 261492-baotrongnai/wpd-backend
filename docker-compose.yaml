@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+
+  backend:
+    image: apichayauwu/wpd-backend:latest
+    container_name: wpd-backend
+    environment:
+      NODE_ENV: development
+      PORT: ${PORT}
+      MYSQL_ROOT_HOST: ${MYSQL_ROOT_HOST}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      LINE_CLIENT_ID: ${LINE_CLIENT_ID}
+      INTERNAL_ID_SECRET: ${INTERNAL_ID_SECRET}
+      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+      CHANNEL_ACCESS_TOKEN: ${CHANNEL_ACCESS_TOKEN}
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - wpd-network
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - '8000:8000'
+
+networks:
+  wpd-network:
+    driver: bridge
+
+volumes:
+  mysql:
+    driver: local
