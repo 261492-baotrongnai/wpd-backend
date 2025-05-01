@@ -3,6 +3,7 @@ import { ClassifyFlex, GreetingFlex } from './flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
 import { getInternalId } from 'src/users/user-utility';
+import axios from 'axios';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -71,5 +72,18 @@ export class WebhooksService {
       console.error('Error handling non-registered user:', error);
       throw error;
     }
+  }
+
+  async loading(userId: string): Promise<void> {
+    await axios.post(
+      'https://api.line.me/v2/bot/chat/loading/start',
+      { chatId: userId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CHANNEL_ACCESS_TOKEN}`,
+        },
+      },
+    );
   }
 }

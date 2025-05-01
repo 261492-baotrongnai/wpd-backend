@@ -32,36 +32,45 @@ export class WebhooksController {
 
     for (const event of events) {
       try {
-        if (event.type === 'message' && event.message?.type === 'text') {
-          if (
-            event.source.userId &&
-            (await this.webhookService.isUserExist(event.source.userId)) ===
-              true
-          ) {
-            await this.webhookService.handleTextMessage(
-              event.replyToken,
-              event.message.text,
-            );
-          } else {
-            console.warn(
-              'received message from non-registered user,',
-              ' message:',
-              event.message.text,
-            );
-            await this.webhookService.handleNonRegisteredUser(
-              event.source.userId ??
-                (() => {
-                  throw new Error('User ID is undefined');
-                })(),
-            );
-          }
-        } else if (
-          event.type === 'follow' &&
-          'isUnblocked' in event['follow'] === false
-        ) {
-          await this.webhookService.handleFollowEvent(event.replyToken);
+        if (event.source.type !== 'user') {
+          console.warn(
+            'Received event from non-user source type:',
+            'Event:',
+            event.source.type,
+          );
         } else {
-          console.warn(`Unsupported event type: ${event.type}`);
+          await this.webhookService.loading(event.source.userId);
+          if (event.type === 'message' && event.message?.type === 'text') {
+            if (
+              event.source.userId &&
+              (await this.webhookService.isUserExist(event.source.userId)) ===
+                true
+            ) {
+              await this.webhookService.handleTextMessage(
+                event.replyToken,
+                event.message.text,
+              );
+            } else {
+              console.warn(
+                'received message from non-registered user,',
+                ' message:',
+                event.message.text,
+              );
+              await this.webhookService.handleNonRegisteredUser(
+                event.source.userId ??
+                  (() => {
+                    throw new Error('User ID is undefined');
+                  })(),
+              );
+            }
+          } else if (
+            event.type === 'follow' &&
+            'isUnblocked' in event['follow'] === false
+          ) {
+            await this.webhookService.handleFollowEvent(event.replyToken);
+          } else {
+            console.warn(`Unsupported event type: ${event.type}`);
+          }
         }
       } catch (error) {
         console.error(
