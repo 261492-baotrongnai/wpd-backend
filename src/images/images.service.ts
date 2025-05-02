@@ -4,14 +4,36 @@ import { UpdateImageDto } from './dto/update-image.dto';
 import { EntityManager, Repository } from 'typeorm';
 import { Image } from './entities/image.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { createS3Client } from './spaceUtil';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class ImagesService {
+  private readonly s3Client = createS3Client();
+
   constructor(
     @InjectRepository(Image)
     private readonly imagesRepository: Repository<Image>,
     private readonly entityManager: EntityManager,
   ) {}
+
+  async getSignedUrl(key: string): Promise<{ signed_url: string }> {
+    const bucketName = process.env.SPACE_NAME;
+
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    // Create a pre-signed URL that expires in 24 hour
+    const signed_url = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 3600 * 24,
+    });
+
+    return { signed_url };
+  }
+
   async create(createImageDto: CreateImageDto) {
     const image = new Image(createImageDto);
     await this.entityManager.save(image);
