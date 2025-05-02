@@ -7,11 +7,14 @@ import {
   Param,
   Delete,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ImagesService } from './images.service';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('images')
 export class ImagesController {
@@ -22,6 +25,14 @@ export class ImagesController {
     const file_name = req.params.file_name;
     const key = `meal_images/${file_name}`;
     const response = this.imagesService.getSignedUrl(key);
+    return response;
+  }
+
+  @Post('meals/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadMealsImage(@UploadedFile() file: Express.Multer.File) {
+    console.log('Received file:', file);
+    const response = await this.imagesService.uploadFile(file, 'meal_images/');
     return response;
   }
 
