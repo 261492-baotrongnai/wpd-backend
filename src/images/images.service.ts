@@ -24,7 +24,7 @@ export class ImagesService {
     file: Express.Multer.File,
     dir: string,
   ): Promise<{ key: string }> {
-    console.log('Uploading file:', file);
+    this.logger.debug('Uploading file:', file);
     if (!file.originalname) throw new Error('File name is undefined');
     if (!file.buffer) throw new Error('File buffer is undefined');
     try {

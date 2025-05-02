@@ -1,4 +1,9 @@
-import { Body, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Body,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 // import { UpdateUserDto } from './dto/update-user.dto';
 import { getInternalId, verifyIdToken } from './user-utility';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,6 +16,7 @@ import * as line from '@line/bot-sdk';
 @Injectable()
 export class UsersService {
   private readonly client: line.messagingApi.MessagingApiClient;
+  private readonly logger = new Logger(UsersService.name);
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
@@ -47,15 +53,14 @@ export class UsersService {
       await verifyIdToken(idToken);
       return true;
     } catch (error) {
-      console.error('Error verifying LINE ID token:', error);
-      throw new InternalServerErrorException(
-        error instanceof Error ? error.message : 'An unknown error occurred',
-      );
+      if (error instanceof Error) {
+        this.logger.error(`Error verifying ID token: ${error.message}`);
+      }
+      return false;
     }
   }
 
   async create(@Body() registerDto: RegisterDto) {
-    // console.log('Registering user:', registerDto);
     try {
       const iid = await getInternalId(registerDto.idToken, undefined);
       const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
