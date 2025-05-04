@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { Logger } from '@nestjs/common';
 
 interface VerifyResponse {
   iss: string;
@@ -15,6 +16,7 @@ export const verifyIdToken = async (idToken: string) => {
     throw new Error('LINE_CLIENT_ID environment variable is not set');
   }
   try {
+    Logger.debug('Verifying LINE ID token');
     const response = await axios.post<VerifyResponse>(
       'https://api.line.me/oauth2/v2.1/verify',
       new URLSearchParams(
@@ -27,12 +29,10 @@ export const verifyIdToken = async (idToken: string) => {
       },
     );
     const { sub } = response.data;
-    if (!sub) {
-      throw new Error('User ID is missing in the response');
-    }
+
     return sub;
   } catch (error) {
-    console.error('Error verifying LINE ID token:', error);
+    Logger.error('Error verifying LINE ID token:', error);
     throw new Error(
       error instanceof Error ? error.message : 'An unknown error occurred',
     );

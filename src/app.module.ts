@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { WebhooksController } from './webhooks/webhooks.controller';
 import { WebhooksService } from './webhooks/webhooks.service';
 import { AuthModule } from './auth/auth.module';
+import { UserStatesModule } from './user-states/user-states.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
     ImagesModule,
     UsersModule,
     AuthModule,
+    UserStatesModule,
   ],
   controllers: [WebhooksController],
   providers: [WebhooksService],

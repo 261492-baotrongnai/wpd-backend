@@ -1,23 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ClassifyFlex, GreetingFlex } from './flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
+import { UserStatesService } from 'src/user-states/user-states.service';
 import { getInternalId } from 'src/users/user-utility';
 import axios from 'axios';
+import { UserState } from 'src/user-states/entities/user-state.entity';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
 @Injectable()
 export class WebhooksService {
   private readonly client: line.messagingApi.MessagingApiClient;
+  private readonly logger = new Logger(WebhooksService.name);
 
   // Initialize LINE SDK client and import user service
-  constructor(private readonly userService: UsersService) {
+  constructor(
+    private readonly userService: UsersService,
+    private readonly userStatesService: UserStatesService,
+  ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
       channelSecret: process.env.LINE_CHANNEL_SECRET || '',
     };
     this.client = new line.messagingApi.MessagingApiClient(config);
+  }
+
+  async checkUserState(uid: string) {
+    const iid = await getInternalId(undefined, uid);
+    const user = await this.userService.findUserByInternalId(iid);
+    this.logger.debug('User found:', user);
+    if (!user || user.states.length === 0) {
+      this.logger.error('User not found or no states in checkUserState');
+      return null;
+    } else {
+      const user_states = user.states;
+      return user_states;
+    }
   }
 
   async isUserExist(userId: string) {
@@ -52,6 +71,75 @@ export class WebhooksService {
     } catch (error) {
       console.error('Error handling follow event:', error);
       throw error;
+    }
+  }
+
+  async handleMealRecord(replyToken: string, uid: string) {
+    await this.client.replyMessage({
+      replyToken,
+      messages: [
+        {
+          type: 'text',
+          text: 'ถ่ายรูปอาหาร หรือ เลือกรูปอาหารจากมือถือส่งมาให้มะลิหน่อยนะคะ~',
+        },
+      ],
+    });
+    const iid = await getInternalId(undefined, uid);
+
+    const user = await this.userService.findUserByInternalId(iid);
+    if (!user) this.logger.error('User not found in handleMealRecord');
+    else {
+      await this.userStatesService.create({
+        user,
+        state: 'waiting for meal image',
+      });
+    }
+  }
+
+  async handleWaitingState(event: line.WebhookEvent, user_state: UserState) {
+    this.logger.debug('Handling waiting state:', user_state.state);
+    // const userId = event.source.userId;
+    if (event.type === 'message') {
+      switch (user_state.state) {
+        case 'waiting for meal image':
+          if (event.message.type === 'image') {
+            await this.client.replyMessage({
+              replyToken: event.replyToken,
+              messages: [
+                {
+                  type: 'text',
+                  text: 'ขอบคุณค่ะ มะลิจะบันทึกอาหารที่ทานให้ค่ะ',
+                },
+              ],
+            });
+            await this.userStatesService.remove(user_state.id);
+          } else {
+            if (
+              event.message.type === 'text' &&
+              event.message.text === 'ยกเลิก'
+            ) {
+              await this.client.replyMessage({
+                replyToken: event.replyToken,
+                messages: [
+                  {
+                    type: 'text',
+                    text: 'ยกเลิกการบันทึกอาหาร',
+                  },
+                ],
+              });
+              await this.userStatesService.remove(user_state.id);
+            }
+            await this.client.replyMessage({
+              replyToken: event.replyToken,
+              messages: [
+                {
+                  type: 'text',
+                  text: 'ยังจะบันทึกอยู่มั้ย',
+                },
+              ],
+            });
+          }
+      }
     }
   }
 

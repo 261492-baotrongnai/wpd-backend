@@ -12,6 +12,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import * as line from '@line/bot-sdk';
+import { RegistConfirmFlex } from './user-flex';
 
 @Injectable()
 export class UsersService {
@@ -90,13 +91,21 @@ export class UsersService {
     const users = await this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.images', 'image')
+      .leftJoinAndSelect('user.states', 'userState')
       .getMany();
 
     return users;
   }
 
   async findUserByInternalId(internalId: string) {
-    return await this.usersRepository.findOneBy({ internalId });
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.images', 'image')
+      .leftJoinAndSelect('user.states', 'userState')
+      .where('user.internalId = :internalId', { internalId })
+      .getOne();
+
+    return user;
   }
 
   findOne(id: number) {
@@ -115,19 +124,11 @@ export class UsersService {
     try {
       await this.client.pushMessage({
         to: userId,
-        messages: [
-          {
-            type: 'text',
-            text: `มะลิสวัสดีเจ้าา 🙏
-  มะลิจะช่วยดูแลเรื่องการกินอาหารของคุณ
-  ทุกวันเลยค่ะ เพื่อสุขภาพดี ห่างไกลเบาหวาน
-  กดเมนูด้านล่างเพื่อเริ่มการใช้งานได้เลยนะคะ`,
-          },
-        ],
+        messages: [RegistConfirmFlex],
       });
-      console.log('Registration success message sent successfully');
+      this.logger.log('Registration success message sent successfully');
     } catch (error) {
-      console.error('Error handling registration success:', error);
+      this.logger.error('Error handling registration success:', error);
       throw error;
     }
   }

@@ -7,12 +7,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
+import { UserStatesModule } from 'src/user-states/user-states.module';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, WebhooksService],
   imports: [
     UsersModule,
+    UserStatesModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },

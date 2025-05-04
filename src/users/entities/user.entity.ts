@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Image } from 'src/images/entities/image.entity';
+import { UserState } from 'src/user-states/entities/user-state.entity';
 
 @Entity()
 export class User {
@@ -30,6 +31,9 @@ export class User {
 
   @Column({ nullable: true })
   program_code: string;
+
+  @OneToMany(() => UserState, (userState) => userState.user)
+  states: UserState[];
 
   constructor(user: Partial<User>) {
     Object.assign(this, user);
