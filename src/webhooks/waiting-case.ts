@@ -124,6 +124,17 @@ export class WaitingCaseHandler {
           ],
         });
       }
+    } else {
+      // Handle other message types (e.g., stickers, images)
+      await this.client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือพิมพ์ "ยกเลิก" เพื่อยกเลิกการบันทึก',
+          },
+        ],
+      });
     }
   }
 }
