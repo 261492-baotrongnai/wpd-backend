@@ -112,6 +112,7 @@ export class WaitingCaseHandler {
         await this.removeUserState(user_state.id);
       } else if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
+        return;
       }
     }
     // Handle other message types (e.g., stickers, images)
