@@ -112,29 +112,17 @@ export class WaitingCaseHandler {
         await this.removeUserState(user_state.id);
       } else if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
-      } else {
-        // Default case: invalid input
-        await this.client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: 'text',
-              text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือพิมพ์ "ยกเลิก" เพื่อยกเลิกการบันทึก',
-            },
-          ],
-        });
       }
-    } else {
-      // Handle other message types (e.g., stickers, images)
-      await this.client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือพิมพ์ "ยกเลิก" เพื่อยกเลิกการบันทึก',
-          },
-        ],
-      });
     }
+    // Handle other message types (e.g., stickers, images)
+    await this.client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [
+        {
+          type: 'text',
+          text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือพิมพ์ "ยกเลิก" เพื่อยกเลิกการบันทึก',
+        },
+      ],
+    });
   }
 }
