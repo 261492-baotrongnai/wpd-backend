@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ClassifyFlex, GreetingFlex } from './flex-message';
+import { AskForImageFlex, ClassifyFlex, GreetingFlex } from './flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
 import { UserStatesService } from 'src/user-states/user-states.service';
 import { getInternalId } from 'src/users/user-utility';
 import axios from 'axios';
 import { UserState } from 'src/user-states/entities/user-state.entity';
+import { WaitingCaseHandler } from './waiting-case';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -18,6 +19,7 @@ export class WebhooksService {
   constructor(
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
+    private readonly waitingCaseHandler: WaitingCaseHandler,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -29,12 +31,12 @@ export class WebhooksService {
   async checkUserState(uid: string) {
     const iid = await getInternalId(undefined, uid);
     const user = await this.userService.findUserByInternalId(iid);
-    this.logger.debug('User found:', user);
+    this.logger.debug(`CheckUserState - User found: ${user?.id}`);
     if (!user || user.states.length === 0) {
       this.logger.error('User not found or no states in checkUserState');
       return null;
     } else {
-      const user_states = user.states;
+      const user_states = await this.userStatesService.findAllByUser(user.id);
       return user_states;
     }
   }
@@ -77,12 +79,7 @@ export class WebhooksService {
   async handleMealRecord(replyToken: string, uid: string) {
     await this.client.replyMessage({
       replyToken,
-      messages: [
-        {
-          type: 'text',
-          text: 'ถ่ายรูปอาหาร หรือ เลือกรูปอาหารจากมือถือส่งมาให้มะลิหน่อยนะคะ~',
-        },
-      ],
+      messages: [AskForImageFlex],
     });
     const iid = await getInternalId(undefined, uid);
 
@@ -98,47 +95,17 @@ export class WebhooksService {
 
   async handleWaitingState(event: line.WebhookEvent, user_state: UserState) {
     this.logger.debug('Handling waiting state:', user_state.state);
-    // const userId = event.source.userId;
+    if (!event.source.userId) {
+      this.logger.error('User ID not found in event source');
+      return;
+    }
     if (event.type === 'message') {
       switch (user_state.state) {
         case 'waiting for meal image':
-          if (event.message.type === 'image') {
-            await this.client.replyMessage({
-              replyToken: event.replyToken,
-              messages: [
-                {
-                  type: 'text',
-                  text: 'ขอบคุณค่ะ มะลิจะบันทึกอาหารที่ทานให้ค่ะ',
-                },
-              ],
-            });
-            await this.userStatesService.remove(user_state.id);
-          } else {
-            if (
-              event.message.type === 'text' &&
-              event.message.text === 'ยกเลิก'
-            ) {
-              await this.client.replyMessage({
-                replyToken: event.replyToken,
-                messages: [
-                  {
-                    type: 'text',
-                    text: 'ยกเลิกการบันทึกอาหาร',
-                  },
-                ],
-              });
-              await this.userStatesService.remove(user_state.id);
-            }
-            await this.client.replyMessage({
-              replyToken: event.replyToken,
-              messages: [
-                {
-                  type: 'text',
-                  text: 'ยังจะบันทึกอยู่มั้ย',
-                },
-              ],
-            });
-          }
+          await this.waitingCaseHandler.waitingMealImage(event, user_state);
+          break;
+        case 'waiting for what meal':
+          await this.waitingCaseHandler.waitingWhatMeal(event, user_state);
       }
     }
   }

@@ -8,10 +8,11 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
 import { UserStatesModule } from 'src/user-states/user-states.module';
+import { WaitingCaseHandler } from 'src/webhooks/waiting-case';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, WebhooksService],
+  providers: [AuthService, JwtStrategy, WebhooksService, WaitingCaseHandler],
   imports: [
     UsersModule,
     UserStatesModule,

@@ -14,21 +14,19 @@ export class WebhooksController {
     @Req()
     req: {
       headers: { [key: string]: string };
-      body: {
-        destination: string;
-        events: line.WebhookEvent[];
-      };
+      body: Buffer;
     },
     @Res() res: Response,
   ) {
-    this.logger.debug(`Received webhook from: ${req.body.destination}`);
-
+    this.logger.log(`Received webhook`);
+    // Need to receive raw body as Buffer because some messsage from flex actions can't be validate the parsed body
     // Verify the signature
     const isValid = line.validateSignature(
-      JSON.stringify(req.body),
+      req.body.toString(),
       process.env.LINE_CHANNEL_SECRET || '',
       req.headers['x-line-signature'],
     );
+    this.logger.debug(`Signature: ${req.headers['x-line-signature']}`);
     this.logger.log(`Signature verification result: ${isValid}`);
 
     if (!isValid) {
@@ -36,7 +34,14 @@ export class WebhooksController {
       return res.status(400).json({ message: 'Invalid signature' });
     }
 
-    const events = req.body.events;
+    // Parse the request body after verifying the signature
+    // The body is a Buffer, so we need to convert it to a string
+    // and then parse it as JSON
+    const body = JSON.parse(req.body.toString()) as {
+      events: line.WebhookEvent[];
+    };
+    const events: line.WebhookEvent[] = body.events;
+
     if (!events || events.length === 0) {
       return res.status(200).json({ message: 'No events to process' });
     }

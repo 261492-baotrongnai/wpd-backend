@@ -112,3 +112,142 @@ export const GreetingFlex: messagingApi.FlexMessage = {
     },
   },
 };
+
+export const AskForImageFlex: messagingApi.FlexMessage = {
+  type: 'flex',
+  altText: 'ถ่ายรูปอาหาร หรือ เลือกรูปอาหารจากมือถือส่งมาให้มะลิหน่อยนะคะ~',
+  contents: {
+    type: 'bubble',
+    size: 'giga',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: 'ถ่ายรูปอาหาร📸 หรือ เลือกรูปอาหารจากมือถือ📱 ส่งมาให้มะลิหน่อยนะคะ~',
+          wrap: true,
+          margin: 'none',
+        },
+      ],
+      paddingBottom: 'xl',
+      paddingTop: 'xl',
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'image',
+          url: 'https://i.postimg.cc/vTGTd9kd/how-to-take-pic-or-send-pic.png',
+          size: 'full',
+          aspectRatio: '2:1',
+          aspectMode: 'cover',
+          offsetTop: 'none',
+        },
+      ],
+      offsetTop: 'none',
+      paddingAll: 'none',
+    },
+  },
+};
+
+export const WhatMealFlex: messagingApi.FlexMessage = {
+  type: 'flex',
+  altText: 'อาหารในรูปคือมื้ออะไรคะ?',
+  contents: {
+    type: 'bubble',
+    size: 'kilo',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: 'อาหารในรูปนี้เป็นมื้อไหนคะ',
+          align: 'center',
+          offsetBottom: 'none',
+          offsetTop: 'xs',
+          weight: 'bold',
+          size: 'lg',
+        },
+        {
+          type: 'separator',
+          margin: 'lg',
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'button',
+              action: {
+                type: 'message',
+                label: 'มื้อเช้า🍳',
+                text: 'มื้อเช้า🍳',
+              },
+              color: '#333333',
+            },
+          ],
+          backgroundColor: '#FFF8CC',
+          margin: 'lg',
+          cornerRadius: 'md',
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'button',
+              action: {
+                type: 'message',
+                label: 'มื้อกลางวัน🍛',
+                text: 'มื้อกลางวัน🍛',
+              },
+              color: '#333333',
+            },
+          ],
+          margin: 'lg',
+          backgroundColor: '#D5F5D0',
+          cornerRadius: 'md',
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'button',
+              action: {
+                type: 'message',
+                label: 'มื้อเย็น🍚',
+                text: 'มื้อเย็น🍚',
+              },
+              color: '#333333',
+            },
+          ],
+          backgroundColor: '#D7EDFB',
+          margin: 'lg',
+          cornerRadius: 'md',
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'button',
+              action: {
+                type: 'message',
+                label: 'ของว่าง🧋',
+                text: 'ของว่าง🧋',
+              },
+              color: '#333333',
+            },
+          ],
+          margin: 'lg',
+          cornerRadius: 'md',
+          backgroundColor: '#EADCF3',
+        },
+      ],
+    },
+  },
+};

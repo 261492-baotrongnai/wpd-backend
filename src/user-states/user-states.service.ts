@@ -24,6 +24,13 @@ export class UserStatesService {
     return `This action returns all userStates`;
   }
 
+  async findAllByUser(userId: number): Promise<UserState[]> {
+    return this.userStatesRepository.find({
+      where: { user: { id: userId } },
+      relations: ['user'], // Eagerly load the `user` relationship
+    });
+  }
+
   findOne(id: number) {
     return this.userStatesRepository.findOne({ where: { id } });
   }
