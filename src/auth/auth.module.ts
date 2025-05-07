@@ -9,10 +9,19 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
 import { UserStatesModule } from 'src/user-states/user-states.module';
 import { WaitingCaseHandler } from 'src/webhooks/waiting-case';
+import { ImagesService } from 'src/images/images.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Image } from 'src/images/entities/image.entity';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, WebhooksService, WaitingCaseHandler],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    WebhooksService,
+    WaitingCaseHandler,
+    ImagesService,
+  ],
   imports: [
     UsersModule,
     UserStatesModule,
@@ -21,6 +30,7 @@ import { WaitingCaseHandler } from 'src/webhooks/waiting-case';
       signOptions: { expiresIn: '1h' },
     }),
     PassportModule,
+    TypeOrmModule.forFeature([Image]),
   ],
 })
 export class AuthModule {}

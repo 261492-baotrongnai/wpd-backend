@@ -20,9 +20,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class ImagesController {
   constructor(private readonly imagesService: ImagesService) {}
 
-  @Get('meals/:file_name')
+  @Get('meal_image')
   getMealsImageUrsl(@Req() req: Request) {
-    const file_name = req.params.file_name;
+    const file_name = req.query.file_name as string;
+    console.log('file_name:', file_name);
     const key = `meal_images/${file_name}`;
     const response = this.imagesService.getSignedUrl(key);
     return response;

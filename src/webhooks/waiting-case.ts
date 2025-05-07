@@ -4,15 +4,22 @@ import { UserStatesService } from 'src/user-states/user-states.service';
 import { UsersService } from 'src/users/users.service';
 import { WhatMealFlex } from './flex-message';
 import { UserState } from 'src/user-states/entities/user-state.entity';
+import axios from 'axios';
+import { createS3Client } from 'src/images/spaceUtil';
+import { ImagesService } from 'src/images/images.service';
+import { Upload } from '@aws-sdk/lib-storage';
+import { ObjectCannedACL } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class WaitingCaseHandler {
   private readonly client: line.messagingApi.MessagingApiClient;
   private readonly logger = new Logger(WaitingCaseHandler.name);
+  private readonly s3Client = createS3Client();
 
   constructor(
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
+    private readonly imagesService: ImagesService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -25,12 +32,9 @@ export class WaitingCaseHandler {
     return event.source.type === 'user';
   }
 
-  private async sendReplyMessage(
-    replyToken: string,
-    text: string,
-  ): Promise<void> {
-    await this.client.replyMessage({
-      replyToken,
+  private async sendReplyMessage(userId: string, text: string): Promise<void> {
+    await this.client.pushMessage({
+      to: userId,
       messages: [{ type: 'text', text }],
     });
   }
@@ -51,6 +55,36 @@ export class WaitingCaseHandler {
     await this.removeUserState(userStateId);
   }
 
+  async getMessageContent(
+    messageId: string,
+  ): Promise<{ buffer: Buffer; fileType: string }> {
+    const response = await axios.get(
+      `https://api-data.line.me/v2/bot/message/${messageId}/content`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.CHANNEL_ACCESS_TOKEN}`,
+        },
+        responseType: 'arraybuffer', // Ensure binary data is handled correctly
+      },
+    );
+
+    if (!response.data) {
+      throw new Error('Failed to fetch image content');
+    }
+
+    // Extract the file type from the Content-Type header
+    const contentType = response.headers['content-type'] as string;
+    if (!contentType) {
+      throw new Error('Content-Type header is missing');
+    }
+    const fileType = contentType.split('/')[1]; // e.g., 'jpeg', 'png'
+
+    // Convert the binary data to a Buffer
+    const buffer = Buffer.from(response.data as ArrayBuffer);
+
+    return { buffer, fileType };
+  }
+
   async waitingMealImage(
     event: line.MessageEvent,
     user_state: UserState,
@@ -60,6 +94,38 @@ export class WaitingCaseHandler {
     }
 
     if (event.message.type === 'image') {
+      // Fetch the image content and file type
+      const { buffer: imageContent, fileType } = await this.getMessageContent(
+        event.message.id,
+      );
+
+      // Define the file name with the correct extension
+      const fileName = `${event.message.id}.${fileType}`;
+      const key = `meal_images/${user_state.user.id}/${fileName}`;
+      const uploadParams = {
+        Bucket: process.env.SPACE_NAME,
+        Key: key,
+        Body: imageContent, // Pass the Buffer directly
+        ContentType: `image/${fileType}`, // Set the correct content type
+        ACL: 'private' as ObjectCannedACL,
+      };
+
+      // Upload the image to the cloud bucket
+      const parallelUpload = new Upload({
+        client: this.s3Client,
+        params: uploadParams,
+      });
+
+      await parallelUpload.done();
+      this.logger.log(`File uploaded successfully: ${fileName}`);
+
+      // Save the image metadata to the database
+      await this.imagesService.create({
+        name: fileName,
+        user: user_state.user,
+      });
+      this.logger.log('Image saved to database:', fileName);
+
       await this.client.replyMessage({
         replyToken: event.replyToken,
         messages: [WhatMealFlex],
@@ -76,7 +142,10 @@ export class WaitingCaseHandler {
     ) {
       await this.handleCancel(event, user_state.id);
     } else {
-      await this.sendReplyMessage(event.replyToken, 'ยังจะบันทึกอยู่มั้ย');
+      if (!event.source.userId) {
+        throw new Error('UserId is not present in waiting meal image');
+      }
+      await this.sendReplyMessage(event.source.userId, 'ยังจะบันทึกอยู่มั้ย');
     }
   }
 
@@ -106,10 +175,18 @@ export class WaitingCaseHandler {
 
       if (response) {
         // Send the corresponding reply
-        await this.sendReplyMessage(event.replyToken, mealResponses[response]);
+        await this.sendReplyMessage(
+          event.source.userId
+            ? event.source.userId
+            : (() => {
+                throw new Error('User ID not found');
+              })(),
+          mealResponses[response],
+        );
 
         // Remove user state
         await this.removeUserState(user_state.id);
+        return;
       } else if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
         return;
