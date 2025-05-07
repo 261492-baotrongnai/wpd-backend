@@ -12,6 +12,8 @@ import { WaitingCaseHandler } from 'src/webhooks/waiting-case';
 import { ImagesService } from 'src/images/images.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Image } from 'src/images/entities/image.entity';
+import { PendingUploadsService } from 'src/pending-uploads/pending-uploads.service';
+import { PendingUpload } from 'src/pending-uploads/entities/pending-uploads.entity';
 
 @Module({
   controllers: [AuthController],
@@ -21,6 +23,7 @@ import { Image } from 'src/images/entities/image.entity';
     WebhooksService,
     WaitingCaseHandler,
     ImagesService,
+    PendingUploadsService,
   ],
   imports: [
     UsersModule,
@@ -30,7 +33,7 @@ import { Image } from 'src/images/entities/image.entity';
       signOptions: { expiresIn: '1h' },
     }),
     PassportModule,
-    TypeOrmModule.forFeature([Image]),
+    TypeOrmModule.forFeature([Image, PendingUpload]),
   ],
 })
 export class AuthModule {}

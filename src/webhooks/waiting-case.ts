@@ -9,6 +9,9 @@ import { createS3Client } from 'src/images/spaceUtil';
 import { ImagesService } from 'src/images/images.service';
 import { Upload } from '@aws-sdk/lib-storage';
 import { ObjectCannedACL } from '@aws-sdk/client-s3';
+import * as path from 'path';
+import * as fs from 'fs';
+import { PendingUploadsService } from 'src/pending-uploads/pending-uploads.service';
 
 @Injectable()
 export class WaitingCaseHandler {
@@ -20,6 +23,7 @@ export class WaitingCaseHandler {
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
     private readonly imagesService: ImagesService,
+    private readonly pendingUploadsService: PendingUploadsService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -85,6 +89,50 @@ export class WaitingCaseHandler {
     return { buffer, fileType };
   }
 
+  async saveToUploadsDir(
+    fileName: string,
+    imageContent: Buffer,
+  ): Promise<string> {
+    const uploadDir = path.join(__dirname, '../../uploads');
+    const filePath = path.join(uploadDir, fileName);
+
+    // Ensure the uploads directory exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Save the buffer to the uploads directory
+    await fs.promises.writeFile(filePath, imageContent);
+    this.logger.log(`File saved locally: ${filePath}`);
+    return filePath;
+  }
+
+  async postToSpace(
+    user_id: number,
+    file_name: string,
+    file_path: string,
+    file_type: string,
+  ): Promise<void> {
+    // Upload the image from the local directory to the Space bucket
+    const key = `meal_images/${user_id}/${file_name}`;
+    const uploadParams = {
+      Bucket: process.env.SPACE_NAME,
+      Key: key,
+      Body: fs.createReadStream(file_path), // Pass the Buffer directly
+      ContentType: `image/${file_type}`, // Set the correct content type
+      ACL: 'private' as ObjectCannedACL,
+    };
+
+    // Upload the image to the cloud bucket
+    const parallelUpload = new Upload({
+      client: this.s3Client,
+      params: uploadParams,
+    });
+
+    await parallelUpload.done();
+    this.logger.log(`File uploaded successfully: ${file_name}`);
+  }
+
   async waitingMealImage(
     event: line.MessageEvent,
     user_state: UserState,
@@ -101,40 +149,27 @@ export class WaitingCaseHandler {
 
       // Define the file name with the correct extension
       const fileName = `${event.message.id}.${fileType}`;
-      const key = `meal_images/${user_state.user.id}/${fileName}`;
-      const uploadParams = {
-        Bucket: process.env.SPACE_NAME,
-        Key: key,
-        Body: imageContent, // Pass the Buffer directly
-        ContentType: `image/${fileType}`, // Set the correct content type
-        ACL: 'private' as ObjectCannedACL,
-      };
 
-      // Upload the image to the cloud bucket
-      const parallelUpload = new Upload({
-        client: this.s3Client,
-        params: uploadParams,
-      });
+      // Save the image content to the uploads directory
+      const filePath = await this.saveToUploadsDir(fileName, imageContent);
 
-      await parallelUpload.done();
-      this.logger.log(`File uploaded successfully: ${fileName}`);
-
-      // Save the image metadata to the database
-      await this.imagesService.create({
-        name: fileName,
+      await this.removeUserState(user_state.id);
+      this.logger.debug('User state removed:', user_state.user);
+      const new_user_state = await this.userStatesService.create({
         user: user_state.user,
+        state: 'waiting for what meal',
       });
-      this.logger.log('Image saved to database:', fileName);
+
+      await this.pendingUploadsService.create({
+        fileName,
+        filePath,
+        userState: new_user_state,
+        status: 'pending for meal confirm',
+      });
 
       await this.client.replyMessage({
         replyToken: event.replyToken,
         messages: [WhatMealFlex],
-      });
-      await this.removeUserState(user_state.id);
-      this.logger.debug('User state removed:', user_state.user);
-      await this.userStatesService.create({
-        user: user_state.user,
-        state: 'waiting for what meal',
       });
     } else if (
       event.message.type === 'text' &&
@@ -174,6 +209,31 @@ export class WaitingCaseHandler {
       );
 
       if (response) {
+        this.logger.debug('Pending: ', user_state.pendingUpload);
+        const fileName = user_state.pendingUpload?.fileName;
+        const filePath = user_state.pendingUpload?.filePath;
+        if (!filePath) {
+          throw new Error(
+            'File path not found in user state [ waitingWhatMeal ]',
+          );
+        }
+        if (!fileName) {
+          throw new Error(
+            'File name not found in user state [ waitingWhatMeal ]',
+          );
+        }
+        await this.imagesService.create({
+          name: fileName,
+          user: user_state.user,
+        });
+        await this.postToSpace(
+          user_state.user.id,
+          fileName,
+          filePath,
+          fileName.split('.').pop() || 'jpg',
+        );
+
+        await this.removeUserState(user_state.id);
         // Send the corresponding reply
         await this.sendReplyMessage(
           event.source.userId
@@ -183,9 +243,6 @@ export class WaitingCaseHandler {
               })(),
           mealResponses[response],
         );
-
-        // Remove user state
-        await this.removeUserState(user_state.id);
         return;
       } else if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
