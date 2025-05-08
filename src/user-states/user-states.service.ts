@@ -37,7 +37,7 @@ export class UserStatesService {
 
   update(id: number, updateUserStateDto: UpdateUserStateDto) {
     this.logger.debug('Updating user state:', id, updateUserStateDto);
-    return `This action updates a #${id} userState`;
+    return this.userStatesRepository.update(id, updateUserStateDto);
   }
 
   async remove(id: number): Promise<void> {

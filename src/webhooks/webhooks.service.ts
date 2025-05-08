@@ -6,7 +6,7 @@ import { UserStatesService } from 'src/user-states/user-states.service';
 import { getInternalId } from 'src/users/user-utility';
 import axios from 'axios';
 import { UserState } from 'src/user-states/entities/user-state.entity';
-import { WaitingCaseHandler } from './waiting-case';
+import { RecordCaseHandler } from './record-case';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -19,7 +19,7 @@ export class WebhooksService {
   constructor(
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
-    private readonly waitingCaseHandler: WaitingCaseHandler,
+    private readonly recordCaseHandler: RecordCaseHandler,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -102,10 +102,17 @@ export class WebhooksService {
     if (event.type === 'message') {
       switch (user_state.state) {
         case 'waiting for meal image':
-          await this.waitingCaseHandler.waitingMealImage(event, user_state);
+          await this.recordCaseHandler.waitingMealImage(event, user_state);
           break;
         case 'waiting for what meal':
-          await this.waitingCaseHandler.waitingWhatMeal(event, user_state);
+          await this.recordCaseHandler.waitingWhatMeal(event, user_state);
+          break;
+        case 'is prediction correct':
+          await this.recordCaseHandler.isPredictionCorrect(event, user_state);
+          break;
+        case 'menu choice confirm':
+          await this.recordCaseHandler.menuChoiceConfirm(event, user_state);
+          break;
       }
     }
   }

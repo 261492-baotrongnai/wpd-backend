@@ -8,12 +8,13 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
 import { UserStatesModule } from 'src/user-states/user-states.module';
-import { WaitingCaseHandler } from 'src/webhooks/waiting-case';
+import { RecordCaseHandler } from 'src/webhooks/record-case';
 import { ImagesService } from 'src/images/images.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Image } from 'src/images/entities/image.entity';
 import { PendingUploadsService } from 'src/pending-uploads/pending-uploads.service';
 import { PendingUpload } from 'src/pending-uploads/entities/pending-uploads.entity';
+import { ExternalApiService } from 'src/external-api/external-api.service';
 
 @Module({
   controllers: [AuthController],
@@ -21,9 +22,10 @@ import { PendingUpload } from 'src/pending-uploads/entities/pending-uploads.enti
     AuthService,
     JwtStrategy,
     WebhooksService,
-    WaitingCaseHandler,
+    RecordCaseHandler,
     ImagesService,
     PendingUploadsService,
+    ExternalApiService,
   ],
   imports: [
     UsersModule,

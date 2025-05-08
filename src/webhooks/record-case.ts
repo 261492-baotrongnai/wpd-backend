@@ -2,7 +2,7 @@ import * as line from '@line/bot-sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { UserStatesService } from 'src/user-states/user-states.service';
 import { UsersService } from 'src/users/users.service';
-import { WhatMealFlex } from './flex-message';
+import { TrueFalseMenuConfirmFlex, WhatMealFlex } from './flex-message';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import axios from 'axios';
 import { createS3Client } from 'src/images/spaceUtil';
@@ -12,11 +12,12 @@ import { ObjectCannedACL } from '@aws-sdk/client-s3';
 import * as path from 'path';
 import * as fs from 'fs';
 import { PendingUploadsService } from 'src/pending-uploads/pending-uploads.service';
+import { ExternalApiService } from 'src/external-api/external-api.service';
 
 @Injectable()
-export class WaitingCaseHandler {
+export class RecordCaseHandler {
   private readonly client: line.messagingApi.MessagingApiClient;
-  private readonly logger = new Logger(WaitingCaseHandler.name);
+  private readonly logger = new Logger(RecordCaseHandler.name);
   private readonly s3Client = createS3Client();
 
   constructor(
@@ -24,6 +25,7 @@ export class WaitingCaseHandler {
     private readonly userStatesService: UserStatesService,
     private readonly imagesService: ImagesService,
     private readonly pendingUploadsService: PendingUploadsService,
+    private readonly api: ExternalApiService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -32,11 +34,17 @@ export class WaitingCaseHandler {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
-  private checkSourceUser(event: line.MessageEvent): boolean {
-    return event.source.type === 'user';
+  private checkSourceUser(event: line.MessageEvent): string {
+    if (event.source.type !== 'user') {
+      throw new Error('Event source is not user type');
+    }
+    return event.source.userId;
   }
 
-  private async sendReplyMessage(userId: string, text: string): Promise<void> {
+  private async sendReplyTextMessage(
+    userId: string,
+    text: string,
+  ): Promise<void> {
     await this.client.pushMessage({
       to: userId,
       messages: [{ type: 'text', text }],
@@ -118,8 +126,8 @@ export class WaitingCaseHandler {
     const uploadParams = {
       Bucket: process.env.SPACE_NAME,
       Key: key,
-      Body: fs.createReadStream(file_path), // Pass the Buffer directly
-      ContentType: `image/${file_type}`, // Set the correct content type
+      Body: fs.createReadStream(file_path),
+      ContentType: `image/${file_type}`,
       ACL: 'private' as ObjectCannedACL,
     };
 
@@ -137,9 +145,7 @@ export class WaitingCaseHandler {
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
-    if (!this.checkSourceUser(event)) {
-      throw new Error('Event source not user type');
-    }
+    const userId = this.checkSourceUser(event);
 
     if (event.message.type === 'image') {
       // Fetch the image content and file type
@@ -169,7 +175,13 @@ export class WaitingCaseHandler {
 
       await this.client.replyMessage({
         replyToken: event.replyToken,
-        messages: [WhatMealFlex],
+        messages: [
+          {
+            type: 'text',
+            text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
+          },
+          WhatMealFlex,
+        ],
       });
     } else if (
       event.message.type === 'text' &&
@@ -177,10 +189,7 @@ export class WaitingCaseHandler {
     ) {
       await this.handleCancel(event, user_state.id);
     } else {
-      if (!event.source.userId) {
-        throw new Error('UserId is not present in waiting meal image');
-      }
-      await this.sendReplyMessage(event.source.userId, 'ยังจะบันทึกอยู่มั้ย');
+      await this.sendReplyTextMessage(userId, 'ยังจะบันทึกอยู่มั้ย');
     }
   }
 
@@ -188,9 +197,7 @@ export class WaitingCaseHandler {
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
-    if (!this.checkSourceUser(event)) {
-      throw new Error('Event source not user type');
-    }
+    const userId = this.checkSourceUser(event);
 
     if (event.message.type === 'text') {
       const mealResponses = {
@@ -210,39 +217,25 @@ export class WaitingCaseHandler {
 
       if (response) {
         this.logger.debug('Pending: ', user_state.pendingUpload);
-        const fileName = user_state.pendingUpload?.fileName;
-        const filePath = user_state.pendingUpload?.filePath;
-        if (!filePath) {
-          throw new Error(
-            'File path not found in user state [ waitingWhatMeal ]',
-          );
-        }
-        if (!fileName) {
-          throw new Error(
-            'File name not found in user state [ waitingWhatMeal ]',
-          );
-        }
-        await this.imagesService.create({
-          name: fileName,
-          user: user_state.user,
-        });
-        await this.postToSpace(
-          user_state.user.id,
-          fileName,
-          filePath,
-          fileName.split('.').pop() || 'jpg',
-        );
 
-        await this.removeUserState(user_state.id);
+        await this.userStatesService.update(user_state.id, {
+          state: 'is prediction correct',
+        });
+
         // Send the corresponding reply
-        await this.sendReplyMessage(
-          event.source.userId
-            ? event.source.userId
-            : (() => {
-                throw new Error('User ID not found');
-              })(),
-          mealResponses[response],
-        );
+        await this.client.pushMessage({
+          to: userId,
+          messages: [
+            {
+              type: 'text',
+              text:
+                mealResponses[response as keyof typeof mealResponses] ||
+                'Unknown meal response',
+            },
+            await TrueFalseMenuConfirmFlex('ยำ'),
+          ],
+        });
+
         return;
       } else if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
@@ -259,5 +252,99 @@ export class WaitingCaseHandler {
         },
       ],
     });
+  }
+
+  async isPredictionCorrect(
+    event: line.MessageEvent,
+    user_state: UserState,
+  ): Promise<void> {
+    const userId = this.checkSourceUser(event);
+    const fileName = user_state.pendingUpload?.fileName;
+    const filePath = user_state.pendingUpload?.filePath;
+    if (!filePath) {
+      throw new Error(
+        'File path not found in user state [ isPredictionCorrect ]',
+      );
+    }
+    if (!fileName) {
+      throw new Error(
+        'File name not found in user state [ isPredictionCorrect ]',
+      );
+    }
+    this.logger.debug('Processing prediction confirmation');
+    if (event.message.type === 'text') {
+      const messageText = event.message.text;
+      if (messageText.includes('ใช่')) {
+        await this.imagesService.create({
+          name: fileName,
+          user: user_state.user,
+        });
+        await this.postToSpace(
+          user_state.user.id,
+          fileName,
+          filePath,
+          fileName.split('.').pop() || 'jpg',
+        );
+        await this.userStatesService.remove(user_state.id);
+        await this.client.pushMessage({
+          to: userId,
+          messages: [
+            {
+              type: 'text',
+              text: 'โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️',
+            },
+          ],
+        });
+        return;
+      } else if (messageText.includes('ไม่ใช่')) {
+        await this.userStatesService.update(user_state.id, {
+          state: 'menu choice confirm',
+        });
+        await this.client.pushMessage({
+          to: userId,
+          messages: [
+            {
+              type: 'text',
+              text: 'มะลิจะบันทึกอาหารที่ทานในวันนี้เป็นอย่างอื่นค่ะ',
+            },
+          ],
+        });
+
+        return;
+      } else if (messageText.includes('ยกเลิก')) {
+        await this.handleCancel(event, user_state.id);
+        return;
+      }
+    }
+    await this.sendReplyTextMessage(userId, 'ที่ทายมาถูกต้องมั้ยคะ?');
+    return;
+  }
+
+  async menuChoiceConfirm(
+    event: line.MessageEvent,
+    user_state: UserState,
+  ): Promise<void> {
+    const userId = this.checkSourceUser(event);
+    if (event.message.type === 'text') {
+      const messageText = event.message.text;
+      if (messageText.includes('ยกเลิก')) {
+        await this.handleCancel(event, user_state.id);
+        return;
+      } else
+        await this.client.pushMessage({
+          to: userId,
+          messages: [
+            {
+              type: 'text',
+              text: 'มะลิจะบันทึกอาหารที่ทานในวันนี้ตามนี้นะคะ',
+            },
+          ],
+        });
+      return;
+    }
+    await this.sendReplyTextMessage(
+      userId,
+      'กรุณาเลือกเมนูอาหารที่ต้องการบันทึก',
+    );
   }
 }

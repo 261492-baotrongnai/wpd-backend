@@ -61,4 +61,15 @@ export class PendingUploadsService {
 
     return savedUpload;
   }
+
+  updateUserState(
+    id: number,
+    updateUserStateDto: Partial<UserState>,
+  ): Promise<UserState> {
+    this.logger.debug('Updating user state:', id, updateUserStateDto);
+    return this.pendingUploadsRepository.manager.save(
+      UserState,
+      Object.assign({ id }, updateUserStateDto),
+    );
+  }
 }

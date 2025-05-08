@@ -251,3 +251,86 @@ export const WhatMealFlex: messagingApi.FlexMessage = {
     },
   },
 };
+
+export const TrueFalseMenuConfirmFlex = (
+  menu_name: string,
+): Promise<messagingApi.FlexMessage> => {
+  return Promise.resolve({
+    type: 'flex',
+    altText: 'ยืนยันชื่อเมนูอาหาร',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: 'มะลิขอเดาว่าเมนูที่ทานคือ',
+            wrap: true,
+            weight: 'bold',
+            size: 'md',
+            align: 'center',
+            contents: [],
+          },
+          {
+            type: 'text',
+            text: `"${menu_name}" ใช่มั้ยคะ?`,
+            margin: 'sm',
+            size: 'md',
+            align: 'center',
+            weight: 'bold',
+          },
+        ],
+        paddingTop: 'xl',
+      },
+      footer: {
+        type: 'box',
+        layout: 'horizontal',
+        spacing: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                action: {
+                  type: 'message',
+                  label: 'ใช่ ✅',
+                  text: 'ใช่แล้ว👍🏻',
+                },
+                color: '#333333',
+              },
+            ],
+            backgroundColor: '#D2ECC0',
+            cornerRadius: 'md',
+            paddingStart: 'none',
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                action: {
+                  type: 'message',
+                  label: 'ไม่ใช่ ❌',
+                  text: 'ไม่ใช่นะ👎🏻',
+                },
+                color: '#333333',
+              },
+            ],
+            backgroundColor: '#FFD3D3',
+            cornerRadius: 'md',
+          },
+        ],
+        paddingBottom: 'xl',
+        paddingTop: 'sm',
+        paddingStart: 'lg',
+        paddingEnd: 'lg',
+      },
+    },
+  });
+};
