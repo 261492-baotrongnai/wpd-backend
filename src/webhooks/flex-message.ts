@@ -150,6 +150,32 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       paddingAll: 'none',
     },
   },
+  quickReply: {
+    items: [
+      {
+        type: 'action',
+        action: {
+          type: 'camera',
+          label: 'Camera',
+        },
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'cameraRoll',
+          label: 'Gallery',
+        },
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: 'ยกเลิกการบันทึก',
+          text: 'ยกเลิก',
+        },
+      },
+    ],
+  },
 };
 
 export const WhatMealFlex: messagingApi.FlexMessage = {
@@ -250,6 +276,18 @@ export const WhatMealFlex: messagingApi.FlexMessage = {
       ],
     },
   },
+  quickReply: {
+    items: [
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: 'ยกเลิกการบันทึก',
+          text: 'ยกเลิก',
+        },
+      },
+    ],
+  },
 };
 
 export const TrueFalseMenuConfirmFlex = (
@@ -331,6 +369,18 @@ export const TrueFalseMenuConfirmFlex = (
         paddingStart: 'lg',
         paddingEnd: 'lg',
       },
+    },
+    quickReply: {
+      items: [
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: 'ยกเลิกการบันทึก',
+            text: 'ยกเลิก',
+          },
+        },
+      ],
     },
   });
 };

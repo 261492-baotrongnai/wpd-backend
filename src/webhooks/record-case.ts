@@ -198,6 +198,12 @@ export class RecordCaseHandler {
     user_state: UserState,
   ): Promise<void> {
     const userId = this.checkSourceUser(event);
+    const filePath = user_state.pendingUpload?.filePath;
+    if (!filePath) {
+      throw new Error(
+        'File path not found in user state [ isPredictionCorrect ]',
+      );
+    }
 
     if (event.message.type === 'text') {
       const mealResponses = {
@@ -218,10 +224,8 @@ export class RecordCaseHandler {
       if (response) {
         this.logger.debug('Pending: ', user_state.pendingUpload);
 
-        await this.userStatesService.update(user_state.id, {
-          state: 'is prediction correct',
-        });
-
+        const candidates = await this.api.askMenuName(filePath);
+        this.logger.debug('Menu name: ', candidates);
         // Send the corresponding reply
         await this.client.pushMessage({
           to: userId,
@@ -232,10 +236,13 @@ export class RecordCaseHandler {
                 mealResponses[response as keyof typeof mealResponses] ||
                 'Unknown meal response',
             },
-            await TrueFalseMenuConfirmFlex('ยำ'),
+            await TrueFalseMenuConfirmFlex(candidates[0].name),
           ],
         });
 
+        await this.userStatesService.update(user_state.id, {
+          state: 'is prediction correct',
+        });
         return;
       } else if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
@@ -248,7 +255,19 @@ export class RecordCaseHandler {
       messages: [
         {
           type: 'text',
-          text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือพิมพ์ "ยกเลิก" เพื่อยกเลิกการบันทึก',
+          text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด"ยกเลิกการบันทึก"',
+          quickReply: {
+            items: [
+              {
+                type: 'action',
+                action: {
+                  type: 'message',
+                  label: 'ยกเลิกการบันทึก',
+                  text: 'ยกเลิก',
+                },
+              },
+            ],
+          },
         },
       ],
     });
@@ -295,6 +314,7 @@ export class RecordCaseHandler {
             },
           ],
         });
+
         return;
       } else if (messageText.includes('ไม่ใช่')) {
         await this.userStatesService.update(user_state.id, {
@@ -316,7 +336,27 @@ export class RecordCaseHandler {
         return;
       }
     }
-    await this.sendReplyTextMessage(userId, 'ที่ทายมาถูกต้องมั้ยคะ?');
+    await this.client.pushMessage({
+      to: userId,
+      messages: [
+        {
+          type: 'text',
+          text: 'ที่ทายมาถูกต้องมั้ยคะ?',
+          quickReply: {
+            items: [
+              {
+                type: 'action',
+                action: {
+                  type: 'message',
+                  label: 'ยกเลิกการบันทึก',
+                  text: 'ยกเลิก',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
     return;
   }
 
