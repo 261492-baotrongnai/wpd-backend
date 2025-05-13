@@ -362,7 +362,7 @@ export class RecordCaseHandler {
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
-    const userId = this.checkSourceUser(event);
+    // const userId = this.checkSourceUser(event);
     this.logger.debug('Processing prediction confirmation');
     if (event.message.type === 'text') {
       const messageText = event.message.text;
@@ -382,8 +382,8 @@ export class RecordCaseHandler {
         await this.foodGrade.getMenuGrade(parsedMenuNames);
 
       if (!avgGrade || !avgScore) {
-        await this.client.pushMessage({
-          to: userId,
+        await this.client.replyMessage({
+          replyToken: event.replyToken,
           messages: [
             {
               type: 'text',
@@ -434,8 +434,8 @@ export class RecordCaseHandler {
         fileName.split('.').pop() || 'jpg',
       );
       await this.userStatesService.remove(user_state.id);
-      await this.client.pushMessage({
-        to: userId,
+      await this.client.replyMessage({
+        replyToken: event.replyToken,
         messages: [
           {
             type: 'text',
@@ -447,12 +447,12 @@ export class RecordCaseHandler {
       return;
       // }
     }
-    await this.client.pushMessage({
-      to: userId,
+    await this.client.replyMessage({
+      replyToken: event.replyToken,
       messages: [
         {
           type: 'text',
-          text: 'ที่ทายมาถูกต้องมั้ยคะ?',
+          text: 'กรุณาเลือกหรือพิมพ์เมนูอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
           quickReply: CancleQuickReply,
         },
       ],
