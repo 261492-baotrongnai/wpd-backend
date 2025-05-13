@@ -68,8 +68,8 @@ export class RecordCaseHandler {
     event: line.MessageEvent,
     userStateId: number,
   ): Promise<void> {
-    await this.client.pushMessage({
-      to: event.source.userId || '',
+    await this.client.replyMessage({
+      replyToken: event.replyToken || '',
       messages: [{ type: 'text', text: 'ยกเลิกการบันทึกอาหาร' }],
     });
     await this.removeUserState(userStateId);
@@ -164,62 +164,84 @@ export class RecordCaseHandler {
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
-    const userId = this.checkSourceUser(event);
+    // const userId = this.checkSourceUser(event);
+    try {
+      if (event.message.type === 'image') {
+        // Fetch the image content and file type
+        const { buffer: imageContent, fileType } = await this.getMessageContent(
+          event.message.id,
+        );
 
-    if (event.message.type === 'image') {
-      // Fetch the image content and file type
-      const { buffer: imageContent, fileType } = await this.getMessageContent(
-        event.message.id,
-      );
+        const candidates = await this.api.getMenuCandidates(undefined, {
+          buffer: imageContent,
+          mimeType: `image/${fileType}`,
+        });
+        this.logger.debug('Menu name: ', candidates);
+        if (!candidates || candidates.length === 0) {
+          await this.client.replyMessage({
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: 'text',
+                text: 'ไม่ใช่รูปอาหาร กรุณาส่งรูปอาหารอีกครั้งค่ะ',
+                quickReply: ImageQuickReply,
+              },
+            ],
+          });
+          return;
+        }
 
-      const candidates = await this.api.getMenuCandidates(undefined, {
-        buffer: imageContent,
-        mimeType: `image/${fileType}`,
-      });
-      this.logger.debug('Menu name: ', candidates);
-      if (!candidates || candidates.length === 0) {
+        // Define the file name with the correct extension
+        const fileName = `${event.message.id}.${fileType}`;
+
+        // Save the image content to the uploads directory
+        const filePath = await this.saveToUploadsDir(fileName, imageContent);
+
+        await this.userStatesService.update(user_state.id, {
+          state: 'waiting for what meal',
+          menuName: candidates,
+          pendingFile: { fileName, filePath },
+        });
+
         await this.client.replyMessage({
           replyToken: event.replyToken,
           messages: [
             {
               type: 'text',
-              text: 'ไม่ใช่รูปอาหาร กรุณาส่งรูปอาหารอีกครั้งค่ะ',
+              text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
+            },
+            WhatMealFlex,
+          ],
+        });
+      } else if (
+        event.message.type === 'text' &&
+        event.message.text === 'ยกเลิก'
+      ) {
+        await this.handleCancel(event, user_state.id);
+      } else {
+        await this.client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: 'text',
+              text: 'กรุณาส่งรูปอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
               quickReply: ImageQuickReply,
             },
           ],
         });
-        return;
       }
-
-      // Define the file name with the correct extension
-      const fileName = `${event.message.id}.${fileType}`;
-
-      // Save the image content to the uploads directory
-      const filePath = await this.saveToUploadsDir(fileName, imageContent);
-
-      await this.userStatesService.update(user_state.id, {
-        state: 'waiting for what meal',
-        menuName: candidates,
-        pendingFile: { fileName, filePath },
-      });
-
+    } catch (error) {
+      this.logger.error('Error at [waitingMealImage]:', error);
       await this.client.replyMessage({
         replyToken: event.replyToken,
         messages: [
           {
             type: 'text',
-            text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
+            text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+            quickReply: ImageQuickReply,
           },
-          WhatMealFlex,
         ],
       });
-    } else if (
-      event.message.type === 'text' &&
-      event.message.text === 'ยกเลิก'
-    ) {
-      await this.handleCancel(event, user_state.id);
-    } else {
-      await this.sendReplyTextMessage(userId, 'ยังจะบันทึกอยู่มั้ย');
     }
   }
 
@@ -228,7 +250,7 @@ export class RecordCaseHandler {
     user_state: UserState,
   ): Promise<void> {
     try {
-      const userId = this.checkSourceUser(event);
+      // const userId = this.checkSourceUser(event);
 
       if (event.message.type === 'text') {
         const messageText = event.message.text;
@@ -284,8 +306,8 @@ export class RecordCaseHandler {
           }
           this.logger.debug('Menu name: ', candidates);
           // Send the corresponding reply
-          await this.client.pushMessage({
-            to: userId,
+          await this.client.replyMessage({
+            replyToken: event.replyToken,
             messages: [
               {
                 type: 'text',
@@ -329,6 +351,7 @@ export class RecordCaseHandler {
           {
             type: 'text',
             text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+            quickReply: CancleQuickReply,
           },
         ],
       });
