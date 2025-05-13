@@ -15,6 +15,10 @@ import { Image } from 'src/images/entities/image.entity';
 import { ExternalApiService } from 'src/external-api/external-api.service';
 import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { FoodGradesModule } from 'src/food-grades/food-grades.module';
+import { MealsService } from 'src/meals/meals.service';
+import { MealsModule } from 'src/meals/meals.module';
+import { FoodsModule } from 'src/foods/foods.module';
+import { FoodsService } from 'src/foods/foods.service';
 
 @Module({
   controllers: [AuthController],
@@ -26,11 +30,15 @@ import { FoodGradesModule } from 'src/food-grades/food-grades.module';
     ImagesService,
     ExternalApiService,
     FoodGradesService,
+    MealsService,
+    FoodsService,
   ],
   imports: [
     UsersModule,
     UserStatesModule,
     FoodGradesModule,
+    MealsModule,
+    FoodsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },

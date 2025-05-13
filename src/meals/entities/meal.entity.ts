@@ -1,11 +1,14 @@
+import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 import { Food } from 'src/foods/entities/food.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -20,14 +23,15 @@ export class Meal {
     type: 'enum',
     enum: ['breakfast', 'lunch', 'dinner', 'snack'],
     nullable: true,
+    default: 'snack',
   })
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: MealType;
 
   @Column()
   avgScore: number;
 
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
-  avgGrade: 'A' | 'B' | 'C';
+  avgGrade: FoodGradeType;
 
   @ManyToOne(() => User, (user) => user.meals, { onDelete: 'CASCADE' })
   user: User;
@@ -35,7 +39,15 @@ export class Meal {
   @OneToMany(() => Food, (food) => food.meal)
   foods: Food[];
 
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
   constructor(meal: Partial<Meal>) {
     Object.assign(this, meal);
   }
 }
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';

@@ -110,9 +110,6 @@ export class WebhooksService {
         case 'is prediction correct':
           await this.recordCaseHandler.MenuChoicesConfirm(event, user_state);
           break;
-        case 'waiting for menu name':
-          await this.recordCaseHandler.recordMeal(event, user_state);
-          break;
       }
     }
   }

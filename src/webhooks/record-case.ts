@@ -15,6 +15,9 @@ import { ExternalApiService } from 'src/external-api/external-api.service';
 import { CancleQuickReply, ImageQuickReply } from './quick-reply';
 import { ConfigService } from '@nestjs/config';
 import { FoodGradesService } from 'src/food-grades/food-grades.service';
+import { MealsService } from 'src/meals/meals.service';
+import { MealType } from 'src/meals/entities/meal.entity';
+import { FoodsService } from 'src/foods/foods.service';
 
 @Injectable()
 export class RecordCaseHandler {
@@ -29,6 +32,8 @@ export class RecordCaseHandler {
     private readonly api: ExternalApiService,
     private readonly configService: ConfigService,
     private readonly foodGrade: FoodGradesService,
+    private readonly mealService: MealsService,
+    private readonly foodService: FoodsService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -241,17 +246,34 @@ export class RecordCaseHandler {
         }
 
         const mealResponses = {
-          เช้า: 'มะลิบันทึกเป็นอาหารเช้าเรียบร้อยค่า',
-          กลางวัน: 'มะลิบันทึกเป็นอาหารกลางวันเรียบร้อยค่า',
-          เที่ยง: 'มะลิบันทึกอาหารกลางวันเรียบร้อยค่า',
-          เย็น: 'มะลิบันทึกเป็นอาหารเย็นเรียบร้อยค่า',
-          ของว่าง: 'มะลิบันทึกเป็นของว่างเรียบร้อยค่า',
+          เช้า: {
+            resp: 'มะลิบันทึกเป็นอาหารเช้าเรียบร้อยค่า',
+            mealType: 'breakfast',
+          },
+          กลางวัน: {
+            resp: 'มะลิบันทึกเป็นอาหารกลางวันเรียบร้อยค่า',
+            mealType: 'lunch',
+          },
+          เที่ยง: {
+            resp: 'มะลิบันทึกเป็นอาหารเที่ยงเรียบร้อยค่า',
+            mealType: 'lunch',
+          },
+          เย็น: {
+            resp: 'มะลิบันทึกเป็นอาหารเย็นเรียบร้อยค่า',
+            mealType: 'dinner',
+          },
+          ของว่าง: {
+            resp: 'มะลิบันทึกเป็นของว่างเรียบร้อยค่า',
+            mealType: 'snack',
+          },
         };
 
         // Check if the message matches any meal keyword
         const response = Object.keys(mealResponses).find((key) =>
           messageText.includes(key),
         );
+
+        this.logger.debug('Response:', response);
         // If a match is found, proceed with the prediction
         if (response) {
           const candidates = user_state.menuName;
@@ -268,7 +290,7 @@ export class RecordCaseHandler {
               {
                 type: 'text',
                 text:
-                  mealResponses[response as keyof typeof mealResponses] ||
+                  mealResponses[response as keyof typeof mealResponses].resp ||
                   'Unknown meal response',
               },
               MenuChoiceConfirmFlex(
@@ -282,6 +304,8 @@ export class RecordCaseHandler {
 
           await this.userStatesService.update(user_state.id, {
             state: 'is prediction correct',
+            mealType: mealResponses[response as keyof typeof mealResponses]
+              .mealType as MealType,
           });
           return;
         }
@@ -329,18 +353,18 @@ export class RecordCaseHandler {
         .split(/[, ]+/) // Split by comma or space (one or more)
         .map((name) => name.trim()) // Remove extra whitespace
         .filter((name) => name.length > 0); // Remove empty strings
-
       this.logger.debug('Parsed menu names:', parsedMenuNames);
 
-      const grade = await this.foodGrade.getMenuGrade(parsedMenuNames);
+      const { avgGrade, avgScore, foods } =
+        await this.foodGrade.getMenuGrade(parsedMenuNames);
 
-      if (!grade) {
+      if (!avgGrade || !avgScore) {
         await this.client.pushMessage({
           to: userId,
           messages: [
             {
               type: 'text',
-              text: 'ชื่อเมนูที่พิพม์อาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
+              text: 'ชื่อที่ส่งมาอาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
             },
           ],
         });
@@ -363,6 +387,23 @@ export class RecordCaseHandler {
         name: fileName,
         user: user_state.user,
       });
+      this.logger.debug('mealType:', user_state.mealType);
+      const meal = await this.mealService.create({
+        user: user_state.user,
+        mealType: user_state.mealType,
+        imageName: fileName,
+        avgGrade,
+        avgScore,
+      });
+      for (const food of foods) {
+        await this.foodService.create({
+          name: food.name,
+          grade: food.grade,
+          description: food.description,
+          meal,
+        });
+      }
+
       await this.postToSpace(
         user_state.user.id,
         fileName,
@@ -375,7 +416,7 @@ export class RecordCaseHandler {
         messages: [
           {
             type: 'text',
-            text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ ${grade}`,
+            text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ ${avgGrade}`,
           },
         ],
       });
@@ -394,29 +435,5 @@ export class RecordCaseHandler {
       ],
     });
     return;
-  }
-
-  async recordMeal(
-    event: line.MessageEvent,
-    user_state: UserState,
-  ): Promise<void> {
-    const userId = this.checkSourceUser(event);
-    if (event.message.type === 'text') {
-      const messageText = event.message.text;
-      if (messageText.includes('ยกเลิก')) {
-        await this.handleCancel(event, user_state.id);
-        return;
-      }
-      await this.client.pushMessage({
-        to: userId,
-        messages: [
-          {
-            type: 'text',
-            text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
-            quickReply: CancleQuickReply,
-          },
-        ],
-      });
-    }
   }
 }

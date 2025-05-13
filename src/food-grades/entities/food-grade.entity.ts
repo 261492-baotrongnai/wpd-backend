@@ -7,8 +7,11 @@ export class FoodGrade {
   @Column()
   name: string;
 
-  @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
-  grade: string;
+  @Column({
+    type: 'enum',
+    enum: ['A', 'B', 'C'],
+  })
+  grade: FoodGradeType;
 
   @Column({
     type: 'enum',
@@ -17,3 +20,5 @@ export class FoodGrade {
   })
   category: string;
 }
+
+export type FoodGradeType = 'A' | 'B' | 'C';

@@ -1,3 +1,4 @@
+import { MealType } from 'src/meals/entities/meal.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -24,6 +25,13 @@ export class UserState {
 
   @Column({ type: 'json', nullable: true })
   menuName: { name: string[] }[] | null;
+
+  @Column({
+    type: 'enum',
+    enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+    nullable: true,
+  })
+  mealType: MealType;
 
   @UpdateDateColumn()
   updatedAt: Date;

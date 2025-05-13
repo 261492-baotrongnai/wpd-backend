@@ -5,6 +5,7 @@ import {
   Type,
 } from '@google/genai';
 import { Injectable, Logger } from '@nestjs/common';
+import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 
 @Injectable()
 export class ExternalApiService {
@@ -111,7 +112,7 @@ export class ExternalApiService {
   async geminiRequestGrade(
     menu: string,
     topBestMatch?: Array<{ name: string; grade: string }>,
-  ): Promise<{ answer: string; descp: string } | null> {
+  ): Promise<{ answer: FoodGradeType; descp: string } | null> {
     if (topBestMatch) {
       this.logger.debug('Top best match:', topBestMatch);
     }
@@ -164,7 +165,10 @@ export class ExternalApiService {
         'Response grading from Gemini:',
         response.usageMetadata?.totalTokenCount,
       );
-      return JSON.parse(response.text) as { answer: string; descp: string };
+      return JSON.parse(response.text) as {
+        answer: FoodGradeType;
+        descp: string;
+      };
     } catch (error) {
       this.logger.error('Error at [geminiRequestGrade]:', error);
       throw new Error('An unexpected error occurred in geminiRequestGrade');
