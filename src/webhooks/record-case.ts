@@ -363,100 +363,113 @@ export class RecordCaseHandler {
     user_state: UserState,
   ): Promise<void> {
     // const userId = this.checkSourceUser(event);
-    this.logger.debug('Processing prediction confirmation');
-    if (event.message.type === 'text') {
-      const messageText = event.message.text;
-      if (messageText.includes('ยกเลิก')) {
-        await this.handleCancel(event, user_state.id);
-        return;
-      }
+    try {
+      this.logger.debug('Processing prediction confirmation');
+      if (event.message.type === 'text') {
+        const messageText = event.message.text;
+        if (messageText.includes('ยกเลิก')) {
+          await this.handleCancel(event, user_state.id);
+          return;
+        }
 
-      // Parse the messageText into a string array
-      const parsedMenuNames = messageText
-        .split(/[, ]+/) // Split by comma or space (one or more)
-        .map((name) => name.trim()) // Remove extra whitespace
-        .filter((name) => name.length > 0); // Remove empty strings
-      this.logger.debug('Parsed menu names:', parsedMenuNames);
+        // Parse the messageText into a string array
+        const parsedMenuNames = messageText
+          .split(/[, ]+/) // Split by comma or space (one or more)
+          .map((name) => name.trim()) // Remove extra whitespace
+          .filter((name) => name.length > 0); // Remove empty strings
+        this.logger.debug('Parsed menu names:', parsedMenuNames);
 
-      const { avgGrade, avgScore, foods } =
-        await this.foodGrade.getMenuGrade(parsedMenuNames);
+        const { avgGrade, avgScore, foods } =
+          await this.foodGrade.getMenuGrade(parsedMenuNames);
 
-      if (!avgGrade || !avgScore) {
+        if (!avgGrade || !avgScore) {
+          await this.client.replyMessage({
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: 'text',
+                text: 'ชื่อที่ส่งมาอาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
+              },
+            ],
+          });
+          return;
+        }
+
+        const fileName = user_state.pendingFile?.fileName;
+        const filePath = user_state.pendingFile?.filePath;
+        if (!filePath) {
+          throw new Error(
+            'File path not found in user state [ isPredictionCorrect ]',
+          );
+        }
+        if (!fileName) {
+          throw new Error(
+            'File name not found in user state [ isPredictionCorrect ]',
+          );
+        }
+        await this.imagesService.create({
+          name: fileName,
+          user: user_state.user,
+        });
+        this.logger.debug('mealType:', user_state.mealType);
+        const meal = await this.mealService.create({
+          user: user_state.user,
+          mealType: user_state.mealType,
+          imageName: fileName,
+          avgGrade,
+          avgScore,
+        });
+        for (const food of foods) {
+          await this.foodService.create({
+            name: food.name,
+            grade: food.grade,
+            description: food.description,
+            meal,
+          });
+        }
+
+        await this.postToSpace(
+          user_state.user.id,
+          fileName,
+          filePath,
+          fileName.split('.').pop() || 'jpg',
+        );
+        await this.userStatesService.remove(user_state.id);
         await this.client.replyMessage({
           replyToken: event.replyToken,
           messages: [
             {
               type: 'text',
-              text: 'ชื่อที่ส่งมาอาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
+              text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ ${avgGrade}`,
             },
           ],
         });
+
         return;
       }
-
-      const fileName = user_state.pendingFile?.fileName;
-      const filePath = user_state.pendingFile?.filePath;
-      if (!filePath) {
-        throw new Error(
-          'File path not found in user state [ isPredictionCorrect ]',
-        );
-      }
-      if (!fileName) {
-        throw new Error(
-          'File name not found in user state [ isPredictionCorrect ]',
-        );
-      }
-      await this.imagesService.create({
-        name: fileName,
-        user: user_state.user,
-      });
-      this.logger.debug('mealType:', user_state.mealType);
-      const meal = await this.mealService.create({
-        user: user_state.user,
-        mealType: user_state.mealType,
-        imageName: fileName,
-        avgGrade,
-        avgScore,
-      });
-      for (const food of foods) {
-        await this.foodService.create({
-          name: food.name,
-          grade: food.grade,
-          description: food.description,
-          meal,
-        });
-      }
-
-      await this.postToSpace(
-        user_state.user.id,
-        fileName,
-        filePath,
-        fileName.split('.').pop() || 'jpg',
-      );
-      await this.userStatesService.remove(user_state.id);
       await this.client.replyMessage({
         replyToken: event.replyToken,
         messages: [
           {
             type: 'text',
-            text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ ${avgGrade}`,
+            text: 'กรุณาเลือกหรือพิมพ์เมนูอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
+            quickReply: CancleQuickReply,
           },
         ],
       });
-
       return;
-      // }
+    } catch (error) {
+      this.logger.error('Error at [MenuChoicesConfirm]:', error);
+      await this.client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+            quickReply: CancleQuickReply,
+          },
+        ],
+      });
     }
-    await this.client.replyMessage({
-      replyToken: event.replyToken,
-      messages: [
-        {
-          type: 'text',
-          text: 'กรุณาเลือกหรือพิมพ์เมนูอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
-          quickReply: CancleQuickReply,
-        },
-      ],
-    });
-    return;
   }
 }
