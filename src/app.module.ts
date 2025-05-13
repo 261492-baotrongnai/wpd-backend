@@ -11,6 +11,7 @@ import { RecordCaseHandler } from './webhooks/record-case';
 import { ExternalApiModule } from './external-api/external-api.module';
 import { MealsModule } from './meals/meals.module';
 import { FoodGradesModule } from './food-grades/food-grades.module';
+import { FoodsModule } from './foods/foods.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +27,7 @@ import { FoodGradesModule } from './food-grades/food-grades.module';
     ExternalApiModule,
     MealsModule,
     FoodGradesModule,
+    FoodsModule,
   ],
   controllers: [WebhooksController],
   providers: [WebhooksService, RecordCaseHandler],

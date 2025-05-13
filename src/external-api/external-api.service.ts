@@ -160,7 +160,10 @@ export class ExternalApiService {
       if (!response || !response.text) {
         throw new Error('Response from Gemini is empty');
       }
-      this.logger.debug('Response grading from Gemini:', response);
+      this.logger.debug(
+        'Response grading from Gemini:',
+        response.usageMetadata?.totalTokenCount,
+      );
       return JSON.parse(response.text) as { answer: string; descp: string };
     } catch (error) {
       this.logger.error('Error at [geminiRequestGrade]:', error);
