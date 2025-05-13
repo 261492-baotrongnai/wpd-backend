@@ -124,22 +124,33 @@ export class RecordCaseHandler {
   ): Promise<void> {
     // Upload the image from the local directory to the Space bucket
     const key = `meal_images/${user_id}/${file_name}`;
-    const uploadParams = {
-      Bucket: process.env.SPACE_NAME,
-      Key: key,
-      Body: fs.createReadStream(file_path),
-      ContentType: `image/${file_type}`,
-      ACL: 'private' as ObjectCannedACL,
-    };
+    try {
+      const uploadParams = {
+        Bucket: process.env.SPACE_NAME,
+        Key: key,
+        Body: fs.createReadStream(file_path),
+        ContentType: `image/${file_type}`,
+        ACL: 'private' as ObjectCannedACL,
+      };
 
-    // Upload the image to the cloud bucket
-    const parallelUpload = new Upload({
-      client: this.s3Client,
-      params: uploadParams,
-    });
+      // Upload the image to the cloud bucket
+      const parallelUpload = new Upload({
+        client: this.s3Client,
+        params: uploadParams,
+      });
 
-    await parallelUpload.done();
-    this.logger.log(`File uploaded successfully: ${file_name}`);
+      await parallelUpload.done();
+      this.logger.log(`File uploaded successfully: ${file_name}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error uploading file: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error uploading file: Unknown error', error);
+      }
+    }
   }
 
   async waitingMealImage(
