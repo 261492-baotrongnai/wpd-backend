@@ -9,6 +9,6 @@ import { ExternalApiService } from 'src/external-api/external-api.service';
   imports: [TypeOrmModule.forFeature([FoodGrade])],
   controllers: [FoodGradesController],
   providers: [FoodGradesService, ExternalApiService],
-  exports: [FoodGradesService],
+  exports: [FoodGradesService, TypeOrmModule],
 })
 export class FoodGradesModule {}

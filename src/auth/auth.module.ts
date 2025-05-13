@@ -13,6 +13,8 @@ import { ImagesService } from 'src/images/images.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Image } from 'src/images/entities/image.entity';
 import { ExternalApiService } from 'src/external-api/external-api.service';
+import { FoodGradesService } from 'src/food-grades/food-grades.service';
+import { FoodGradesModule } from 'src/food-grades/food-grades.module';
 
 @Module({
   controllers: [AuthController],
@@ -23,10 +25,12 @@ import { ExternalApiService } from 'src/external-api/external-api.service';
     RecordCaseHandler,
     ImagesService,
     ExternalApiService,
+    FoodGradesService,
   ],
   imports: [
     UsersModule,
     UserStatesModule,
+    FoodGradesModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },

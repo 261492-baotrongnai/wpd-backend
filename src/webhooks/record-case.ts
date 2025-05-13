@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import { ExternalApiService } from 'src/external-api/external-api.service';
 import { CancleQuickReply, ImageQuickReply } from './quick-reply';
 import { ConfigService } from '@nestjs/config';
+import { FoodGradesService } from 'src/food-grades/food-grades.service';
 
 @Injectable()
 export class RecordCaseHandler {
@@ -27,6 +28,7 @@ export class RecordCaseHandler {
     private readonly imagesService: ImagesService,
     private readonly api: ExternalApiService,
     private readonly configService: ConfigService,
+    private readonly foodGrade: FoodGradesService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -273,6 +275,7 @@ export class RecordCaseHandler {
                 candidates.map((candidate) => ({
                   name: candidate.name.join(', '),
                 })),
+                user_state.id,
               ),
             ],
           });
@@ -321,6 +324,29 @@ export class RecordCaseHandler {
         return;
       }
 
+      // Parse the messageText into a string array
+      const parsedMenuNames = messageText
+        .split(/[, ]+/) // Split by comma or space (one or more)
+        .map((name) => name.trim()) // Remove extra whitespace
+        .filter((name) => name.length > 0); // Remove empty strings
+
+      this.logger.debug('Parsed menu names:', parsedMenuNames);
+
+      const grade = await this.foodGrade.getMenuGrade(parsedMenuNames);
+
+      if (!grade) {
+        await this.client.pushMessage({
+          to: userId,
+          messages: [
+            {
+              type: 'text',
+              text: 'ชื่อเมนูที่พิพม์อาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
+            },
+          ],
+        });
+        return;
+      }
+
       const fileName = user_state.pendingFile?.fileName;
       const filePath = user_state.pendingFile?.filePath;
       if (!filePath) {
@@ -333,22 +359,6 @@ export class RecordCaseHandler {
           'File name not found in user state [ isPredictionCorrect ]',
         );
       }
-      // if (messageText.includes('ไม่')) {
-      //   await this.userStatesService.update(user_state.id, {
-      //     state: 'waiting for menu name',
-      //   });
-      //   await this.client.pushMessage({
-      //     to: userId,
-      //     messages: [
-      //       {
-      //         type: 'text',
-      //         text: 'มะลิจะบันทึกอาหารที่ทานในวันนี้เป็นอย่างอื่นค่ะ',
-      //       },
-      //     ],
-      //   });
-
-      //   return;
-      // } else {
       await this.imagesService.create({
         name: fileName,
         user: user_state.user,
@@ -365,7 +375,7 @@ export class RecordCaseHandler {
         messages: [
           {
             type: 'text',
-            text: 'โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️',
+            text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ ${grade}`,
           },
         ],
       });

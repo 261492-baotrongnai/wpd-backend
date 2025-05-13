@@ -60,4 +60,19 @@ export class UserStatesService {
       throw error;
     }
   }
+
+  async findCandidates(id: number) {
+    const userState = await this.userStatesRepository.findOne({
+      where: { id },
+    });
+
+    if (!userState) {
+      this.logger.warn(`UserState with id ${id} not found`);
+      return null;
+    }
+
+    const candidates = userState.menuName;
+
+    return candidates;
+  }
 }
