@@ -2,7 +2,7 @@ import * as line from '@line/bot-sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { UserStatesService } from 'src/user-states/user-states.service';
 import { UsersService } from 'src/users/users.service';
-import { TrueFalseMenuConfirmFlex, WhatMealFlex } from './flex-message';
+import { MenuChoiceConfirmFlex, WhatMealFlex } from './flex-message';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import axios from 'axios';
 import { createS3Client } from 'src/images/spaceUtil';
@@ -11,8 +11,9 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { ObjectCannedACL } from '@aws-sdk/client-s3';
 import * as path from 'path';
 import * as fs from 'fs';
-import { PendingUploadsService } from 'src/pending-uploads/pending-uploads.service';
 import { ExternalApiService } from 'src/external-api/external-api.service';
+import { CancleQuickReply, ImageQuickReply } from './quick-reply';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RecordCaseHandler {
@@ -24,8 +25,8 @@ export class RecordCaseHandler {
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
     private readonly imagesService: ImagesService,
-    private readonly pendingUploadsService: PendingUploadsService,
     private readonly api: ExternalApiService,
+    private readonly configService: ConfigService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -153,24 +154,35 @@ export class RecordCaseHandler {
         event.message.id,
       );
 
+      const candidates = await this.api.getMenuCandidates(undefined, {
+        buffer: imageContent,
+        mimeType: `image/${fileType}`,
+      });
+      this.logger.debug('Menu name: ', candidates);
+      if (!candidates || candidates.length === 0) {
+        await this.client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: 'text',
+              text: 'ไม่ใช่รูปอาหาร กรุณาส่งรูปอาหารอีกครั้งค่ะ',
+              quickReply: ImageQuickReply,
+            },
+          ],
+        });
+        return;
+      }
+
       // Define the file name with the correct extension
       const fileName = `${event.message.id}.${fileType}`;
 
       // Save the image content to the uploads directory
       const filePath = await this.saveToUploadsDir(fileName, imageContent);
 
-      await this.removeUserState(user_state.id);
-      this.logger.debug('User state removed:', user_state.user);
-      const new_user_state = await this.userStatesService.create({
-        user: user_state.user,
+      await this.userStatesService.update(user_state.id, {
         state: 'waiting for what meal',
-      });
-
-      await this.pendingUploadsService.create({
-        fileName,
-        filePath,
-        userState: new_user_state,
-        status: 'pending for meal confirm',
+        menuName: candidates,
+        pendingFile: { fileName, filePath },
       });
 
       await this.client.replyMessage({
@@ -197,144 +209,158 @@ export class RecordCaseHandler {
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
-    const userId = this.checkSourceUser(event);
-    const filePath = user_state.pendingUpload?.filePath;
-    if (!filePath) {
-      throw new Error(
-        'File path not found in user state [ isPredictionCorrect ]',
-      );
-    }
+    try {
+      const userId = this.checkSourceUser(event);
 
-    if (event.message.type === 'text') {
-      const mealResponses = {
-        เช้า: 'มะลิบันทึกเป็นอาหารเช้าเรียบร้อยค่า',
-        กลางวัน: 'มะลิบันทึกเป็นอาหารกลางวันเรียบร้อยค่า',
-        เที่ยง: 'มะลิบันทึกอาหารกลางวันเรียบร้อยค่า',
-        เย็น: 'มะลิบันทึกเป็นอาหารเย็นเรียบร้อยค่า',
-        ของว่าง: 'มะลิบันทึกเป็นของว่างเรียบร้อยค่า',
-      };
+      if (event.message.type === 'text') {
+        const messageText = event.message.text;
 
-      const messageText = event.message.text;
+        if (messageText.includes('ยกเลิก')) {
+          await this.handleCancel(event, user_state.id);
+          return;
+        }
 
-      // Check if the message matches any meal keyword
-      const response = Object.keys(mealResponses).find((key) =>
-        messageText.includes(key),
-      );
+        const filePath = user_state.pendingFile?.filePath;
+        if (!filePath) {
+          throw new Error(
+            'File path not found in user state [ isPredictionCorrect ]',
+          );
+        }
 
-      if (response) {
-        this.logger.debug('Pending: ', user_state.pendingUpload);
+        const mealResponses = {
+          เช้า: 'มะลิบันทึกเป็นอาหารเช้าเรียบร้อยค่า',
+          กลางวัน: 'มะลิบันทึกเป็นอาหารกลางวันเรียบร้อยค่า',
+          เที่ยง: 'มะลิบันทึกอาหารกลางวันเรียบร้อยค่า',
+          เย็น: 'มะลิบันทึกเป็นอาหารเย็นเรียบร้อยค่า',
+          ของว่าง: 'มะลิบันทึกเป็นของว่างเรียบร้อยค่า',
+        };
 
-        const candidates = await this.api.askMenuName(filePath);
-        this.logger.debug('Menu name: ', candidates);
-        // Send the corresponding reply
-        await this.client.pushMessage({
-          to: userId,
-          messages: [
-            {
-              type: 'text',
-              text:
-                mealResponses[response as keyof typeof mealResponses] ||
-                'Unknown meal response',
-            },
-            await TrueFalseMenuConfirmFlex(candidates[0].name),
-          ],
-        });
-
-        await this.userStatesService.update(user_state.id, {
-          state: 'is prediction correct',
-        });
-        return;
-      } else if (messageText.includes('ยกเลิก')) {
-        await this.handleCancel(event, user_state.id);
-        return;
-      }
-    }
-    // Handle other message types (e.g., stickers, images)
-    await this.client.replyMessage({
-      replyToken: event.replyToken,
-      messages: [
-        {
-          type: 'text',
-          text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด"ยกเลิกการบันทึก"',
-          quickReply: {
-            items: [
+        // Check if the message matches any meal keyword
+        const response = Object.keys(mealResponses).find((key) =>
+          messageText.includes(key),
+        );
+        // If a match is found, proceed with the prediction
+        if (response) {
+          const candidates = user_state.menuName;
+          if (!candidates) {
+            throw new Error(
+              'Menu name not found in user state at [waitingWhatMeal]',
+            );
+          }
+          this.logger.debug('Menu name: ', candidates);
+          // Send the corresponding reply
+          await this.client.pushMessage({
+            to: userId,
+            messages: [
               {
-                type: 'action',
-                action: {
-                  type: 'message',
-                  label: 'ยกเลิกการบันทึก',
-                  text: 'ยกเลิก',
-                },
+                type: 'text',
+                text:
+                  mealResponses[response as keyof typeof mealResponses] ||
+                  'Unknown meal response',
               },
+              MenuChoiceConfirmFlex(
+                candidates.map((candidate) => ({
+                  name: candidate.name.join(', '),
+                })),
+              ),
             ],
+          });
+
+          await this.userStatesService.update(user_state.id, {
+            state: 'is prediction correct',
+          });
+          return;
+        }
+      }
+      // Handle other message types (e.g., stickers, images)
+      await this.client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
+            quickReply: CancleQuickReply,
           },
-        },
-      ],
-    });
+        ],
+      });
+    } catch (error) {
+      this.logger.error('Error at [waitingWhatMeal]:', error);
+      await this.client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+          },
+        ],
+      });
+    }
   }
 
-  async isPredictionCorrect(
+  async MenuChoicesConfirm(
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
     const userId = this.checkSourceUser(event);
-    const fileName = user_state.pendingUpload?.fileName;
-    const filePath = user_state.pendingUpload?.filePath;
-    if (!filePath) {
-      throw new Error(
-        'File path not found in user state [ isPredictionCorrect ]',
-      );
-    }
-    if (!fileName) {
-      throw new Error(
-        'File name not found in user state [ isPredictionCorrect ]',
-      );
-    }
     this.logger.debug('Processing prediction confirmation');
     if (event.message.type === 'text') {
       const messageText = event.message.text;
-      if (messageText.includes('ใช่')) {
-        await this.imagesService.create({
-          name: fileName,
-          user: user_state.user,
-        });
-        await this.postToSpace(
-          user_state.user.id,
-          fileName,
-          filePath,
-          fileName.split('.').pop() || 'jpg',
-        );
-        await this.userStatesService.remove(user_state.id);
-        await this.client.pushMessage({
-          to: userId,
-          messages: [
-            {
-              type: 'text',
-              text: 'โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️',
-            },
-          ],
-        });
-
-        return;
-      } else if (messageText.includes('ไม่ใช่')) {
-        await this.userStatesService.update(user_state.id, {
-          state: 'menu choice confirm',
-        });
-        await this.client.pushMessage({
-          to: userId,
-          messages: [
-            {
-              type: 'text',
-              text: 'มะลิจะบันทึกอาหารที่ทานในวันนี้เป็นอย่างอื่นค่ะ',
-            },
-          ],
-        });
-
-        return;
-      } else if (messageText.includes('ยกเลิก')) {
+      if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
         return;
       }
+
+      const fileName = user_state.pendingFile?.fileName;
+      const filePath = user_state.pendingFile?.filePath;
+      if (!filePath) {
+        throw new Error(
+          'File path not found in user state [ isPredictionCorrect ]',
+        );
+      }
+      if (!fileName) {
+        throw new Error(
+          'File name not found in user state [ isPredictionCorrect ]',
+        );
+      }
+      // if (messageText.includes('ไม่')) {
+      //   await this.userStatesService.update(user_state.id, {
+      //     state: 'waiting for menu name',
+      //   });
+      //   await this.client.pushMessage({
+      //     to: userId,
+      //     messages: [
+      //       {
+      //         type: 'text',
+      //         text: 'มะลิจะบันทึกอาหารที่ทานในวันนี้เป็นอย่างอื่นค่ะ',
+      //       },
+      //     ],
+      //   });
+
+      //   return;
+      // } else {
+      await this.imagesService.create({
+        name: fileName,
+        user: user_state.user,
+      });
+      await this.postToSpace(
+        user_state.user.id,
+        fileName,
+        filePath,
+        fileName.split('.').pop() || 'jpg',
+      );
+      await this.userStatesService.remove(user_state.id);
+      await this.client.pushMessage({
+        to: userId,
+        messages: [
+          {
+            type: 'text',
+            text: 'โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️',
+          },
+        ],
+      });
+
+      return;
+      // }
     }
     await this.client.pushMessage({
       to: userId,
@@ -342,25 +368,14 @@ export class RecordCaseHandler {
         {
           type: 'text',
           text: 'ที่ทายมาถูกต้องมั้ยคะ?',
-          quickReply: {
-            items: [
-              {
-                type: 'action',
-                action: {
-                  type: 'message',
-                  label: 'ยกเลิกการบันทึก',
-                  text: 'ยกเลิก',
-                },
-              },
-            ],
-          },
+          quickReply: CancleQuickReply,
         },
       ],
     });
     return;
   }
 
-  async menuChoiceConfirm(
+  async recordMeal(
     event: line.MessageEvent,
     user_state: UserState,
   ): Promise<void> {
@@ -370,21 +385,17 @@ export class RecordCaseHandler {
       if (messageText.includes('ยกเลิก')) {
         await this.handleCancel(event, user_state.id);
         return;
-      } else
-        await this.client.pushMessage({
-          to: userId,
-          messages: [
-            {
-              type: 'text',
-              text: 'มะลิจะบันทึกอาหารที่ทานในวันนี้ตามนี้นะคะ',
-            },
-          ],
-        });
-      return;
+      }
+      await this.client.pushMessage({
+        to: userId,
+        messages: [
+          {
+            type: 'text',
+            text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
+            quickReply: CancleQuickReply,
+          },
+        ],
+      });
     }
-    await this.sendReplyTextMessage(
-      userId,
-      'กรุณาเลือกเมนูอาหารที่ต้องการบันทึก',
-    );
   }
 }

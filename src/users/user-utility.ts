@@ -16,7 +16,6 @@ export const verifyIdToken = async (idToken: string) => {
     throw new Error('LINE_CLIENT_ID environment variable is not set');
   }
   try {
-    Logger.debug('Verifying LINE ID token');
     const response = await axios.post<VerifyResponse>(
       'https://api.line.me/oauth2/v2.1/verify',
       new URLSearchParams(

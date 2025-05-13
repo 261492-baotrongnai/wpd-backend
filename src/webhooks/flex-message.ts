@@ -1,4 +1,7 @@
 import { messagingApi } from '@line/bot-sdk';
+import { ImageQuickReply, CancleQuickReply } from './quick-reply';
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 // FlexMessage type มันโดน deprecated ไปแล้วให้เรียก type ผ่าน messagingApi เท่านั้น (แต่ doc ไม่เขียนไว้ จะบ้า)
 export const ClassifyFlex: messagingApi.FlexMessage = {
@@ -150,32 +153,7 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       paddingAll: 'none',
     },
   },
-  quickReply: {
-    items: [
-      {
-        type: 'action',
-        action: {
-          type: 'camera',
-          label: 'Camera',
-        },
-      },
-      {
-        type: 'action',
-        action: {
-          type: 'cameraRoll',
-          label: 'Gallery',
-        },
-      },
-      {
-        type: 'action',
-        action: {
-          type: 'message',
-          label: 'ยกเลิกการบันทึก',
-          text: 'ยกเลิก',
-        },
-      },
-    ],
-  },
+  quickReply: ImageQuickReply,
 };
 
 export const WhatMealFlex: messagingApi.FlexMessage = {
@@ -276,18 +254,7 @@ export const WhatMealFlex: messagingApi.FlexMessage = {
       ],
     },
   },
-  quickReply: {
-    items: [
-      {
-        type: 'action',
-        action: {
-          type: 'message',
-          label: 'ยกเลิกการบันทึก',
-          text: 'ยกเลิก',
-        },
-      },
-    ],
-  },
+  quickReply: CancleQuickReply,
 };
 
 export const TrueFalseMenuConfirmFlex = (
@@ -370,17 +337,192 @@ export const TrueFalseMenuConfirmFlex = (
         paddingEnd: 'lg',
       },
     },
-    quickReply: {
-      items: [
-        {
-          type: 'action',
-          action: {
-            type: 'message',
-            label: 'ยกเลิกการบันทึก',
-            text: 'ยกเลิก',
-          },
-        },
-      ],
-    },
+    quickReply: CancleQuickReply,
   });
+};
+
+export const MenuChoiceConfirmFlex = (
+  candidates: { name: string }[],
+): messagingApi.FlexMessage => {
+  const config = new ConfigService();
+  const liff_menu_input = config.get<string>('MENU_INPUT');
+  Logger.debug(candidates, 'candidates');
+  try {
+    return {
+      type: 'flex',
+      altText: 'ยืนยันชื่อเมนูอาหาร',
+      contents: {
+        type: 'bubble',
+        size: 'giga',
+        body: {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: 'เลือกเมนูอาหารที่',
+              align: 'center',
+              offsetBottom: 'none',
+              offsetTop: 'xs',
+              weight: 'bold',
+              size: 'lg',
+            },
+            {
+              type: 'text',
+              text: 'มะลิคิดว่าใกล้เคียงกับ',
+              weight: 'bold',
+              align: 'center',
+              size: 'lg',
+            },
+            {
+              type: 'text',
+              text: 'อาหารในรูปดูนะคะ',
+              weight: 'bold',
+              align: 'center',
+              size: 'lg',
+            },
+            {
+              type: 'separator',
+              margin: 'xl',
+            },
+            {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: '#FFF8CC',
+              margin: 'lg',
+              cornerRadius: 'md',
+              paddingAll: 'lg',
+              action: {
+                type: 'message',
+                label: candidates[0].name,
+                text: candidates[0].name,
+              },
+              contents: [
+                {
+                  type: 'text',
+                  text: candidates[0].name,
+                  wrap: true,
+                  size: 'lg',
+                  align: 'center',
+                  color: '#333333',
+                  weight: 'regular',
+                },
+              ],
+              offsetTop: 'none',
+            },
+            {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: '#D5F5D0',
+              margin: 'lg',
+              cornerRadius: 'md',
+              paddingAll: 'lg',
+              action: {
+                type: 'message',
+                label: candidates[1].name,
+                text: candidates[1].name,
+              },
+              contents: [
+                {
+                  type: 'text',
+                  text: candidates[1].name,
+                  wrap: true,
+                  size: 'lg',
+                  align: 'center',
+                  color: '#333333',
+                  weight: 'regular',
+                },
+              ],
+            },
+            {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: '#D7EDFB',
+              margin: 'lg',
+              cornerRadius: 'md',
+              paddingAll: 'lg',
+              action: {
+                type: 'message',
+                label: candidates[2].name,
+                text: candidates[2].name,
+              },
+              contents: [
+                {
+                  type: 'text',
+                  text: candidates[2].name,
+                  wrap: true,
+                  size: 'lg',
+                  align: 'center',
+                  color: '#333333',
+                  weight: 'regular',
+                },
+              ],
+            },
+            {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: '#EADCF3',
+              margin: 'lg',
+              cornerRadius: 'md',
+              paddingAll: 'lg',
+              action: {
+                type: 'message',
+                label: candidates[3].name,
+                text: candidates[3].name,
+              },
+              contents: [
+                {
+                  type: 'text',
+                  text: candidates[3].name,
+                  wrap: true,
+                  size: 'lg',
+                  align: 'center',
+                  color: '#333333',
+                  weight: 'regular',
+                },
+              ],
+            },
+            {
+              type: 'box',
+              layout: 'vertical',
+              backgroundColor: '#FFDBE8',
+              cornerRadius: 'md',
+              margin: 'lg',
+              paddingAll: 'lg',
+              action: {
+                type: 'uri',
+                label: 'ไม่มีเมนูที่ถูกต้อง พิมพ์ชื่ออาหารเอง',
+                uri: liff_menu_input,
+              },
+              contents: [
+                {
+                  type: 'text',
+                  text: 'ไม่มีเมนูที่ถูกต้อง',
+                  wrap: true,
+                  size: 'lg',
+                  align: 'center',
+                  color: '#333333',
+                  weight: 'regular',
+                },
+                {
+                  type: 'text',
+                  text: 'พิมพ์ชื่ออาหารเอง',
+                  wrap: true,
+                  size: 'lg',
+                  align: 'center',
+                  color: '#333333',
+                  margin: 'sm',
+                  weight: 'regular',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      quickReply: CancleQuickReply,
+    };
+  } catch (error) {
+    console.error('Error creating MenuChoiceConfirmFlex:', error);
+    throw error;
+  }
 };

@@ -27,7 +27,7 @@ export class UserStatesService {
   async findAllByUser(userId: number): Promise<UserState[]> {
     return this.userStatesRepository.find({
       where: { user: { id: userId } },
-      relations: ['user', 'pendingUpload'],
+      relations: ['user'],
     });
   }
 
@@ -43,10 +43,8 @@ export class UserStatesService {
   async remove(id: number): Promise<void> {
     this.logger.debug(`Removing user state with ID: ${id}`);
 
-    // Find the user state with its pending upload
     const userState = await this.userStatesRepository.findOne({
       where: { id },
-      relations: ['pendingUpload'],
     });
 
     if (!userState) {
@@ -55,7 +53,6 @@ export class UserStatesService {
     }
 
     try {
-      // With cascade: true, this will delete the pending upload as well
       await this.userStatesRepository.remove(userState);
       this.logger.debug(`Successfully removed user state with ID: ${id}`);
     } catch (error) {

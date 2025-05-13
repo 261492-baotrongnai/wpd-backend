@@ -107,11 +107,8 @@ export class WebhooksController {
         } else {
           this.logger.warn(`Unsupported event type: ${event.type}`);
         }
-      } catch (error) {
-        this.logger.error(
-          `Error processing event: ${JSON.stringify(event)}`,
-          error,
-        );
+      } catch {
+        this.logger.error(`Error processing event: ${JSON.stringify(event)}`);
       }
     }
   }

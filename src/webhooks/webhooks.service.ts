@@ -108,10 +108,10 @@ export class WebhooksService {
           await this.recordCaseHandler.waitingWhatMeal(event, user_state);
           break;
         case 'is prediction correct':
-          await this.recordCaseHandler.isPredictionCorrect(event, user_state);
+          await this.recordCaseHandler.MenuChoicesConfirm(event, user_state);
           break;
-        case 'menu choice confirm':
-          await this.recordCaseHandler.menuChoiceConfirm(event, user_state);
+        case 'waiting for menu name':
+          await this.recordCaseHandler.recordMeal(event, user_state);
           break;
       }
     }
@@ -131,8 +131,7 @@ export class WebhooksService {
       });
       console.log('Welcome message sent successfully');
     } catch (error) {
-      console.error('Error handling non-registered user:', error);
-      throw error;
+      this.logger.error('Error handling non-registered user:', error);
     }
   }
 

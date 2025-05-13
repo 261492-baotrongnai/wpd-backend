@@ -12,8 +12,6 @@ import { RecordCaseHandler } from 'src/webhooks/record-case';
 import { ImagesService } from 'src/images/images.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Image } from 'src/images/entities/image.entity';
-import { PendingUploadsService } from 'src/pending-uploads/pending-uploads.service';
-import { PendingUpload } from 'src/pending-uploads/entities/pending-uploads.entity';
 import { ExternalApiService } from 'src/external-api/external-api.service';
 
 @Module({
@@ -24,7 +22,6 @@ import { ExternalApiService } from 'src/external-api/external-api.service';
     WebhooksService,
     RecordCaseHandler,
     ImagesService,
-    PendingUploadsService,
     ExternalApiService,
   ],
   imports: [
@@ -35,7 +32,7 @@ import { ExternalApiService } from 'src/external-api/external-api.service';
       signOptions: { expiresIn: '1h' },
     }),
     PassportModule,
-    TypeOrmModule.forFeature([Image, PendingUpload]),
+    TypeOrmModule.forFeature([Image]),
   ],
 })
 export class AuthModule {}
