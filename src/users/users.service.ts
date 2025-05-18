@@ -81,6 +81,7 @@ export class UsersService {
         program_code: registerDto.program_code,
       });
       await this.entityManager.save(newUser);
+      this.logger.debug('New user created');
       const acct = await this.generateToken(newUser.internalId);
       await this.handleRegisterSuccess(uid.sub);
       return { type: 'NewUser', access_token: acct };
