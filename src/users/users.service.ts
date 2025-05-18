@@ -63,12 +63,17 @@ export class UsersService {
 
   async create(@Body() registerDto: RegisterDto) {
     try {
+      this.logger.log('Creating user with ID token:', registerDto);
       const iid = await getInternalId(registerDto.idToken, undefined);
       const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
 
       const user = await this.usersRepository.findOneBy({ internalId: iid });
       if (user) {
         const acct = await this.generateToken(user.internalId);
+        if (user.program_code !== registerDto.program_code) {
+          user.program_code = registerDto.program_code ?? '';
+          await this.entityManager.save(user);
+        }
         return { type: 'User', access_token: acct };
       }
       const newUser = new User({
