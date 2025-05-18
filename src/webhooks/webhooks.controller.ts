@@ -81,6 +81,12 @@ export class WebhooksController {
                 (await this.webhookService.isUserExist(uid)) === true
               ) {
                 switch (event.message.text) {
+                  case 'ยันยันการบันทึกผู้ใช้':
+                    this.logger.debug('User requested to confirm registration');
+                    await this.webhookService.handleConfirmRegistration(
+                      event.replyToken,
+                    );
+                    break;
                   case 'บันทึกอาหารที่ทาน':
                     this.logger.debug('User requested to record meal:');
                     await this.webhookService.handleMealRecord(

@@ -7,6 +7,7 @@ import { getInternalId } from 'src/users/user-utility';
 import axios from 'axios';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { RecordCaseHandler } from './record-case';
+import { RegistConfirmFlex } from 'src/users/user-flex';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -73,6 +74,18 @@ export class WebhooksService {
     } catch (error) {
       console.error('Error handling follow event:', error);
       throw error;
+    }
+  }
+
+  async handleConfirmRegistration(replyToken: string) {
+    try {
+      await this.client.replyMessage({
+        replyToken,
+        messages: [RegistConfirmFlex],
+      });
+      console.log('Registration confirmation message sent successfully');
+    } catch (error) {
+      console.error('Error handling confirm registration:', error);
     }
   }
 
