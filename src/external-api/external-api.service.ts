@@ -67,23 +67,32 @@ export class ExternalApiService {
             'บอกเมนูรายการอาหารที่มีในภาพนี้มาให้ครบถ้วนทุกองค์ประกอบของเมนู เป็นภาษาไทย ไม่ควรเป็นชื่อที่ความหมายกว้างเกินไป ควรเป็นชื่อที่บ่งบอกถึงวัตถุดิบในนั้นได้ด้วยจะดีมาก',
             'หากมีหลายเมนูในภาพ ให้ตอบมาแบบบอกชื่อให้ครบตามจำนวนของเมนูที่เห็นในภาพ เช่น หากในรูปมี 3 อย่าง ให้ตอบ name: /[ส้มตำ,ไก่ย่าง,ข้าวเหนียว/] หากมี 1 อย่างให้ตอบ name: /[ส้มตำ/] ดังนั้น สมาชิกใน array name จึงมักจะไม่ใช่ชื่ออาหารชนิดใกล้เคียงกัน (ทุกสมาชิกใน array name ต้องมีขนาดรวมกันไม่เกิน 40 characters)` )',
             'นอกจากได้ array name มา 1 คำตอบแล้ว ให้เพิ่มตัวเลือก array name ที่มั่นใจรองลงมาอีก 3 ตัวเลือก ในลักษณะเดียวกันแต่ห้ามซ้ำกับคำตอบอื่นๆ ก็จะได้ลักษณะของ response เช่น [{name: ["น้ำพริก"], name: ["น้ำพริกอ่อง","ผักลวก"], name: [คำตอบที่ 2], name: [คำตอบที่ 3]}]',
-            '(หากรูปภาพไม่ใช่รูปอาหารที่คนกินจริงๆเข่น รูปวาดอาหาร หรือภาพที่ไม่ใช่อาหาร ให้ตอบมาเป็น array ว่าง)',
+            '(หากรูปภาพไม่ใช่รูปอาหารที่คนกินจริงๆเข่น รูปวาดอาหาร หรือภาพที่ไม่ใช่อาหาร ให้ตอบ isFood: false)',
             createPartFromUri(uploadedImage.uri, uploadedImage.mimeType),
           ]),
         ],
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.ARRAY,
-            minItems: '4',
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: {
-                  type: Type.ARRAY,
-                  minItems: '1',
-                  items: {
-                    type: Type.STRING,
+            type: Type.OBJECT,
+            properties: {
+              isFood: {
+                type: Type.BOOLEAN,
+                description: 'Is the image food?',
+              },
+              candidates: {
+                type: Type.ARRAY,
+                minItems: '4',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: {
+                      type: Type.ARRAY,
+                      minItems: '1',
+                      items: {
+                        type: Type.STRING,
+                      },
+                    },
                   },
                 },
               },
@@ -94,7 +103,8 @@ export class ExternalApiService {
 
       this.logger.debug(
         'Token usage:',
-        response.usageMetadata?.totalTokenCount,
+        // response.usageMetadata?.totalTokenCount,
+        response,
       );
 
       if (!response || !response.text) {
@@ -102,7 +112,10 @@ export class ExternalApiService {
         throw new Error('Response from Gemini is empty');
       }
 
-      return JSON.parse(response.text) as { name: string[] }[];
+      return JSON.parse(response.text) as {
+        isFood: boolean;
+        candidates: { name: string[] }[];
+      };
     } catch (error) {
       this.logger.error('Error at [geminiRequestMenusFromBuffer]:', error);
       throw error;

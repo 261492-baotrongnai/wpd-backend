@@ -172,12 +172,12 @@ export class RecordCaseHandler {
           event.message.id,
         );
 
-        const candidates = await this.api.getMenuCandidates(undefined, {
+        const response = await this.api.getMenuCandidates(undefined, {
           buffer: imageContent,
           mimeType: `image/${fileType}`,
         });
-        this.logger.debug('Menu name: ', candidates);
-        if (!candidates || candidates.length === 0) {
+        this.logger.debug('Menu name: ', response);
+        if (!response.isFood) {
           await this.client.replyMessage({
             replyToken: event.replyToken,
             messages: [
@@ -199,7 +199,7 @@ export class RecordCaseHandler {
 
         await this.userStatesService.update(user_state.id, {
           state: 'waiting for what meal',
-          menuName: candidates,
+          menuName: response.candidates,
           pendingFile: { fileName, filePath },
         });
 
