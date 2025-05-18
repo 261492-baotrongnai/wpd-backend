@@ -93,7 +93,10 @@ export class WebhooksController {
                   'Received message from non-registered user, message:',
                   event.message.text,
                 );
-                await this.webhookService.handleNonRegisteredUser(uid);
+                await this.webhookService.handleNonRegisteredUser(
+                  event.replyToken,
+                  uid,
+                );
               }
             }
           } else {

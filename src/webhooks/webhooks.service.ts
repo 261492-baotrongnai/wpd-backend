@@ -114,10 +114,11 @@ export class WebhooksService {
     }
   }
 
-  async handleNonRegisteredUser(userId: string) {
+  async handleNonRegisteredUser(replyToken: string, userId?: string) {
+    this.logger.debug('Handling non-registered user:', userId);
     try {
-      await this.client.pushMessage({
-        to: userId,
+      await this.client.replyMessage({
+        replyToken,
         messages: [
           {
             type: 'text',
