@@ -32,7 +32,7 @@ export class AuthService {
       const result = await getInternalId(LineIdToken, undefined);
       if (typeof result !== 'string') {
         console.error(
-          'Error verifying ID token: Invalid result type from getInternalId in validateUser',
+          'Error validate user by lineIdToken: Invalid result type from getInternalId in validateUser',
         );
         return null; // Return null for invalid tokens
       }

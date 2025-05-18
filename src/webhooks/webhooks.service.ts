@@ -67,7 +67,7 @@ export class WebhooksService {
       // Send a greeting flex messages
       await this.client.replyMessage({
         replyToken,
-        messages: [GreetingFlex, ClassifyFlex],
+        messages: [GreetingFlex, ClassifyFlex()],
       });
       console.log('Welcome message sent successfully');
     } catch (error) {
@@ -123,7 +123,7 @@ export class WebhooksService {
             type: 'text',
             text: `คุณยังไม่ได้ลงทะเบียนในระบบ กรุณาเลือกประเภทผู้ใช้งาน และยอมรับเงื่อนไขการใช้งาน`,
           },
-          ClassifyFlex,
+          ClassifyFlex(),
         ],
       });
       console.log('Welcome message sent successfully');
