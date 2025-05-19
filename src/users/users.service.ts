@@ -80,6 +80,7 @@ export class UsersService {
         internalId: iid,
         program_code: registerDto.program_code,
       });
+      this.logger.debug('New user:', newUser);
       await this.entityManager.save(newUser);
       this.logger.debug('New user created');
       const acct = await this.generateToken(newUser.internalId);
