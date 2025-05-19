@@ -87,6 +87,13 @@ export class WebhooksController {
                       event.replyToken,
                     );
                     break;
+                  case 'ยันยันการแก้ไขโค้ด':
+                    this.logger.debug('User requested to confirm code change');
+                    await this.webhookService.handleConfirmCodeChange(
+                      event.replyToken,
+                      uid,
+                    );
+                    break;
                   case 'บันทึกอาหารที่ทาน':
                     this.logger.debug('User requested to record meal:');
                     await this.webhookService.handleMealRecord(

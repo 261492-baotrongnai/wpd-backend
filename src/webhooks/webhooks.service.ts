@@ -89,6 +89,26 @@ export class WebhooksService {
     }
   }
 
+  async handleConfirmCodeChange(replyToken: string, uid: string) {
+    try {
+      const iid = await getInternalId(undefined, uid);
+      const user = await this.userService.findUserByInternalId(iid);
+      this.logger.debug(`User found: ${user?.id}`);
+      await this.client.replyMessage({
+        replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: `โค้ดโครงการปัจจุบันของคุณคือ "${user?.program_code}"`,
+          },
+        ],
+      });
+      console.log('Code change confirmation message sent successfully');
+    } catch (error) {
+      console.error('Error handling confirm code change:', error);
+    }
+  }
+
   async handleMealRecord(replyToken: string, uid: string) {
     await this.client.replyMessage({
       replyToken,
