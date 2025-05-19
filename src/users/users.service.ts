@@ -84,7 +84,7 @@ export class UsersService {
       await this.entityManager.save(newUser);
       this.logger.debug('New user created');
       const acct = await this.generateToken(newUser.internalId);
-      await this.handleRegisterSuccess(uid.sub);
+      // await this.handleRegisterSuccess(uid.sub);
       return { type: 'NewUser', access_token: acct };
     } catch (error) {
       console.error('Error creating user:', error);
