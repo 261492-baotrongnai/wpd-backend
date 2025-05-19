@@ -1,10 +1,23 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Request,
+  Delete,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { MealsService } from './meals.service';
 import { CreateMealDto } from './dto/create-meal.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { User } from 'src/users/entities/user.entity';
 // import { UpdateMealDto } from './dto/update-meal.dto';
 
 @Controller('meals')
 export class MealsController {
+  logger = new Logger(MealsController.name);
   constructor(private readonly mealsService: MealsService) {}
 
   @Post()
@@ -12,28 +25,10 @@ export class MealsController {
     return this.mealsService.create(createMealDto);
   }
 
-  @Get()
-  findAll() {
-    return this.mealsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.mealsService.findOne(+id);
-  }
-
-  @Get('user/:userId')
-  findAllByUser(@Param('userId') userId: string) {
-    return this.mealsService.findAllByUser(+userId);
-  }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateMealDto: UpdateMealDto) {
-  //   return this.mealsService.update(+id, updateMealDto);
-  // }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.mealsService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Get('user')
+  findAllByUser(@Request() req: { user: { internalId: string; id: number } }) {
+    this.logger.log('/meals/user for user: ', req.user.internalId);
+    return this.mealsService.findAllByUser(+req.user.id);
   }
 }

@@ -27,11 +27,11 @@ export class UsersController {
     return this.usersService.create(registerDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  getProfile(@Request() req: { user: { internalId: string } }) {
-    return req.user;
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Get('profile')
+  // getProfile(@Request() req: { user: { internalId: string } }) {
+  //   return req.user;
+  // }
 
   @Get()
   findAll() {
