@@ -3,7 +3,8 @@ import { CreateMealDto } from './dto/create-meal.dto';
 // import { UpdateMealDto } from './dto/update-meal.dto';
 import { Meal } from './entities/meal.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { Between, EntityManager, Repository } from 'typeorm';
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class MealsService {
@@ -21,6 +22,8 @@ export class MealsService {
       avgScore: createMealDto.avgScore,
       avgGrade: createMealDto.avgGrade,
       user: createMealDto.user,
+      createdAt: moment.tz('Asia/Bangkok').startOf('day').toDate(),
+      updatedAt: moment.tz('Asia/Bangkok').startOf('day').toDate(),
     });
 
     return this.entityManager.save(new_meal);
@@ -39,6 +42,22 @@ export class MealsService {
       where: { user: { id: userId } },
       relations: ['user', 'foods'],
     });
+  }
+
+  async findTodayByUser(userId: number) {
+    const today = moment.tz('Asia/Bangkok').startOf('day').toDate();
+    const tomorrow = moment.tz('Asia/Bangkok').endOf('day').toDate();
+    this.logger.debug(`Today: ${today.toISOString()}`);
+    this.logger.debug(`Tomorrow: ${tomorrow.toISOString()}`);
+    const today_meals = await this.mealsRepository.find({
+      where: {
+        user: { id: userId },
+        createdAt: Between(today, tomorrow),
+      },
+      relations: ['user', 'foods'],
+    });
+    this.logger.debug(`Today meals:`, today_meals);
+    return today_meals;
   }
 
   // update(id: number, updateMealDto: UpdateMealDto) {
