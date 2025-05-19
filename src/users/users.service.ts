@@ -66,7 +66,7 @@ export class UsersService {
       this.logger.log('Creating user with ID token:', registerDto);
       const iid = await getInternalId(registerDto.idToken, undefined);
       const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
-
+      this.logger.debug('Decoded ID token:', uid);
       const user = await this.usersRepository.findOneBy({ internalId: iid });
       if (user) {
         const acct = await this.generateToken(user.internalId);

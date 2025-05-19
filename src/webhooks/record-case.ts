@@ -18,6 +18,7 @@ import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { MealsService } from 'src/meals/meals.service';
 import { MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
+import { GradeAFlex, GradeBFlex, GradeCFlex } from './flex-grade';
 
 @Injectable()
 export class RecordCaseHandler {
@@ -379,6 +380,7 @@ export class RecordCaseHandler {
           .filter((name) => name.length > 0); // Remove empty strings
         this.logger.debug('Parsed menu names:', parsedMenuNames);
 
+        // get the average grade and score from the foodGrade service
         const { avgGrade, avgScore, foods } =
           await this.foodGrade.getMenuGrade(parsedMenuNames);
 
@@ -393,6 +395,18 @@ export class RecordCaseHandler {
             ],
           });
           return;
+        }
+        let GradeFlex: line.messagingApi.FlexMessage;
+        switch (avgGrade) {
+          case 'A':
+            GradeFlex = GradeAFlex(messageText);
+            break;
+          case 'B':
+            GradeFlex = GradeBFlex(messageText);
+            break;
+          case 'C':
+            GradeFlex = GradeCFlex(messageText);
+            break;
         }
 
         const fileName = user_state.pendingFile?.fileName;
@@ -440,8 +454,9 @@ export class RecordCaseHandler {
           messages: [
             {
               type: 'text',
-              text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ ${avgGrade}`,
+              text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
             },
+            GradeFlex,
           ],
         });
 
