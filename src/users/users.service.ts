@@ -81,9 +81,13 @@ export class UsersService {
         program_code: registerDto.program_code,
       });
       this.logger.debug('New user:', newUser);
-      await this.entityManager.save(newUser);
-      this.logger.debug('New user created');
+      const new_user_created = await this.usersRepository.save(newUser);
+      if (!new_user_created) {
+        throw new InternalServerErrorException('Failed to create user');
+      }
+      this.logger.debug('New user created', new_user_created);
       const acct = await this.generateToken(newUser.internalId);
+      this.logger.debug('Generated token:', acct);
       // await this.handleRegisterSuccess(uid.sub);
       return { type: 'NewUser', access_token: acct };
     } catch (error) {
