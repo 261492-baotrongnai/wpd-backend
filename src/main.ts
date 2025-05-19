@@ -15,7 +15,8 @@ async function bootstrap() {
   // Use raw-body middleware for the /webhooks route
   app.use('/webhooks', bodyParser.raw({ type: 'application/json' }));
 
-  await app.listen(process.env.PORT ?? 8000);
+  await app.listen(process.env.PORT ?? 8000, '0.0.0.0');
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 void (async () => {
   try {
