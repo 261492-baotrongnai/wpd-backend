@@ -40,16 +40,16 @@ jobs:
           chmod +x ./build.sh
           ./build.sh "$IMAGE_TAG"
 
-      - name: SSH and deploy
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: BACKEND_VERSION
-          script: |
-            export BACKEND_VERSION=${{ steps.vars.outputs.tag }}
-            cd wpd-project
-            docker pull apichayauwu/wpd-backend:$BACKEND_VERSION
-            docker compose up -d --build --pull always
+      # - name: SSH and deploy
+      #   uses: appleboy/ssh-action@v1.0.0
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     port: ${{ secrets.SSH_PORT }}
+      #     envs: BACKEND_VERSION
+      #     script: |
+      #       export BACKEND_VERSION=${{ steps.vars.outputs.tag }}
+      #       cd wpd-project
+      #       docker pull apichayauwu/wpd-backend:$BACKEND_VERSION
+      #       docker compose up -d --build --pull always
