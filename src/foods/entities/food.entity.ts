@@ -10,7 +10,7 @@ export class Food {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'longtext', nullable: true })
   description: string;
 
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
