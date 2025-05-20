@@ -39,10 +39,10 @@ export class Meal {
   @OneToMany(() => Food, (food) => food.meal)
   foods: Food[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 
   constructor(meal: Partial<Meal>) {
