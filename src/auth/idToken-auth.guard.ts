@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
@@ -22,7 +23,7 @@ export class IdTokenAuthGuard implements CanActivate {
     const { idToken } = request.body;
 
     if (!idToken) {
-      throw new UnauthorizedException('No idToken provided');
+      throw new BadRequestException('No idToken provided');
     }
 
     const user = await this.authService.validateUser(idToken);
