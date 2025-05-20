@@ -42,7 +42,7 @@ export class MealsService {
     });
   }
 
-  async findTodayByUser(userId: number) {
+  async findTodayMealsByUser(userId: number) {
     const today = moment.tz('Asia/Bangkok').startOf('day').toDate();
     const tomorrow = moment.tz('Asia/Bangkok').endOf('day').toDate();
     this.logger.debug(`Today: ${today.toISOString()}`);
@@ -52,10 +52,26 @@ export class MealsService {
         user: { id: userId },
         createdAt: Between(today, tomorrow),
       },
-      relations: ['user', 'foods'],
+      relations: ['foods'],
     });
-    this.logger.debug(`Today meals:`, today_meals);
+    // this.logger.debug(`Today meals:`, today_meals);
     return today_meals;
+  }
+
+  async findMealsByDay(userId: number, date: string) {
+    const startOfDay = moment.tz(date, 'Asia/Bangkok').startOf('day').toDate();
+    const endOfDay = moment.tz(date, 'Asia/Bangkok').endOf('day').toDate();
+    this.logger.debug(`Start of day: ${startOfDay.toISOString()}`);
+    this.logger.debug(`End of day: ${endOfDay.toISOString()}`);
+    const meals = await this.mealsRepository.find({
+      where: {
+        user: { id: userId },
+        createdAt: Between(startOfDay, endOfDay),
+      },
+      relations: ['foods'],
+    });
+    this.logger.debug(`Meals:`, meals);
+    return meals;
   }
 
   // update(id: number, updateMealDto: UpdateMealDto) {

@@ -6,6 +6,7 @@ import {
   Request,
   UseGuards,
   Logger,
+  Query,
 } from '@nestjs/common';
 import { MealsService } from './meals.service';
 import { CreateMealDto } from './dto/create-meal.dto';
@@ -30,11 +31,29 @@ export class MealsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('day')
+  findMealsByDay(
+    @Request()
+    req: {
+      user: { internalId: string; id: number };
+    },
+    @Query('date')
+    date: string,
+  ) {
+    this.logger.log('[/meals/day] for user: ', req.user.internalId);
+    this.logger.log('[/meals/day] for date: ', date);
+    return this.mealsService.findMealsByDay(+req.user.id, date);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('today')
-  findTodayByUser(
-    @Request() req: { user: { internalId: string; id: number } },
+  findTodayMealsByUser(
+    @Request()
+    req: {
+      user: { internalId: string; id: number };
+    },
   ) {
     this.logger.log('[/meals/today] for user: ', req.user.internalId);
-    return this.mealsService.findTodayByUser(+req.user.id);
+    return this.mealsService.findTodayMealsByUser(+req.user.id);
   }
 }

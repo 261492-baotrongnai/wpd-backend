@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as bodyParser from 'body-parser';
+import * as moment from 'moment-timezone';
 import { ConfigService } from '@nestjs/config'; // Import the 'ConfigService' from '@nestjs/config'
 
 async function bootstrap() {
+  moment.tz.setDefault('Asia/Bangkok'); // Set the default timezone to 'Asia/Bangkok'
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   app.enableCors({
