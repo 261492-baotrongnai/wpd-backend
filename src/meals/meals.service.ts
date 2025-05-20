@@ -22,8 +22,6 @@ export class MealsService {
       avgScore: createMealDto.avgScore,
       avgGrade: createMealDto.avgGrade,
       user: createMealDto.user,
-      createdAt: moment.tz('Asia/Bangkok').startOf('day').toDate(),
-      updatedAt: moment.tz('Asia/Bangkok').startOf('day').toDate(),
     });
 
     return this.entityManager.save(new_meal);

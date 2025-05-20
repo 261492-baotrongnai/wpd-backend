@@ -15,7 +15,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
         synchronize: configService.get('NODE_ENV') === 'development',
-        timezone: '+07:00',
       }),
       inject: [ConfigService],
     }),
