@@ -6,25 +6,30 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
+  Request,
+  Query,
 } from '@nestjs/common';
 import { ImagesService } from './images.service';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
-import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('images')
 export class ImagesController {
   constructor(private readonly imagesService: ImagesService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get('meal_image')
-  getMealsImageUrsl(@Req() req: Request) {
-    const file_name = req.query.file_name as string;
+  getMealsImageUrsl(
+    @Request() req: { user: { id: number } },
+    @Query('file_name') file_name: string,
+  ) {
     console.log('file_name:', file_name);
-    const key = `meal_images/${file_name}`;
+    const key = `meal_images/${req.user.id}/${file_name}`;
     const response = this.imagesService.getSignedUrl(key);
     return response;
   }
