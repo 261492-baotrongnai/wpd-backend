@@ -5,6 +5,7 @@ import { Meal } from './entities/meal.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, EntityManager, Repository } from 'typeorm';
 import * as moment from 'moment-timezone';
+import { FoodGradesService } from 'src/food-grades/food-grades.service';
 
 @Injectable()
 export class MealsService {
@@ -14,6 +15,7 @@ export class MealsService {
     @InjectRepository(Meal)
     private readonly mealsRepository: Repository<Meal>,
     private readonly entityManager: EntityManager,
+    private readonly foodGrades: FoodGradesService,
   ) {}
   create(createMealDto: CreateMealDto) {
     const new_meal = new Meal({
@@ -72,6 +74,31 @@ export class MealsService {
     });
     this.logger.debug(`Meals:`, meals);
     return meals;
+  }
+
+  getStatsOfDay(meals: Meal[]) {
+    const stats = {
+      avgScore: 0,
+      avgGrade: '',
+      totalMeal: meals.length,
+      countA: 0,
+      countB: 0,
+      countC: 0,
+      totalFood: 0,
+    };
+    meals.forEach((meal) => {
+      stats.avgScore += meal.avgScore;
+      stats.totalFood += meal.foods.length;
+      stats.countA += meal.avgGrade === 'A' ? 1 : 0;
+      stats.countB += meal.avgGrade === 'B' ? 1 : 0;
+      stats.countC += meal.avgGrade === 'C' ? 1 : 0;
+    });
+
+    stats.avgScore /= meals.length;
+    this.logger.debug(`Avg score: ${stats.avgScore}`);
+    stats.avgGrade = this.foodGrades.scoreToGrade(stats.avgScore) as string;
+    this.logger.debug(`Stats:`, stats);
+    return stats;
   }
 
   // update(id: number, updateMealDto: UpdateMealDto) {

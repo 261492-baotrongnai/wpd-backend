@@ -21,4 +21,10 @@ export class FoodGrade {
   category: string;
 }
 
-export type FoodGradeType = 'A' | 'B' | 'C';
+export const FoodGradeType = {
+  A: 'A',
+  B: 'B',
+  C: 'C',
+} as const;
+
+export type FoodGradeType = (typeof FoodGradeType)[keyof typeof FoodGradeType];

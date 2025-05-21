@@ -46,6 +46,20 @@ export class MealsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('day/stats')
+  async getStatsOfDay(
+    @Request() req: { user: { internalId: string; id: number } },
+    @Query('date') date: string,
+  ) {
+    this.logger.log('[/meals/day/stats] for user: ', req.user.internalId);
+    this.logger.log('[/meals/day/stats] for date: ', date);
+    const uid = +req.user.id;
+    const meals = await this.mealsService.findMealsByDay(uid, date);
+    const stats = this.mealsService.getStatsOfDay(meals);
+    return { meals, stats };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('today')
   findTodayMealsByUser(
     @Request()
@@ -55,5 +69,17 @@ export class MealsController {
   ) {
     this.logger.log('[/meals/today] for user: ', req.user.internalId);
     return this.mealsService.findTodayMealsByUser(+req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('today/stats')
+  async getStatsOfToDay(
+    @Request() req: { user: { internalId: string; id: number } },
+  ) {
+    this.logger.log('[/meals/today/stats] for user: ', req.user.internalId);
+    const uid = +req.user.id;
+    const meals = await this.mealsService.findTodayMealsByUser(uid);
+    const stats = this.mealsService.getStatsOfDay(meals);
+    return { meals, stats };
   }
 }

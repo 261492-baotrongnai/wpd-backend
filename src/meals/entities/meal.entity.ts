@@ -27,7 +27,7 @@ export class Meal {
   })
   mealType: MealType;
 
-  @Column()
+  @Column({ type: 'float', default: 0 })
   avgScore: number;
 
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
