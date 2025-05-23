@@ -366,7 +366,12 @@ export class RecordCaseHandler {
     // const userId = this.checkSourceUser(event);
     try {
       this.logger.debug('Processing prediction confirmation');
-      if (event.message.type === 'text') {
+      if (
+        event.message.type === 'text' &&
+        event.message.text !== 'บันทึกอาหารที่ทาน' &&
+        event.message.text !== 'กินได้ก่อ' &&
+        event.message.text !== 'วิธีใช้'
+      ) {
         const messageText = event.message.text;
         if (messageText.includes('ยกเลิก')) {
           await this.handleCancel(event, user_state.id);
