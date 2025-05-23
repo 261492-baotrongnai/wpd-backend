@@ -349,10 +349,9 @@ export const TrueFalseMenuConfirmFlex = (
 
 export const MenuChoiceConfirmFlex = (
   candidates: { name: string }[],
-  id: number,
 ): messagingApi.FlexMessage => {
   const config = new ConfigService();
-  const liff_menu_input = `${config.get<string>('MENU_INPUT')}?id=${id}`;
+  const liff_menu_input = `${config.get<string>('MENU_INPUT')}`;
   Logger.debug(liff_menu_input, 'LIFF URL');
   try {
     return {

@@ -320,7 +320,6 @@ export class RecordCaseHandler {
                 candidates.map((candidate) => ({
                   name: candidate.name.join(', '),
                 })),
-                user_state.id,
               ),
             ],
           });
