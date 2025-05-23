@@ -63,11 +63,11 @@ export class UserStatesService {
 
   async findCandidates(id: number) {
     const userState = await this.userStatesRepository.findOne({
-      where: { id },
+      where: { user: { id } },
     });
 
     if (!userState) {
-      this.logger.warn(`UserState with id ${id} not found`);
+      this.logger.warn(`UserState with user ${id} not found`);
       return null;
     }
 
