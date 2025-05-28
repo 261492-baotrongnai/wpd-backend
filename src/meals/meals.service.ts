@@ -4,7 +4,7 @@ import { CreateMealDto } from './dto/create-meal.dto';
 import { Meal } from './entities/meal.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, EntityManager, Repository } from 'typeorm';
-import * as moment from 'moment-timezone';
+import moment from 'moment-timezone';
 import { FoodGradesService } from 'src/food-grades/food-grades.service';
 
 @Injectable()
@@ -76,7 +76,7 @@ export class MealsService {
     return meals;
   }
 
-  getStatsOfDay(meals: Meal[]) {
+  getSummaryStats(meals: Meal[]) {
     const stats = {
       avgScore: 0,
       avgGrade: '',
@@ -95,16 +95,92 @@ export class MealsService {
     });
 
     stats.avgScore /= meals.length;
-    this.logger.debug(`Avg score: ${stats.avgScore}`);
     stats.avgGrade = this.foodGrades.scoreToGrade(stats.avgScore) as string;
-    this.logger.debug(`Stats:`, stats);
     return stats;
   }
 
-  // update(id: number, updateMealDto: UpdateMealDto) {
-  //   return `This action updates a #${id} meal`;
-  // }
+  async getTodaySummary(userId: number) {
+    try {
+      const today = new Date();
+      this.logger.debug(' today: ', today.toISOString());
+      const startOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      const endOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1,
+      );
 
+      this.logger.debug(
+        `Fetching meals for userId: ${userId}, from ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`,
+      );
+
+      const meals: Meal[] = await this.mealsRepository.find({
+        where: {
+          user: { id: userId },
+          createdAt: Between(startOfDay, endOfDay),
+        },
+        relations: ['foods'],
+      });
+
+      const result = this.getSummaryStats(meals);
+      return result;
+    } catch (error) {
+      this.logger.error('Error at [getTodaySummary]:', error);
+      throw error;
+    }
+  }
+
+  async getWeekSummary(userId: number) {
+    try {
+      const today = moment.tz('Asia/Bangkok').startOf('day').toDate();
+      const startOfWeek = moment(today).startOf('week').toDate();
+      const endOfWeek = moment(today).endOf('week').toDate();
+      this.logger.debug(
+        `Fetching meals for userId: ${userId}, from ${startOfWeek.toISOString()} to ${endOfWeek.toISOString()}`,
+      );
+      const meals: Meal[] = await this.mealsRepository.find({
+        where: {
+          user: { id: userId },
+          createdAt: Between(startOfWeek, endOfWeek),
+        },
+        relations: ['foods'],
+      });
+      const result = this.getSummaryStats(meals);
+      this.logger.debug(`Week summary:`, result);
+      return result;
+    } catch (error) {
+      this.logger.error('Error at [getWeekSummary]:', error);
+      throw error;
+    }
+  }
+
+  async getMonthSummary(userId: number) {
+    try {
+      const today = moment.tz('Asia/Bangkok').startOf('day').toDate();
+      const startOfMonth = moment(today).startOf('month').toDate();
+      const endOfMonth = moment(today).endOf('month').toDate();
+      this.logger.debug(
+        `Fetching meals for userId: ${userId}, from ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`,
+      );
+      const meals = await this.mealsRepository.find({
+        where: {
+          user: { id: userId },
+          createdAt: Between(startOfMonth, endOfMonth),
+        },
+        relations: ['foods'],
+      });
+      const result = this.getSummaryStats(meals);
+      this.logger.debug(`Month summary:`, result);
+      return result;
+    } catch (error) {
+      this.logger.error('Error at [getMonthSummary]:', error);
+      throw error;
+    }
+  }
   remove(id: number) {
     return `This action removes a #${id} meal`;
   }

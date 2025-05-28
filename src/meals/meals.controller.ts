@@ -55,7 +55,7 @@ export class MealsController {
     this.logger.log('[/meals/day/stats] for date: ', date);
     const uid = +req.user.id;
     const meals = await this.mealsService.findMealsByDay(uid, date);
-    const stats = this.mealsService.getStatsOfDay(meals);
+    const stats = this.mealsService.getSummaryStats(meals);
     return { meals, stats };
   }
 
@@ -79,7 +79,32 @@ export class MealsController {
     this.logger.log('[/meals/today/stats] for user: ', req.user.internalId);
     const uid = +req.user.id;
     const meals = await this.mealsService.findTodayMealsByUser(uid);
-    const stats = this.mealsService.getStatsOfDay(meals);
+    const stats = this.mealsService.getSummaryStats(meals);
     return { meals, stats };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('today-summary')
+  getTodaySummary(
+    @Request() req: { user: { internalId: string; id: number } },
+  ) {
+    this.logger.log('[/food-grades/today-summary] for user: ', req.user.id);
+    return this.mealsService.getTodaySummary(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('week-summary')
+  getWeekSummary(@Request() req: { user: { internalId: string; id: number } }) {
+    this.logger.log('[/food-grades/week-summary] for user: ', req.user.id);
+    return this.mealsService.getWeekSummary(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('month-summary')
+  getMonthSummary(
+    @Request() req: { user: { internalId: string; id: number } },
+  ) {
+    console.log('[/food-grades/month-summary] for user: ', req.user.id);
+    return this.mealsService.getMonthSummary(req.user.id);
   }
 }
