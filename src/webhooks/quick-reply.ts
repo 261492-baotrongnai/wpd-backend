@@ -6,14 +6,14 @@ export const ImageQuickReply: messagingApi.QuickReply = {
       type: 'action',
       action: {
         type: 'camera',
-        label: 'Camera',
+        label: 'เปิดกล้อง',
       },
     },
     {
       type: 'action',
       action: {
         type: 'cameraRoll',
-        label: 'Gallery',
+        label: 'อัลบั้มรูป',
       },
     },
     {
