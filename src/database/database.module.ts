@@ -15,6 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
         synchronize: configService.get('NODE_ENV') === 'development',
+        logging: true,
         // Add these timeout settings:
         connectTimeout: 60000, // 60 seconds
         acquireTimeout: 60000, // 60 seconds
