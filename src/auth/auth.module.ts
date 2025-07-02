@@ -19,6 +19,8 @@ import { MealsService } from 'src/meals/meals.service';
 import { MealsModule } from 'src/meals/meals.module';
 import { FoodsModule } from 'src/foods/foods.module';
 import { FoodsService } from 'src/foods/foods.service';
+import { BullModule } from '@nestjs/bullmq';
+import { WebhooksProcessor } from 'src/webhooks/webhooks.worker';
 
 @Module({
   controllers: [AuthController],
@@ -32,6 +34,7 @@ import { FoodsService } from 'src/foods/foods.service';
     FoodGradesService,
     MealsService,
     FoodsService,
+    WebhooksProcessor,
   ],
   imports: [
     UsersModule,
@@ -45,6 +48,9 @@ import { FoodsService } from 'src/foods/foods.service';
     }),
     PassportModule,
     TypeOrmModule.forFeature([Image]),
+    BullModule.registerQueue({
+      name: 'webhook',
+    }),
   ],
 })
 export class AuthModule {}

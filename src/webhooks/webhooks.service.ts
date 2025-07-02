@@ -8,6 +8,8 @@ import axios from 'axios';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { RecordCaseHandler } from './record-case';
 import { RegistConfirmFlex } from 'src/users/user-flex';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -21,6 +23,7 @@ export class WebhooksService {
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
     private readonly recordCaseHandler: RecordCaseHandler,
+    @InjectQueue('webhook') private readonly webhooksQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',

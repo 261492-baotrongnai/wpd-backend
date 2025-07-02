@@ -2,15 +2,20 @@ import { Controller, Logger, Post, Req, Res } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import * as line from '@line/bot-sdk';
 import { Response } from 'express';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Controller('webhooks')
 export class WebhooksController {
   private readonly client: line.messagingApi.MessagingApiClient;
   private readonly logger = new Logger(WebhooksController.name);
-  constructor(readonly webhookService: WebhooksService) {}
+  constructor(
+    readonly webhookService: WebhooksService,
+    @InjectQueue('webhook') private readonly webhooksQueue: Queue,
+  ) {}
 
   @Post('')
-  getWebhook(
+  async getWebhook(
     @Req()
     req: {
       headers: { [key: string]: string };
@@ -41,6 +46,9 @@ export class WebhooksController {
       events: line.WebhookEvent[];
     };
     const events: line.WebhookEvent[] = body.events;
+    await this.webhooksQueue.add('webhook-process', {
+      context: events,
+    });
 
     if (!events || events.length === 0) {
       return res.status(200).json({ message: 'No events to process' });
