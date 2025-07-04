@@ -13,7 +13,9 @@ import { MealsModule } from './meals/meals.module';
 import { FoodGradesModule } from './food-grades/food-grades.module';
 import { FoodsModule } from './foods/foods.module';
 import { BullModule } from '@nestjs/bullmq';
-import { WebhooksProcessor } from './webhooks/webhooks.worker';
+import { WebhooksProcessor } from './webhooks/workers/webhooks.worker';
+import { ServiceProcessor } from './webhooks/workers/service.worker';
+import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -49,8 +51,17 @@ import { WebhooksProcessor } from './webhooks/webhooks.worker';
     BullModule.registerQueue({
       name: 'webhook',
     }),
+    BullModule.registerQueue({
+      name: 'webhook-service',
+    }),
+    AdminModule,
   ],
   controllers: [WebhooksController],
-  providers: [WebhooksService, RecordCaseHandler, WebhooksProcessor],
+  providers: [
+    WebhooksService,
+    RecordCaseHandler,
+    WebhooksProcessor,
+    ServiceProcessor,
+  ],
 })
 export class AppModule {}

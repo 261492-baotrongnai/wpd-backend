@@ -23,7 +23,6 @@ export class WebhooksController {
     },
     @Res() res: Response,
   ) {
-    this.logger.log(`Received webhook`);
     // Need to receive raw body as Buffer because some messsage from flex actions can't be validate the parsed body
     // Verify the signature
     const isValid = line.validateSignature(
@@ -31,8 +30,6 @@ export class WebhooksController {
       process.env.LINE_CHANNEL_SECRET || '',
       req.headers['x-line-signature'],
     );
-    this.logger.debug(`Signature: ${req.headers['x-line-signature']}`);
-    this.logger.log(`Signature verification result: ${isValid}`);
 
     if (!isValid) {
       this.logger.warn('Invalid signature');
@@ -46,7 +43,7 @@ export class WebhooksController {
       events: line.WebhookEvent[];
     };
     const events: line.WebhookEvent[] = body.events;
-    await this.webhooksQueue.add('webhook-process', {
+    await this.webhooksQueue.add('webhook-events', {
       context: events,
     });
 
@@ -67,6 +64,7 @@ export class WebhooksController {
     for (const event of events) {
       try {
         this.logger.debug('Processing event:', event);
+
         if (event.source.type !== 'user') {
           this.logger.warn(
             'Received event from non-user source type:',

@@ -23,7 +23,7 @@ export class WebhooksService {
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
     private readonly recordCaseHandler: RecordCaseHandler,
-    @InjectQueue('webhook') private readonly webhooksQueue: Queue,
+    @InjectQueue('webhook-service') private readonly serviceQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -34,6 +34,10 @@ export class WebhooksService {
 
   async checkUserState(uid: string) {
     const iid = await getInternalId(undefined, uid);
+    await this.serviceQueue.add('check-user-state', {
+      iid,
+    });
+
     const user = await this.userService.findUserByInternalId(iid);
     this.logger.debug(`CheckUserState - User found: ${user?.id}`);
     if (!user || user.states.length === 0) {
