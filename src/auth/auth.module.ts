@@ -53,6 +53,7 @@ import { WebhooksProcessor } from 'src/webhooks/workers/webhooks.worker';
         name: 'webhook',
       },
       { name: 'webhook-service' },
+      { name: 'admin' },
     ),
   ],
 })
