@@ -1,26 +1,38 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { Admin } from './entities/admin.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EntityManager, Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AdminService {
-  create(createAdminDto: CreateAdminDto) {
-    return 'This action adds a new admin';
+  private readonly logger = new Logger(AdminService.name);
+  constructor(
+    @InjectRepository(Admin)
+    private readonly adminRepository: Repository<Admin>,
+
+    @InjectQueue('admin') private adminQueue: Queue,
+    private readonly entityManager: EntityManager,
+    private readonly jwtService: JwtService,
+  ) {}
+  async createLine(iid: string) {
+    const existingAdmin = await this.adminRepository.findOne({
+      where: { internalId: iid },
+    });
+    if (existingAdmin) {
+      this.logger.warn(`Admin with internalId ${iid} already exists.`);
+      return existingAdmin;
+    }
+    const newAdmin = new Admin();
+    newAdmin.internalId = iid;
+    const savedAdmin = await this.adminRepository.save(newAdmin);
+    this.logger.log(`Admin with internalId ${iid} created successfully.`);
+    return savedAdmin;
   }
 
-  findAll() {
-    return `This action returns all admin`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} admin`;
-  }
-
-  update(id: number, updateAdminDto: UpdateAdminDto) {
-    return `This action updates a #${id} admin`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} admin`;
-  }
+  // createEmail(createAdminEmailDto: CreateAdminEmailDto) {
+  //   return 'This action adds a new admin';
+  // }
 }

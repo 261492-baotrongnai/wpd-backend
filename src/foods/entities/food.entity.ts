@@ -2,7 +2,7 @@ import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
+@Entity('foods')
 export class Food {
   @PrimaryGeneratedColumn()
   id: number;

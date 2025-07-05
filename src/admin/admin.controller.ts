@@ -1,34 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { AdminService } from './admin.service';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { Controller, Post, Body } from '@nestjs/common';
+import {
+  // CreateAdminEmailDto,
+  CreateAdminLineDto,
+} from './dto/create-admin.dto';
+import { AdminJobService } from './admin-job.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminJobService: AdminJobService,
+    @InjectQueue('admin') private readonly adminQueue: Queue,
+  ) {}
 
-  @Post()
-  create(@Body() createAdminDto: CreateAdminDto) {
-    return this.adminService.create(createAdminDto);
+  @Post('line-register')
+  lineRegister(@Body() createAdminLineDto: CreateAdminLineDto) {
+    return this.adminQueue.add('create-admin-line', createAdminLineDto);
   }
 
-  @Get()
-  findAll() {
-    return this.adminService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.adminService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto) {
-    return this.adminService.update(+id, updateAdminDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.adminService.remove(+id);
-  }
+  // @Post('email-register')
+  // emailRegister(@Body() createAdminEmailDto: CreateAdminEmailDto) {
+  //   return this.adminService.createEmail(createAdminEmailDto);
+  // }
 }

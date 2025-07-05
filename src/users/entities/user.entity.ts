@@ -10,7 +10,7 @@ import { Image } from 'src/images/entities/image.entity';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
