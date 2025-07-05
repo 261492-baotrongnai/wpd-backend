@@ -8,22 +8,22 @@ import {
 import { AuthService } from './auth.service';
 
 @Injectable()
-export class IdTokenAuthGuard implements CanActivate {
+export class AdminIdTokenAuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
-      .getRequest<{ body: { idToken: string }; user?: any }>();
+      .getRequest<{ body: { idToken: string }; admin?: any }>();
     const { idToken } = request.body;
 
     if (!idToken) {
       throw new BadRequestException('No idToken provided');
     }
 
-    const user = await this.authService.validateUser(idToken);
+    const admin = await this.authService.validateAdmin(idToken);
 
-    if (!user) {
+    if (!admin) {
       // const userId = await verifyIdToken(idToken);
       // await this.webhookService.handleNonRegisteredUser(userId);
       throw new UnauthorizedException(
@@ -31,7 +31,7 @@ export class IdTokenAuthGuard implements CanActivate {
       );
     }
 
-    request.user = user; // Attach user to request
+    request.admin = admin; // Attach admin to request
     return true;
   }
 }

@@ -2,17 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { getInternalId } from 'src/users/user-utility';
+import { AdminService } from 'src/admin/admin.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly adminService: AdminService,
   ) {}
-  async generateToken(internalId: string): Promise<string> {
+  async generateToken(internalId: string, role: string): Promise<string> {
     const secretKey = process.env.JWT_SECRET;
     return await this.jwtService.signAsync(
-      { internalId, role: 'user' },
+      { internalId, role },
       { secret: secretKey, expiresIn: '1h' },
     );
   }
@@ -47,6 +49,30 @@ export class AuthService {
       return user; // Return the user if validation is successful
     } catch (error) {
       console.error('Error during user validation:', error);
+      return null; // Return null for any unexpected errors
+    }
+  }
+
+  async validateAdmin(LineIdToken: string) {
+    try {
+      const result = await getInternalId(LineIdToken, undefined);
+      if (typeof result !== 'string') {
+        console.error(
+          'Error validate admin by lineIdToken: Invalid result type from getInternalId in validateAdmin',
+        );
+        return null; // Return null for invalid tokens
+      }
+
+      const internalId: string = result;
+      const admin = await this.adminService.findAdminByInternalId(internalId);
+      if (!admin) {
+        console.error('Admin not found or terms not agreed');
+        return null; // Return null if admin is not found
+      }
+
+      return admin; // Return the admin if validation is successful
+    } catch (error) {
+      console.error('Error during admin validation:', error);
       return null; // Return null for any unexpected errors
     }
   }

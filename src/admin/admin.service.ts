@@ -35,4 +35,13 @@ export class AdminService {
   // createEmail(createAdminEmailDto: CreateAdminEmailDto) {
   //   return 'This action adds a new admin';
   // }
+
+  async findAdminByInternalId(internalId: string) {
+    const admin = await this.adminRepository
+      .createQueryBuilder('admin')
+      .where('admin.internalId = :internalId', { internalId })
+      .getOne();
+
+    return admin;
+  }
 }
