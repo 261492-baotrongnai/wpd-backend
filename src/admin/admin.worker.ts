@@ -4,7 +4,9 @@ import { Job } from 'bullmq';
 import { AdminJobService } from './admin-job.service';
 import { CreateAdminLineDto } from './dto/create-admin.dto';
 
-@Processor('admin')
+@Processor('admin', {
+  concurrency: 10,
+})
 export class AdminProcessor extends WorkerHost {
   private logger = new Logger(AdminProcessor.name);
   constructor(private readonly adminJobService: AdminJobService) {
@@ -28,7 +30,7 @@ export class AdminProcessor extends WorkerHost {
 
   @OnWorkerEvent('active')
   onAdded(job: Job) {
-    this.logger.log(`Got job ${job.id} `);
+    this.logger.log(`Got job ${job.id} of type ${job.name}`);
   }
 
   @OnWorkerEvent('completed')
