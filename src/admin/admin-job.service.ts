@@ -12,4 +12,15 @@ export class AdminJobService {
     const iid = await getInternalId(createAdminLineDto.idToken);
     return await this.adminService.createLine(iid);
   }
+
+  async handleGetAdminInfoJob(jobData: { internalId: string; id: number }) {
+    const admin = await this.adminService.adminInfo(jobData.id);
+    if (!admin) {
+      this.logger.warn(
+        `Admin with internalId ${jobData.internalId} id ${jobData.id} not found.`,
+      );
+      return null;
+    }
+    return await this.adminService.adminInfo(jobData.id);
+  }
 }

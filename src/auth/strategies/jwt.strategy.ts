@@ -3,9 +3,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AdminService } from 'src/admin/admin.service';
 import { UsersService } from 'src/users/users.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
   constructor(
     private readonly userService: UsersService,
     private readonly adminService: AdminService,
@@ -23,6 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: { internalId: string; role: string }) {
     console.log('JWT payload:', payload);
     if (payload.role === 'admin') {
+      this.logger.debug('Validating admin role');
       const admin = await this.adminService.findAdminByInternalId(
         payload.internalId,
       );
@@ -33,6 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return { internalId: payload.internalId, id: admin.id, role: 'admin' };
     }
     if (payload.role === 'user') {
+      this.logger.debug('Validating user role');
       const user = await this.userService.findUserByInternalId(
         payload.internalId,
       );

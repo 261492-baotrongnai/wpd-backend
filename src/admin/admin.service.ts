@@ -44,4 +44,13 @@ export class AdminService {
 
     return admin;
   }
+
+  async adminInfo(id: number) {
+    const admin = await this.entityManager.findOne(Admin, { where: { id } });
+    if (!admin) {
+      this.logger.warn(`Admin with id ${id} not found.`);
+      return null;
+    }
+    return admin;
+  }
 }
