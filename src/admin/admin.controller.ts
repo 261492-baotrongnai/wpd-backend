@@ -1,4 +1,11 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Request,
+} from '@nestjs/common';
 import {
   // CreateAdminEmailDto,
   CreateAdminLineDto,
@@ -6,6 +13,7 @@ import {
 import { AdminJobService } from './admin-job.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('admin')
 export class AdminController {
@@ -17,6 +25,17 @@ export class AdminController {
   @Post('line-register')
   lineRegister(@Body() createAdminLineDto: CreateAdminLineDto) {
     return this.adminQueue.add('create-admin-line', createAdminLineDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('info')
+  async getAdminInfo(
+    @Request() req: { user: { internalId: string; id: number } },
+  ) {
+    return this.adminQueue.add('get-admin-info', {
+      internalId: req.user.internalId,
+      id: req.user.id,
+    });
   }
 
   // @Post('email-register')

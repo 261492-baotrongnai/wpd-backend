@@ -21,6 +21,8 @@ import { FoodsModule } from 'src/foods/foods.module';
 import { FoodsService } from 'src/foods/foods.service';
 import { BullModule } from '@nestjs/bullmq';
 import { WebhooksProcessor } from 'src/webhooks/workers/webhooks.worker';
+import { AdminService } from 'src/admin/admin.service';
+import { AdminModule } from 'src/admin/admin.module';
 
 @Module({
   controllers: [AuthController],
@@ -35,6 +37,7 @@ import { WebhooksProcessor } from 'src/webhooks/workers/webhooks.worker';
     MealsService,
     FoodsService,
     WebhooksProcessor,
+    AdminService,
   ],
   imports: [
     UsersModule,
@@ -42,6 +45,7 @@ import { WebhooksProcessor } from 'src/webhooks/workers/webhooks.worker';
     FoodGradesModule,
     MealsModule,
     FoodsModule,
+    AdminModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },

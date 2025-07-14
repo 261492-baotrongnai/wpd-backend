@@ -2,7 +2,6 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AdminJobService } from './admin-job.service';
-import { CreateAdminLineDto } from './dto/create-admin.dto';
 
 @Processor('admin', {
   concurrency: 10,
@@ -13,9 +12,17 @@ export class AdminProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<CreateAdminLineDto>) {
+  async process(job: Job) {
     if (job.name === 'create-admin-line') {
-      return await this.adminJobService.handleCreateAdminLineJob(job.data);
+      if ('idToken' in job.data) {
+        return await this.adminJobService.handleCreateAdminLineJob(
+          job.data as { idToken: string },
+        );
+      }
+    } else if (job.name === 'get-admin-info') {
+      return await this.adminJobService.handleGetAdminInfoJob(
+        job.data as { internalId: string; id: number },
+      );
     }
   }
 

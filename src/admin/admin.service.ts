@@ -35,4 +35,22 @@ export class AdminService {
   // createEmail(createAdminEmailDto: CreateAdminEmailDto) {
   //   return 'This action adds a new admin';
   // }
+
+  async findAdminByInternalId(internalId: string) {
+    const admin = await this.adminRepository
+      .createQueryBuilder('admin')
+      .where('admin.internalId = :internalId', { internalId })
+      .getOne();
+
+    return admin;
+  }
+
+  async adminInfo(id: number) {
+    const admin = await this.entityManager.findOne(Admin, { where: { id } });
+    if (!admin) {
+      this.logger.warn(`Admin with id ${id} not found.`);
+      return null;
+    }
+    return admin;
+  }
 }
