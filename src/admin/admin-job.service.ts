@@ -10,6 +10,7 @@ export class AdminJobService {
 
   async handleCreateAdminLineJob(createAdminLineDto: { idToken: string }) {
     const iid = await getInternalId(createAdminLineDto.idToken);
+
     return await this.adminService.createLine(iid);
   }
 

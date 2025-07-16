@@ -1,4 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Program } from 'src/programs/entities/programs.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('admins')
 export class Admin {
@@ -19,4 +28,18 @@ export class Admin {
 
   @Column({ nullable: true })
   lastName: string;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
+
+  @ManyToMany(() => Program, (program) => program.admins)
+  @JoinTable({
+    name: 'admin_programs',
+    joinColumns: [{ name: 'adminId' }],
+    inverseJoinColumns: [{ name: 'programId' }],
+  })
+  programs: Program[];
 }
