@@ -12,7 +12,7 @@ import {
 } from './dto/create-admin.dto';
 import { AdminJobService } from './admin-job.service';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Job, Queue, QueueEvents } from 'bullmq';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('admin')
@@ -22,9 +22,23 @@ export class AdminController {
     @InjectQueue('admin') private readonly adminQueue: Queue,
   ) {}
 
+  private async waitForJobResult(job: Job, queue: Queue) {
+    const queueEvents = new QueueEvents(queue.name, {
+      connection: queue.opts.connection,
+    });
+    const result: unknown = await job.waitUntilFinished(queueEvents);
+    await queueEvents.close();
+    return result;
+  }
+
   @Post('line-register')
-  lineRegister(@Body() createAdminLineDto: CreateAdminLineDto) {
-    return this.adminQueue.add('create-admin-line', createAdminLineDto);
+  async lineRegister(@Body() createAdminLineDto: CreateAdminLineDto) {
+    const job = await this.adminQueue.add(
+      'create-admin-line',
+      createAdminLineDto,
+    );
+    const result: unknown = await this.waitForJobResult(job, this.adminQueue);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -32,10 +46,12 @@ export class AdminController {
   async getAdminInfo(
     @Request() req: { user: { internalId: string; id: number } },
   ) {
-    return this.adminQueue.add('get-admin-info', {
+    const job = await this.adminQueue.add('get-admin-info', {
       internalId: req.user.internalId,
       id: req.user.id,
     });
+    const result: unknown = await this.waitForJobResult(job, this.adminQueue);
+    return result;
   }
 
   // @Post('email-register')
