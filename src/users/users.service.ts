@@ -80,10 +80,13 @@ export class UsersService {
     try {
       this.logger.log('Creating user with ID token:', registerDto);
       const iid = await getInternalId(registerDto.idToken, undefined);
-      const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
+      // const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
 
       // Check if user already exists
-      const user = await this.usersRepository.findOneBy({ internalId: iid });
+      const user = await this.usersRepository.findOne({
+        where: { internalId: iid },
+        relations: ['programs'],
+      });
 
       // Check if program code is exists
       const job = await this.programQueue.add('find-program-by-code', {
@@ -98,9 +101,6 @@ export class UsersService {
       if (user) {
         const acct = await this.generateToken(user.internalId);
 
-        if (!user.programs) {
-          user.programs = [];
-        }
         user.programs.push(program as Program);
         await this.entityManager.save(user);
         await this.entityManager.save(user);
@@ -129,7 +129,7 @@ export class UsersService {
       }
 
       const acct = await this.generateToken(newUser.internalId);
-      await this.handleRegisterSuccess(uid.sub);
+      // await this.handleRegisterSuccess(uid.sub);
       return { type: 'NewUser', access_token: acct };
     } catch (error) {
       console.error('Error creating user:', error);
