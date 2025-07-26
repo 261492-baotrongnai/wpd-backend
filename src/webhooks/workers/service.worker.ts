@@ -17,14 +17,14 @@ export class ServiceProcessor extends WorkerHost {
     }
   }
 
-  @OnWorkerEvent('progress')
-  onProgress(job: Job) {
-    const progressStr =
-      typeof job.progress === 'object'
-        ? JSON.stringify(job.progress)
-        : String(job.progress);
-    this.logger.log(`Job ${job.id} progress: ${progressStr}%`);
-  }
+  // @OnWorkerEvent('progress')
+  // onProgress(job: Job) {
+  //   // const progressStr =
+  //   //   typeof job.progress === 'object'
+  //   //     ? JSON.stringify(job.progress)
+  //   //     : String(job.progress);
+  //   // this.logger.log(`Job ${job.id} progress: ${progressStr}%`);
+  // }
 
   @OnWorkerEvent('active')
   onAdded(job: Job) {
