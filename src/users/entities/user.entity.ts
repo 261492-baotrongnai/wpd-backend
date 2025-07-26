@@ -5,10 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToMany,
 } from 'typeorm';
 import { Image } from 'src/images/entities/image.entity';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
+import { Program } from 'src/programs/entities/programs.entity';
 
 @Entity('users')
 export class User {
@@ -30,14 +32,16 @@ export class User {
   @OneToMany(() => Image, (image) => image.user)
   images: Image[];
 
-  @Column({ nullable: true })
-  program_code: string;
-
   @OneToMany(() => UserState, (userState) => userState.user)
   states: UserState[];
 
   @OneToMany(() => Meal, (meal) => meal.user)
   meals: Meal[];
+
+  @ManyToMany(() => Program, (program) => program.users, {
+    onDelete: 'CASCADE',
+  })
+  programs: Program[];
 
   constructor(user: Partial<User>) {
     Object.assign(this, user);

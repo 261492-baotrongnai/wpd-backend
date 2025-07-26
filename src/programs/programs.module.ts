@@ -24,5 +24,6 @@ import { Admin } from 'src/admin/entities/admin.entity';
     ProgramsJobService,
     ProgramProcessor,
   ],
+  exports: [ProgramsService, ProgramsJobService, TypeOrmModule],
 })
 export class ProgramsModule {}

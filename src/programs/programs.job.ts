@@ -15,5 +15,10 @@ export class ProgramsJobService {
     this.logger.debug(`Fetching program info for ID: ${id}`);
     return await this.programsService.getProgramInfoFromUser(id);
   }
-  // Add your job processing logic here
+
+  async handleFindProgramByCodeJob(code: string) {
+    this.logger.debug(`Finding program by code: ${code}`);
+    const program = await this.programsService.findProgramByCode(code);
+    return program;
+  }
 }

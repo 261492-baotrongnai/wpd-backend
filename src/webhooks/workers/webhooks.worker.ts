@@ -6,24 +6,28 @@ import { Job } from 'bullmq';
 export class WebhooksProcessor extends WorkerHost {
   private logger = new Logger(WebhooksProcessor.name);
 
-  async process(job: Job) {
-    const totalSteps = 5;
-
-    for (let i = 1; i <= totalSteps; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const progress = Math.floor((i / totalSteps) * 100);
-      await job.updateProgress(progress);
+  process(job: Job): any {
+    this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
+    // Here you would handle the job based on its name or data
+    // For example, if the job is to process a webhook:
+    if (job.name === 'process-webhook') {
+      // Process the webhook data
+      const webhookData = job.data as Record<string, unknown>;
+      this.logger.debug(`Webhook data: ${JSON.stringify(webhookData)}`);
+      // Add your processing logic here
+      return { status: 'success', data: webhookData };
     }
+    // Handle other job types as needed
+    return { status: 'unknown job type' };
   }
 
-  @OnWorkerEvent('progress')
-  onProgress(job: Job) {
-    const progressStr =
-      typeof job.progress === 'object'
-        ? JSON.stringify(job.progress)
-        : String(job.progress);
-    this.logger.log(`Job ${job.id} progress: ${progressStr}%`);
-  }
+  // @OnWorkerEvent('progress')
+  // onProgress(job: Job) {
+  //   const progressStr =
+  //     typeof job.progress === 'object'
+  //       ? JSON.stringify(job.progress)
+  //       : String(job.progress);
+  // }
 
   @OnWorkerEvent('active')
   onAdded(job: Job) {

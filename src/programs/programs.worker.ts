@@ -25,6 +25,10 @@ export class ProgramProcessor extends WorkerHost {
       return await this.programJobService.handleGetProgramInfoJob(
         (job.data as { id: number }).id,
       );
+    } else if (job.name === 'find-program-by-code') {
+      return await this.programJobService.handleFindProgramByCodeJob(
+        (job.data as { code: string }).code,
+      );
     }
   }
 

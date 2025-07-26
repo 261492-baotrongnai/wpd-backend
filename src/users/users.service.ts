@@ -13,6 +13,9 @@ import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import * as line from '@line/bot-sdk';
 import { RegistConfirmFlex } from './user-flex';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Job, Queue, QueueEvents } from 'bullmq';
+import { Program } from 'src/programs/entities/programs.entity';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +24,9 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @InjectQueue('program') private readonly programQueue: Queue,
+
     private readonly entityManager: EntityManager,
     private readonly jwtService: JwtService,
   ) {
@@ -29,6 +35,15 @@ export class UsersService {
       channelSecret: process.env.LINE_CHANNEL_SECRET || '',
     };
     this.client = new line.messagingApi.MessagingApiClient(config);
+  }
+
+  private async waitForJobResult(job: Job, queue: Queue) {
+    const queueEvents = new QueueEvents(queue.name, {
+      connection: queue.opts.connection,
+    });
+    const result: unknown = await job.waitUntilFinished(queueEvents);
+    await queueEvents.close();
+    return result;
   }
 
   async generateToken(internalId: string): Promise<string> {
@@ -65,29 +80,55 @@ export class UsersService {
     try {
       this.logger.log('Creating user with ID token:', registerDto);
       const iid = await getInternalId(registerDto.idToken, undefined);
-      const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
-      this.logger.debug('Decoded ID token:', uid);
-      const user = await this.usersRepository.findOneBy({ internalId: iid });
+      // const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
+
+      // Check if user already exists
+      const user = await this.usersRepository.findOne({
+        where: { internalId: iid },
+        relations: ['programs'],
+      });
+
+      // Check if program code is exists
+      const job = await this.programQueue.add('find-program-by-code', {
+        code: registerDto.program_code,
+      });
+      const program: unknown = await this.waitForJobResult(
+        job,
+        this.programQueue,
+      );
+      this.logger.debug(`Program found: ${JSON.stringify(program)}`);
+
       if (user) {
         const acct = await this.generateToken(user.internalId);
-        if (user.program_code !== registerDto.program_code) {
-          user.program_code = registerDto.program_code ?? '';
-          await this.entityManager.save(user);
-        }
+
+        user.programs.push(program as Program);
+        await this.entityManager.save(user);
+        await this.entityManager.save(user);
         return { type: 'User', access_token: acct };
       }
-      const newUser = new User({
-        internalId: iid,
-        program_code: registerDto.program_code,
-      });
-      this.logger.debug('New user:', newUser);
+
+      let newUser: User;
+      if (program) {
+        newUser = new User({
+          internalId: iid,
+          programs: [program as Program],
+        });
+      } else {
+        newUser = new User({
+          internalId: iid,
+        });
+      }
+
       const new_user_created = await this.usersRepository.save(newUser);
+
+      this.logger.log(
+        `New user created with internalId: ${newUser.internalId}`,
+      );
       if (!new_user_created) {
         throw new InternalServerErrorException('Failed to create user');
       }
-      this.logger.debug('New user created', new_user_created);
+
       const acct = await this.generateToken(newUser.internalId);
-      this.logger.debug('Generated token:', acct);
       // await this.handleRegisterSuccess(uid.sub);
       return { type: 'NewUser', access_token: acct };
     } catch (error) {
