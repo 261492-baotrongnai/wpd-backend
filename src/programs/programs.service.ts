@@ -46,4 +46,16 @@ export class ProgramsService {
     );
     return programs;
   }
+
+  async findProgramByCode(code: string): Promise<Program | null> {
+    const program = await this.programRepository.findOne({
+      where: { code },
+    });
+    if (!program) {
+      this.logger.warn(`Program with code ${code} not found.`);
+      return null;
+    }
+    this.logger.debug(`Program found: ${JSON.stringify(program)}`);
+    return program;
+  }
 }

@@ -1,8 +1,10 @@
 import { Admin } from 'src/admin/entities/admin.entity';
+import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
   ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -30,6 +32,14 @@ export class Program {
 
   @ManyToMany(() => Admin, (admin) => admin.programs)
   admins: Admin[];
+
+  @ManyToMany(() => User, (user) => user.programs)
+  @JoinTable({
+    name: 'user_programs',
+    joinColumns: [{ name: 'programId' }],
+    inverseJoinColumns: [{ name: 'userId' }],
+  })
+  users: User[];
 
   constructor(program: Partial<Program>) {
     Object.assign(this, program);

@@ -101,12 +101,13 @@ export class WebhooksService {
       const iid = await getInternalId(undefined, uid);
       const user = await this.userService.findUserByInternalId(iid);
       this.logger.debug(`User found: ${user?.id}`);
+      const latest_program = user?.programs[user.programs.length - 1].name;
       await this.client.replyMessage({
         replyToken,
         messages: [
           {
             type: 'text',
-            text: `โค้ดโครงการปัจจุบันของคุณคือ "${user?.program_code}"`,
+            text: `คุณได้เข้าร่วมโครงการ "${latest_program}"`,
           },
         ],
       });
