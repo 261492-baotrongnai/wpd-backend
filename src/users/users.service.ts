@@ -103,7 +103,9 @@ export class UsersService {
 
         user.programs.push(program as Program);
         await this.entityManager.save(user);
-        await this.entityManager.save(user);
+        this.logger.log(
+          `User with internalId: ${user.internalId} already exists, added to program`,
+        );
         return { type: 'User', access_token: acct };
       }
 
