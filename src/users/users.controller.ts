@@ -43,6 +43,12 @@ export class UsersController {
     return this.usersService.findOne(+id);
   }
 
+  // @Get('/check/:internalId')
+  // findByInternalId(@Param('internalId') internalId: string) {
+  //   console.log(`Finding user by internalId: ${internalId}`);
+  //   return this.usersService.findUserByInternalId(internalId);
+  // }
+
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
   //   return this.usersService.update(+id, updateUserDto);

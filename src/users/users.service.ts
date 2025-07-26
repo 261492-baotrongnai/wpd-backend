@@ -152,12 +152,10 @@ export class UsersService {
   }
 
   async findUserByInternalId(internalId: string) {
-    const user = await this.usersRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.images', 'image')
-      .leftJoinAndSelect('user.states', 'userState')
-      .where('user.internalId = :internalId', { internalId })
-      .getOne();
+    const user = await this.usersRepository.findOne({
+      where: { internalId },
+      relations: ['programs', 'images', 'states'],
+    });
 
     return user;
   }
