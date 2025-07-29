@@ -15,6 +15,7 @@ import { FoodsModule } from './foods/foods.module';
 import { BullModule } from '@nestjs/bullmq';
 import { WebhooksProcessor } from './webhooks/workers/webhooks.worker';
 import { ServiceProcessor } from './webhooks/workers/service.worker';
+import { ChoiceLogsProcessor } from './webhooks/workers/userChoiceLog.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
 @Module({
@@ -55,6 +56,9 @@ import { ProgramsModule } from './programs/programs.module';
     BullModule.registerQueue({
       name: 'webhook-service',
     }),
+    BullModule.registerQueue({
+      name: 'user-choice-logs'
+    }),
     AdminModule,
     ProgramsModule,
   ],
@@ -64,6 +68,8 @@ import { ProgramsModule } from './programs/programs.module';
     RecordCaseHandler,
     WebhooksProcessor,
     ServiceProcessor,
+    ChoiceLogsProcessor,
   ],
+  
 })
 export class AppModule {}
