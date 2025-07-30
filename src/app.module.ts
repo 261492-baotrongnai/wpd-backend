@@ -17,6 +17,10 @@ import { WebhooksProcessor } from './webhooks/workers/webhooks.worker';
 import { ServiceProcessor } from './webhooks/workers/service.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
+import { SchedulerService } from './scheduler/scheduler.service';
+import { SchedulerModule } from './scheduler/scheduler.module';
+import { ScheduleModule } from '@nestjs/schedule';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -57,6 +61,8 @@ import { ProgramsModule } from './programs/programs.module';
     }),
     AdminModule,
     ProgramsModule,
+    SchedulerModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [WebhooksController],
   providers: [
@@ -64,6 +70,7 @@ import { ProgramsModule } from './programs/programs.module';
     RecordCaseHandler,
     WebhooksProcessor,
     ServiceProcessor,
+    SchedulerService,
   ],
 })
 export class AppModule {}
