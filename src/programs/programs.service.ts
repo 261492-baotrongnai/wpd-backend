@@ -35,7 +35,7 @@ export class ProgramsService {
 
     const programs = await this.programRepository.find({
       where: { admins: { id: admin_id } },
-      relations: ['admins'],
+      relations: ['admins', 'users'],
     });
     if (programs.length === 0) {
       this.logger.warn(`No programs found for admin ID: ${admin_id}`);
@@ -50,6 +50,7 @@ export class ProgramsService {
   async findProgramByCode(code: string): Promise<Program | null> {
     const program = await this.programRepository.findOne({
       where: { code },
+      relations: ['admins', 'users'],
     });
     if (!program) {
       this.logger.warn(`Program with code ${code} not found.`);
