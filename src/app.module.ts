@@ -18,6 +18,7 @@ import { ServiceProcessor } from './webhooks/workers/service.worker';
 import { ChoiceLogsProcessor } from './webhooks/workers/userChoiceLog.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
+import { ChoiceLogsModule } from './choice-logs/logs.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,6 +35,7 @@ import { ProgramsModule } from './programs/programs.module';
     MealsModule,
     FoodGradesModule,
     FoodsModule,
+    ChoiceLogsModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

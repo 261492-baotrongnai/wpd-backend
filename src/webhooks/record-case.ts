@@ -392,9 +392,7 @@ export class RecordCaseHandler {
         const { avgGrade, avgScore, foods } =
           await this.foodGrade.getMenuGrade(parsedMenuNames);
 
-
-
-          if (!avgGrade || !avgScore) {
+        if (!avgGrade || !avgScore) {
           await this.client.replyMessage({
             replyToken: event.replyToken,
             messages: [
@@ -430,19 +428,18 @@ export class RecordCaseHandler {
           throw new Error(
             'File name not found in user state [ isPredictionCorrect ]',
           );
-        }       
+        }
 
         // log user choice
         await this.logsQueue.add(
-          'user-choice-logs', 
+          'user-choice-logs',
           {
-          user: user_state.user,
+            userId: user_state.user.id,
             candidates: user_state.menuName,
             selected: parsedMenuNames,
-            fileName: fileName,
             filePath: filePath,
-            timeStamp: Date.now()
-          }, {
+          },
+          {
             removeOnComplete: false, // Keep this job forever
           },
         );
