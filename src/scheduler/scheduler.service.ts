@@ -15,7 +15,7 @@ export class SchedulerService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
-  @Cron('0 9 * * *')
+  @Cron('0 7 * * *')
   async handleMorningCron() {
     const message =
       'มื้อเช้านี้จะกินอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิิดูด้วยน้าาา 😉';
@@ -37,7 +37,7 @@ export class SchedulerService {
       .catch((err) => this.logger.error('Failed to send LINE message', err));
   }
 
-  @Cron('0 18 * * *')
+  @Cron('0 16 * * *')
   async handleEveningCron() {
     const message =
       'มื้อเย็นนี้จะกินเมนูอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิิดูด้วยน้าาา 😉';

@@ -18,7 +18,6 @@ import { ServiceProcessor } from './webhooks/workers/service.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
 import { SchedulerService } from './scheduler/scheduler.service';
-import { SchedulerModule } from './scheduler/scheduler.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -61,7 +60,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     }),
     AdminModule,
     ProgramsModule,
-    SchedulerModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [WebhooksController],
