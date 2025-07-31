@@ -25,7 +25,6 @@ import { SchedulerService } from './scheduler/scheduler.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FollowersModule } from './followers/followers.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -66,7 +65,13 @@ import { FollowersModule } from './followers/followers.module';
       name: 'webhook-service',
     }),
     BullModule.registerQueue({
-      name: 'user-choice-logs'
+      name: 'user-choice-logs',
+    }),
+    BullModule.registerQueue({
+      name: 'follower',
+    }),
+    BullModule.registerQueue({
+      name: 'meal',
     }),
     AdminModule,
     ProgramsModule,
@@ -79,12 +84,8 @@ import { FollowersModule } from './followers/followers.module';
     RecordCaseHandler,
     WebhooksProcessor,
     ServiceProcessor,
-
     ChoiceLogsProcessor,
-
     SchedulerService,
-
   ],
-  
 })
 export class AppModule {}

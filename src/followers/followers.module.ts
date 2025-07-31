@@ -12,5 +12,6 @@ import { FollowerProcessor } from './followers.worker';
     BullModule.registerQueue({ name: 'follower' }),
   ],
   providers: [FollowersService, FollowersJobService, FollowerProcessor],
+  exports: [FollowersService, FollowersJobService, TypeOrmModule],
 })
 export class FollowersModule {}
