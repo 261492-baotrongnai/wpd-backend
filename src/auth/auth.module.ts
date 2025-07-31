@@ -51,6 +51,7 @@ import { AdminModule } from 'src/admin/admin.module';
       signOptions: { expiresIn: '1h' },
     }),
     PassportModule,
+  
     TypeOrmModule.forFeature([Image]),
     BullModule.registerQueue(
       {
@@ -58,6 +59,7 @@ import { AdminModule } from 'src/admin/admin.module';
       },
       { name: 'webhook-service' },
       { name: 'admin' },
+      { name: 'user-choice-logs'}
     ),
   ],
 })

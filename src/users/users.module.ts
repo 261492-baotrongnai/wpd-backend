@@ -6,12 +6,15 @@ import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ProgramsModule } from 'src/programs/programs.module';
 import { BullModule } from '@nestjs/bullmq';
+import { FollowersModule } from 'src/followers/followers.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     ProgramsModule,
+    FollowersModule,
     BullModule.registerQueue({ name: 'program' }),
+    BullModule.registerQueue({ name: 'follower' }),
   ],
   controllers: [UsersController],
   providers: [UsersService, JwtService],

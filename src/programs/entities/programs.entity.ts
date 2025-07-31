@@ -22,6 +22,9 @@ export class Program {
   hospitalName?: string;
 
   @Column({ type: 'text', nullable: true })
+  organizationName?: string;
+
+  @Column({ type: 'text', nullable: true })
   code?: string;
 
   @CreateDateColumn({ type: 'timestamp' })
