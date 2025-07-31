@@ -15,11 +15,16 @@ import { FoodsModule } from './foods/foods.module';
 import { BullModule } from '@nestjs/bullmq';
 import { WebhooksProcessor } from './webhooks/workers/webhooks.worker';
 import { ServiceProcessor } from './webhooks/workers/service.worker';
+import { ChoiceLogsProcessor } from './webhooks/workers/userChoiceLog.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
+
+import { ChoiceLogsModule } from './choice-logs/logs.module';
+
 import { SchedulerService } from './scheduler/scheduler.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FollowersModule } from './followers/followers.module';
+
 
 @Module({
   imports: [
@@ -37,6 +42,7 @@ import { FollowersModule } from './followers/followers.module';
     MealsModule,
     FoodGradesModule,
     FoodsModule,
+    ChoiceLogsModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -59,6 +65,9 @@ import { FollowersModule } from './followers/followers.module';
     BullModule.registerQueue({
       name: 'webhook-service',
     }),
+    BullModule.registerQueue({
+      name: 'user-choice-logs'
+    }),
     AdminModule,
     ProgramsModule,
     ScheduleModule.forRoot(),
@@ -70,7 +79,12 @@ import { FollowersModule } from './followers/followers.module';
     RecordCaseHandler,
     WebhooksProcessor,
     ServiceProcessor,
+
+    ChoiceLogsProcessor,
+
     SchedulerService,
+
   ],
+  
 })
 export class AppModule {}

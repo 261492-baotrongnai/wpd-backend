@@ -19,6 +19,8 @@ import { MealsService } from 'src/meals/meals.service';
 import { MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradeAFlex, GradeBFlex, GradeCFlex } from './flex-grade';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class RecordCaseHandler {
@@ -35,6 +37,7 @@ export class RecordCaseHandler {
     private readonly foodGrade: FoodGradesService,
     private readonly mealService: MealsService,
     private readonly foodService: FoodsService,
+    @InjectQueue('user-choice-logs') private readonly logsQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -328,6 +331,7 @@ export class RecordCaseHandler {
             state: 'is prediction correct',
             mealType: mealResponses[response as keyof typeof mealResponses]
               .mealType as MealType,
+            menuName: candidates,
           });
           return;
         }
@@ -425,6 +429,21 @@ export class RecordCaseHandler {
             'File name not found in user state [ isPredictionCorrect ]',
           );
         }
+
+        // log user choice
+        await this.logsQueue.add(
+          'user-choice-logs',
+          {
+            userId: user_state.user.id,
+            candidates: user_state.menuName,
+            selected: parsedMenuNames,
+            filePath: filePath,
+          },
+          {
+            removeOnComplete: false, // Keep this job forever
+          },
+        );
+
         await this.imagesService.create({
           name: fileName,
           user: user_state.user,
