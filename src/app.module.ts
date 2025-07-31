@@ -18,7 +18,14 @@ import { ServiceProcessor } from './webhooks/workers/service.worker';
 import { ChoiceLogsProcessor } from './webhooks/workers/userChoiceLog.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
+
 import { ChoiceLogsModule } from './choice-logs/logs.module';
+
+import { SchedulerService } from './scheduler/scheduler.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { FollowersModule } from './followers/followers.module';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -63,6 +70,8 @@ import { ChoiceLogsModule } from './choice-logs/logs.module';
     }),
     AdminModule,
     ProgramsModule,
+    ScheduleModule.forRoot(),
+    FollowersModule,
   ],
   controllers: [WebhooksController],
   providers: [
@@ -70,7 +79,11 @@ import { ChoiceLogsModule } from './choice-logs/logs.module';
     RecordCaseHandler,
     WebhooksProcessor,
     ServiceProcessor,
+
     ChoiceLogsProcessor,
+
+    SchedulerService,
+
   ],
   
 })

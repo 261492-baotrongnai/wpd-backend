@@ -1,33 +1,24 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { ProgramsJobService } from './programs.job';
-import { CreateProgramDto } from './dto/create.dto';
+import { FollowersJobService } from './followers.job';
 
-@Processor('program', {
+@Processor('follower', {
   concurrency: 10,
 })
-export class ProgramProcessor extends WorkerHost {
-  private logger = new Logger(ProgramProcessor.name);
-  constructor(private readonly programJobService: ProgramsJobService) {
+export class FollowerProcessor extends WorkerHost {
+  private logger = new Logger(FollowerProcessor.name);
+  constructor(private readonly followersJobService: FollowersJobService) {
     super();
   }
 
   async process(job: Job) {
-    if (job.name === 'create-program') {
+    if (job.name === 'create-follower') {
       this.logger.debug(
-        `Processing create-program job with data: ${JSON.stringify(job.data)}`,
+        `Processing create-follower job with data: ${JSON.stringify(job.data)}`,
       );
-      const { id, body } = job.data as { id: number; body: CreateProgramDto };
-      return await this.programJobService.handleCreateProgramJob(id, body);
-    } else if (job.name === 'get-program-info') {
-      return await this.programJobService.handleGetProgramInfoJob(
-        (job.data as { id: number }).id,
-      );
-    } else if (job.name === 'find-program-by-code') {
-      return await this.programJobService.handleFindProgramByCodeJob(
-        (job.data as { code: string }).code,
-      );
+      const { userId } = job.data as { userId: string };
+      return await this.followersJobService.handleCreateFollowerJob(userId);
     }
   }
 
