@@ -44,6 +44,18 @@ export class MealsService {
     });
   }
 
+  async findTodayAllMeals() {
+    const today = moment.tz('Asia/Bangkok').startOf('day').toDate();
+    const tomorrow = moment.tz('Asia/Bangkok').endOf('day').toDate();
+    this.logger.debug(`Today: ${today.toISOString()}`);
+    return this.mealsRepository.find({
+      where: {
+        createdAt: Between(today, tomorrow),
+      },
+      relations: ['user'],
+    });
+  }
+
   async findTodayMealsByUser(userId: number) {
     const today = moment.tz('Asia/Bangkok').startOf('day').toDate();
     const tomorrow = moment.tz('Asia/Bangkok').endOf('day').toDate();

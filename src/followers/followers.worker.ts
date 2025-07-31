@@ -19,6 +19,8 @@ export class FollowerProcessor extends WorkerHost {
       );
       const { userId } = job.data as { userId: string };
       return await this.followersJobService.handleCreateFollowerJob(userId);
+    } else if (job.name === 'get-user-id') {
+      return await this.followersJobService.handleGetUserIdJob();
     }
   }
 

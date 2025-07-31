@@ -9,4 +9,8 @@ export class FollowersJobService {
     this.logger.debug(`Creating follower with UID: ${uid}`);
     return await this.followersService.addUserId(uid);
   }
+
+  async handleGetUserIdJob() {
+    return await this.followersService.findAll();
+  }
 }
