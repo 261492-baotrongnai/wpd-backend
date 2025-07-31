@@ -27,6 +27,8 @@ export class UsersService {
 
     @InjectQueue('program') private readonly programQueue: Queue,
 
+    @InjectQueue('follower') private readonly followerQueue: Queue,
+
     private readonly entityManager: EntityManager,
     private readonly jwtService: JwtService,
   ) {
@@ -80,7 +82,7 @@ export class UsersService {
     try {
       this.logger.log('Creating user with ID token:', registerDto);
       const iid = await getInternalId(registerDto.idToken, undefined);
-      // const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
+      const uid = this.jwtService.decode<{ sub: string }>(registerDto.idToken);
 
       // Check if user already exists
       const user = await this.usersRepository.findOne({
@@ -106,6 +108,7 @@ export class UsersService {
         this.logger.log(
           `User with internalId: ${user.internalId} already exists, added to program`,
         );
+
         return { type: 'User', access_token: acct };
       }
 
@@ -131,7 +134,17 @@ export class UsersService {
       }
 
       const acct = await this.generateToken(newUser.internalId);
-      // await this.handleRegisterSuccess(uid.sub);
+
+      const followerJob = await this.followerQueue.add('create-follower', {
+        userId: uid?.sub,
+      });
+      const followerResult: unknown = await this.waitForJobResult(
+        followerJob,
+        this.followerQueue,
+      );
+      this.logger.debug(
+        `Follower job result: ${JSON.stringify(followerResult)}`,
+      );
       return { type: 'NewUser', access_token: acct };
     } catch (error) {
       console.error('Error creating user:', error);

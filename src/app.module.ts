@@ -19,6 +19,7 @@ import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
 import { SchedulerService } from './scheduler/scheduler.service';
 import { ScheduleModule } from '@nestjs/schedule';
+import { FollowersModule } from './followers/followers.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AdminModule,
     ProgramsModule,
     ScheduleModule.forRoot(),
+    FollowersModule,
   ],
   controllers: [WebhooksController],
   providers: [
