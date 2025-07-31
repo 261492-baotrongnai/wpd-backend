@@ -5,9 +5,9 @@ import { ChoiceLogsService } from './logs.service';
 export class ChoiceLogsController {
   constructor(private readonly logsService: ChoiceLogsService) {}
 
-  @Get('all-choice-logs')
-  async getCompletedLogs() {
-    return this.logsService.getAllCompletedLogs();
-  }
+  // @Get('all-choice-logs')
+  // async getCompletedLogs() {
+  //   return this.logsService.getAllCompletedLogs();
+  // }
 
 }
