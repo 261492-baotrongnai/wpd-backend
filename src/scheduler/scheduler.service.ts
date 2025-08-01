@@ -37,7 +37,7 @@ export class SchedulerService {
       'มื้อเช้านี้จะกินอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิิดูด้วยน้าาา 😉';
 
     const userIds = await this.getFollowersToSent('breakfast');
-    this.logger.log('Test message to user IDs:', userIds);
+    this.logger.log('send message to user IDs:', userIds);
 
     await this.client
       .multicast({ to: userIds, messages: [{ type: 'text', text: message }] })
@@ -53,7 +53,7 @@ export class SchedulerService {
       'มื้อเที่ยงนี้จะกินเมนูอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิิดูด้วยน้าาา 😉';
 
     const userIds = await this.getFollowersToSent('lunch');
-    this.logger.log('Test message to user IDs:', userIds);
+    this.logger.log('send message to user IDs:', userIds);
 
     await this.client
       .multicast({ to: userIds, messages: [{ type: 'text', text: message }] })
@@ -69,7 +69,7 @@ export class SchedulerService {
       'มื้อเย็นนี้จะกินเมนูอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิิดูด้วยน้าาา 😉';
 
     const userIds = await this.getFollowersToSent('dinner');
-    this.logger.log('Test message to user IDs:', userIds);
+    this.logger.log('send message to user IDs:', userIds);
 
     await this.client
       .multicast({ to: userIds, messages: [{ type: 'text', text: message }] })
@@ -117,6 +117,11 @@ export class SchedulerService {
     const meals: Meal[] = Array.isArray(mealsResult)
       ? (mealsResult as Meal[])
       : [];
+
+    if (meals.length === 0) {
+      this.logger.warn('No meals found for the specified meal type');
+      return AllFollowers;
+    }
 
     const internalIds: string[] = Array.from(
       new Set(
