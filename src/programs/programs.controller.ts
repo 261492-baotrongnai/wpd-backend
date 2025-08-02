@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -11,6 +12,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Job, Queue, QueueEvents } from 'bullmq';
 import { CreateProgramDto } from './dto/create.dto';
+import { ShortTokenGuard } from 'src/auth/short-token.guard';
 
 @Controller('program')
 export class ProgramsController {
@@ -53,5 +55,23 @@ export class ProgramsController {
     });
     const result: unknown = await this.waitForJobResult(job, this.programQueue);
     return result;
+  }
+
+  @Post('validate-code')
+  @UseGuards(ShortTokenGuard)
+  async validateProgram(@Body('code') code: string) {
+    const job = await this.programQueue.add('validate-code', {
+      code: code,
+    });
+    const result: boolean = (await this.waitForJobResult(
+      job,
+      this.programQueue,
+    )) as boolean;
+
+    if (!result) {
+      this.logger.error(`Program code ${code} does not exist ${result}`);
+      throw new BadRequestException('Program code does not exist');
+    }
+    return { isExist: result };
   }
 }

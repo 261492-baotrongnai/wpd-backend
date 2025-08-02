@@ -24,8 +24,6 @@ export class IdTokenAuthGuard implements CanActivate {
     const user = await this.authService.validateUser(idToken);
 
     if (!user) {
-      // const userId = await verifyIdToken(idToken);
-      // await this.webhookService.handleNonRegisteredUser(userId);
       throw new UnauthorizedException(
         `Invalid idToken, please classify and agree terms and conditions before using`,
       );
