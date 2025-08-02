@@ -3,27 +3,21 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { ImagesModule } from './images/images.module';
 import { UsersModule } from './users/users.module';
-import { WebhooksController } from './webhooks/webhooks.controller';
-import { WebhooksService } from './webhooks/webhooks.service';
 import { AuthModule } from './auth/auth.module';
 import { UserStatesModule } from './user-states/user-states.module';
-import { RecordCaseHandler } from './webhooks/record-case';
 import { ExternalApiModule } from './external-api/external-api.module';
 import { MealsModule } from './meals/meals.module';
 import { FoodGradesModule } from './food-grades/food-grades.module';
 import { FoodsModule } from './foods/foods.module';
 import { BullModule } from '@nestjs/bullmq';
-import { WebhooksProcessor } from './webhooks/workers/webhooks.worker';
-import { ServiceProcessor } from './webhooks/workers/service.worker';
-import { ChoiceLogsProcessor } from './webhooks/workers/userChoiceLog.worker';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
 
 import { ChoiceLogsModule } from './choice-logs/logs.module';
 
-import { SchedulerService } from './scheduler/scheduler.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FollowersModule } from './followers/followers.module';
+import { WebhookModule } from './webhooks/webhook.module';
 
 @Module({
   imports: [
@@ -58,34 +52,21 @@ import { FollowersModule } from './followers/followers.module';
         },
       }),
     }),
-    BullModule.registerQueue({
-      name: 'webhook',
-    }),
-    BullModule.registerQueue({
-      name: 'webhook-service',
-    }),
-    BullModule.registerQueue({
-      name: 'user-choice-logs',
-    }),
+
     BullModule.registerQueue({
       name: 'follower',
     }),
     BullModule.registerQueue({
       name: 'meal',
     }),
+    BullModule.registerQueue({
+      name: 'task',
+    }),
     AdminModule,
     ProgramsModule,
     ScheduleModule.forRoot(),
     FollowersModule,
-  ],
-  controllers: [WebhooksController],
-  providers: [
-    WebhooksService,
-    RecordCaseHandler,
-    WebhooksProcessor,
-    ServiceProcessor,
-    ChoiceLogsProcessor,
-    SchedulerService,
+    WebhookModule,
   ],
 })
 export class AppModule {}

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SchedulerService } from './scheduler.service';
+import { TasksService } from './tasks.service';
 import { BullModule } from '@nestjs/bullmq';
 
 @Module({
@@ -10,7 +10,10 @@ import { BullModule } from '@nestjs/bullmq';
     BullModule.registerQueue({
       name: 'meal',
     }),
+    BullModule.registerQueue({
+      name: 'webhook',
+    }),
   ],
-  providers: [SchedulerService],
+  providers: [TasksService],
 })
-export class SchedulerModule {}
+export class TasksModule {}

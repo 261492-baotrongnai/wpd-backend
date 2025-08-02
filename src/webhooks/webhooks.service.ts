@@ -8,8 +8,6 @@ import axios from 'axios';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { RecordCaseHandler } from './record-case';
 import { RegistConfirmFlex } from 'src/users/user-flex';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -23,7 +21,6 @@ export class WebhooksService {
     private readonly userService: UsersService,
     private readonly userStatesService: UserStatesService,
     private readonly recordCaseHandler: RecordCaseHandler,
-    @InjectQueue('webhook-service') private readonly serviceQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -32,11 +29,69 @@ export class WebhooksService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
+  async processEvents(events: line.WebhookEvent[]): Promise<void> {
+    for (const event of events) {
+      try {
+        this.logger.debug('Processing event:', event);
+
+        if (event.source.type !== 'user') {
+          this.logger.warn(
+            'Received event from non-user source type:',
+            event.source.type,
+          );
+          continue;
+        }
+
+        await this.loading(event.source.userId);
+        const uid = event.source.userId;
+        if (event.type === 'message') {
+          // check if user has any waiting state before processing the message
+          const user_states = await this.checkUserState(uid);
+          this.logger.debug('User states: ', user_states);
+          // if there no waiting state, process the message normally
+          if (user_states === null) {
+            if (event.message?.type === 'text') {
+              if (uid && (await this.isUserExist(uid)) === true) {
+                switch (event.message.text) {
+                  case 'ยันยันการบันทึกผู้ใช้':
+                    this.logger.debug('User requested to confirm registration');
+                    await this.handleConfirmRegistration(event.replyToken);
+                    break;
+                  case 'ยันยันการแก้ไขโค้ด':
+                    this.logger.debug('User requested to confirm code change');
+                    await this.handleConfirmCodeChange(event.replyToken, uid);
+                    break;
+                  case 'บันทึกอาหารที่ทาน':
+                    this.logger.debug('User requested to record meal:');
+                    await this.handleMealRecord(event.replyToken, uid);
+                }
+              } else {
+                this.logger.warn(
+                  'Received message from non-registered user, message:',
+                  event.message.text,
+                );
+                await this.handleNonRegisteredUser(event.replyToken, uid);
+              }
+            }
+          } else {
+            this.logger.log('handle waiting state');
+            for (const user_state of user_states) {
+              await this.handleWaitingState(event, user_state);
+            }
+          }
+        } else if (event.type === 'follow') {
+          await this.handleFollowEvent(event.replyToken);
+        } else {
+          this.logger.warn(`Unsupported event type: ${event.type}`);
+        }
+      } catch {
+        this.logger.error(`Error processing event: ${JSON.stringify(event)}`);
+      }
+    }
+  }
+
   async checkUserState(uid: string) {
     const iid = await getInternalId(undefined, uid);
-    await this.serviceQueue.add('check-user-state', {
-      iid,
-    });
 
     const user = await this.userService.findUserByInternalId(iid);
     this.logger.debug(`CheckUserState - User found: ${user?.id}`);

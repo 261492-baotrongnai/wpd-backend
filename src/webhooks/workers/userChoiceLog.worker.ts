@@ -4,10 +4,12 @@ import { Job } from 'bullmq';
 
 @Processor('user-choice-logs')
 export class ChoiceLogsProcessor extends WorkerHost {
-    private readonly logger = new Logger(ChoiceLogsProcessor.name);
+  private readonly logger = new Logger(ChoiceLogsProcessor.name);
 
-    async process(job: Job<any>) {
-        this.logger.debug(`Processing user choice log: ${JSON.stringify(job.data)}`);
+  async process(job: Job<any>) {
+    this.logger.debug(
+      `Processing user choice log: ${JSON.stringify(job.data)}`,
+    );
     return true;
   }
 }
