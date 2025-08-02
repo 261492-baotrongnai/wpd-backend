@@ -49,7 +49,7 @@ export class TasksService {
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเย็น
-  @Cron('* * * * *')
+  @Cron('0 16 * * *')
   async handleEveningCron() {
     const job = await this.webhookQueue.add('task-dinner', '');
     const result = await this.waitForJobResult(job, this.webhookQueue);
