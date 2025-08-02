@@ -18,6 +18,7 @@ import { ChoiceLogsModule } from './choice-logs/logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FollowersModule } from './followers/followers.module';
 import { WebhookModule } from './webhooks/webhook.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { WebhookModule } from './webhooks/webhook.module';
     ScheduleModule.forRoot(),
     FollowersModule,
     WebhookModule,
+    OrganizationsModule,
   ],
 })
 export class AppModule {}

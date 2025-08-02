@@ -22,6 +22,7 @@ import { FoodsService } from 'src/foods/foods.service';
 import { BullModule } from '@nestjs/bullmq';
 import { AdminService } from 'src/admin/admin.service';
 import { AdminModule } from 'src/admin/admin.module';
+import { TokenService } from './token.service';
 
 @Module({
   controllers: [AuthController],
@@ -36,6 +37,7 @@ import { AdminModule } from 'src/admin/admin.module';
     MealsService,
     FoodsService,
     AdminService,
+    TokenService,
   ],
   imports: [
     UsersModule,

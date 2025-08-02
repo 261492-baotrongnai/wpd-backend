@@ -1,11 +1,15 @@
-import { Controller, Post, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Get } from '@nestjs/common';
 import { IdTokenAuthGuard } from './idToken-auth.guard'; // your new guard
 import { AuthService } from './auth.service';
 import { AdminIdTokenAuthGuard } from './admin-idToken-auth.guard';
+import { TokenService } from './token.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly tokenService: TokenService,
+  ) {}
 
   @Post('login')
   @UseGuards(IdTokenAuthGuard)
@@ -24,5 +28,11 @@ export class AuthController {
       'admin',
     );
     return { access_token: token };
+  }
+
+  @Get('short-token')
+  async getShortToken() {
+    const token = await this.tokenService.generateToken(300);
+    return { token };
   }
 }

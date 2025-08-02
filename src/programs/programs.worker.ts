@@ -28,6 +28,9 @@ export class ProgramProcessor extends WorkerHost {
       return await this.programJobService.handleFindProgramByCodeJob(
         (job.data as { code: string }).code,
       );
+    } else if (job.name === 'validate-code') {
+      const { code } = job.data as { code: string };
+      return await this.programJobService.handleValidateCodeJob(code);
     }
   }
 

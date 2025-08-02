@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ProgramsJobService } from './programs.job';
 import { ProgramProcessor } from './programs.worker';
 import { Admin } from 'src/admin/entities/admin.entity';
+import { TokenService } from 'src/auth/token.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { Admin } from 'src/admin/entities/admin.entity';
     JwtService,
     ProgramsJobService,
     ProgramProcessor,
+    TokenService,
   ],
   exports: [ProgramsService, ProgramsJobService, TypeOrmModule],
 })
