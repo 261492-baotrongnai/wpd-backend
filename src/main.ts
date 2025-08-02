@@ -14,7 +14,7 @@ async function bootstrap() {
       configService.get<string>('ADMIN_URL'),
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type,Authorization',
+    allowedHeaders: 'Content-Type,Authorization,x-short-token',
   });
 
   // Use raw-body middleware for the /webhooks route
