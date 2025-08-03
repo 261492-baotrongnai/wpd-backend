@@ -12,7 +12,6 @@ import { FoodGradesModule } from 'src/food-grades/food-grades.module';
 import { MealsModule } from 'src/meals/meals.module';
 import { FoodsModule } from 'src/foods/foods.module';
 import { WebhookProcessor } from './workers/webhooks.worker';
-import { TasksService } from 'src/tasks/tasks.service';
 
 @Module({
   imports: [
@@ -29,6 +28,9 @@ import { TasksService } from 'src/tasks/tasks.service';
     BullModule.registerQueue({
       name: 'meal',
     }),
+    BullModule.registerQueue({
+      name: 'user-state',
+    }),
     UsersModule,
     UserStatesModule,
     ImagesModule,
@@ -43,7 +45,6 @@ import { TasksService } from 'src/tasks/tasks.service';
     ChoiceLogsProcessor,
     ExternalApiService,
     WebhookProcessor,
-    TasksService,
   ],
   exports: [],
 })

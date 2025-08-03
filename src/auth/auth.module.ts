@@ -59,6 +59,7 @@ import { TokenService } from './token.service';
       },
       { name: 'admin' },
       { name: 'user-choice-logs' },
+      { name: 'user-state' },
     ),
   ],
 })

@@ -14,30 +14,36 @@ export class UserStatesService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  create(createUserStateDto: CreateUserStateDto) {
+  async create(createUserStateDto: CreateUserStateDto) {
     const new_user_state = new UserState(createUserStateDto);
     this.logger.debug('Creating user state:', new_user_state);
-    return this.entityManager.save(new_user_state);
-  }
-
-  findAll() {
-    return `This action returns all userStates`;
+    return await this.entityManager.save(new_user_state);
   }
 
   async findAllByUser(userId: number): Promise<UserState[]> {
-    return this.userStatesRepository.find({
+    this.logger.debug(`Finding all user states for user ID: ${userId}`);
+    return await this.userStatesRepository.find({
       where: { user: { id: userId } },
       relations: ['user'],
     });
   }
 
-  findOne(id: number) {
-    return this.userStatesRepository.findOne({ where: { id } });
+  async getAllUserInternalIds(): Promise<string[]> {
+    const userStates = await this.userStatesRepository.find({
+      select: ['user'],
+      relations: ['user'],
+    });
+
+    return userStates.map((userState) => userState.user.internalId);
   }
 
-  update(id: number, updateUserStateDto: UpdateUserStateDto) {
+  async findOne(id: number) {
+    return await this.userStatesRepository.findOne({ where: { id } });
+  }
+
+  async update(id: number, updateUserStateDto: UpdateUserStateDto) {
     this.logger.debug('Updating user state:', id, updateUserStateDto);
-    return this.userStatesRepository.update(id, updateUserStateDto);
+    return await this.userStatesRepository.update(id, updateUserStateDto);
   }
 
   async remove(id: number): Promise<void> {
