@@ -1,53 +1,43 @@
-import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import { TasksService } from 'src/tasks/tasks.service';
 import { Job } from 'bullmq';
 import * as line from '@line/bot-sdk';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
 
-@Processor('webhook')
+@Processor('webhook', {
+  concurrency: 10,
+})
 export class WebhookProcessor extends WorkerHost {
   private logger = new Logger(WebhookProcessor.name);
 
-  constructor(private readonly webhookService: WebhooksService) {
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly webhookService: WebhooksService,
+  ) {
     super();
   }
 
   async process(job: Job) {
-    if (job.name === 'process-event') {
+    if (job.name === 'task-breakfast') {
+      this.logger.debug(
+        `Processing breakfast job with data: ${JSON.stringify(job.data)}`,
+      );
+      return await this.tasksService.handleBreakfastJob();
+    } else if (job.name === 'task-lunch') {
+      this.logger.debug(
+        `Processing lunch job with data: ${JSON.stringify(job.data)}`,
+      );
+      return await this.tasksService.handleLunchJob();
+    } else if (job.name === 'task-dinner') {
+      this.logger.debug(
+        `Processing dinner job with data: ${JSON.stringify(job.data)}`,
+      );
+      return await this.tasksService.handleDinnerJob();
+    } else if (job.name === 'process-event') {
       return await this.webhookService.processEvents(
         job.data as line.WebhookEvent[],
       );
     }
-  }
-
-  @OnWorkerEvent('progress')
-  onProgress(job: Job) {
-    const progressStr =
-      typeof job.progress === 'object'
-        ? JSON.stringify(job.progress)
-        : String(job.progress);
-    this.logger.log(
-      `Job name: ${job.name} id: ${job.id} progress: ${progressStr}%`,
-    );
-  }
-
-  @OnWorkerEvent('active')
-  onActive(job: Job) {
-    this.logger.log(`Job name: ${job.name} id: ${job.id} is now active`);
-  }
-
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(
-      `Job name: ${job.name} id: ${job.id} completed successfully`,
-    );
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(
-      `Job name: ${job.name} id: ${job.id} failed with error: ${error.message}`,
-    );
-    this.logger.error(`Attempts: ${job.attemptsMade}`);
   }
 }

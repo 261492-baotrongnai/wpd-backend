@@ -1,5 +1,6 @@
 import * as line from '@line/bot-sdk';
 import { Injectable, Logger } from '@nestjs/common';
+import { UserStatesService } from 'src/user-states/user-states.service';
 import { UsersService } from 'src/users/users.service';
 import { MenuChoiceConfirmFlex, WhatMealFlex } from './flex-message';
 import { UserState } from 'src/user-states/entities/user-state.entity';
@@ -19,8 +20,7 @@ import { MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradeAFlex, GradeBFlex, GradeCFlex } from './flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
-// import { UpdateUserStateDto } from 'src/user-states/dto/update-user-state.dto';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class RecordCaseHandler {
@@ -30,6 +30,7 @@ export class RecordCaseHandler {
 
   constructor(
     private readonly userService: UsersService,
+    private readonly userStatesService: UserStatesService,
     private readonly imagesService: ImagesService,
     private readonly api: ExternalApiService,
     private readonly configService: ConfigService,
@@ -37,7 +38,6 @@ export class RecordCaseHandler {
     private readonly mealService: MealsService,
     private readonly foodService: FoodsService,
     @InjectQueue('user-choice-logs') private readonly logsQueue: Queue,
-    @InjectQueue('user-state') private readonly userStateQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -63,22 +63,9 @@ export class RecordCaseHandler {
     });
   }
 
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
-    return result;
-  }
-
   private async removeUserState(userStateId: number): Promise<void> {
     this.logger.debug('User state removed:', userStateId);
-    const removeJob = await this.userStateQueue.add(
-      'remove-user-state',
-      userStateId,
-    );
-    await this.waitForJobResult(removeJob, this.userStateQueue);
+    await this.userStatesService.remove(userStateId);
   }
 
   private async handleCancel(
@@ -214,16 +201,11 @@ export class RecordCaseHandler {
         // Save the image content to the uploads directory
         const filePath = await this.saveToUploadsDir(fileName, imageContent);
 
-        const updateJob = await this.userStateQueue.add('update-user-state', {
-          id: user_state.id,
-          updateUserStateDto: {
-            state: 'waiting for what meal',
-            menuName: response.candidates,
-            pendingFile: { fileName, filePath },
-          },
+        await this.userStatesService.update(user_state.id, {
+          state: 'waiting for what meal',
+          menuName: response.candidates,
+          pendingFile: { fileName, filePath },
         });
-
-        await this.waitForJobResult(updateJob, this.userStateQueue);
 
         await this.client.replyMessage({
           replyToken: event.replyToken,
@@ -345,18 +327,12 @@ export class RecordCaseHandler {
             ],
           });
 
-          const updateJob = await this.userStateQueue.add('update-user-state', {
-            id: user_state.id,
-            updateUserStateDto: {
-              state: 'is prediction correct',
-              mealType: mealResponses[response as keyof typeof mealResponses]
-                .mealType as MealType,
-              menuName: candidates,
-            },
+          await this.userStatesService.update(user_state.id, {
+            state: 'is prediction correct',
+            mealType: mealResponses[response as keyof typeof mealResponses]
+              .mealType as MealType,
+            menuName: candidates,
           });
-
-          await this.waitForJobResult(updateJob, this.userStateQueue);
-
           return;
         }
       }
@@ -495,16 +471,7 @@ export class RecordCaseHandler {
           filePath,
           fileName.split('.').pop() || 'jpg',
         );
-
-        const removeJob = await this.userStateQueue.add(
-          'remove-user-state',
-          user_state.id,
-        );
-
-        await this.waitForJobResult(removeJob, this.userStateQueue);
-
-        this.logger.debug(`User state removed: ${user_state.id}`);
-
+        await this.userStatesService.remove(user_state.id);
         await this.client.replyMessage({
           replyToken: event.replyToken,
           messages: [

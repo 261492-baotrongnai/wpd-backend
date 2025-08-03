@@ -51,32 +51,16 @@ export class WebhooksController {
     // Send 200 OK immediately to acknowledge receipt
     res.status(200).json({ message: 'Webhook received' });
 
-    // // Process the events asynchronously after sending the response
-    // const events_job = await this.webhooksQueue.add('process-event', events);
+    // Process the events asynchronously after sending the response
+    const events_job = await this.webhooksQueue.add('process-event', events);
 
-    // const result: unknown = await this.waitForJobResult(
-    //   events_job,
-    //   this.webhooksQueue,
-    // );
-    // this.logger.debug(
-    //   `Job ${events_job.id} completed with result: ${JSON.stringify(result)}`,
-    // );
-    // return result;
-
-    await this.webhookService
-      .processEvents(events)
-      .then((result) => {
-        this.logger.debug(`Events processed successfully: ${result}`);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Error) {
-          this.logger.error(`Error processing events: ${error.message}`);
-        } else {
-          this.logger.error(
-            `Error processing events: ${JSON.stringify(error)}`,
-          );
-        }
-      });
+    const result: unknown = await this.waitForJobResult(
+      events_job,
+      this.webhooksQueue,
+    );
+    this.logger.debug(
+      `Job ${events_job.id} completed with result: ${JSON.stringify(result)}`,
+    );
   }
 
   private async waitForJobResult(job: Job, queue: Queue) {

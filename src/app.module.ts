@@ -19,7 +19,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { FollowersModule } from './followers/followers.module';
 import { WebhookModule } from './webhooks/webhook.module';
 import { OrganizationsModule } from './organizations/organizations.module';
-import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -61,10 +60,12 @@ import { TasksModule } from './tasks/tasks.module';
     BullModule.registerQueue({
       name: 'meal',
     }),
+    BullModule.registerQueue({
+      name: 'task',
+    }),
     AdminModule,
     ProgramsModule,
     ScheduleModule.forRoot(),
-    TasksModule,
     FollowersModule,
     WebhookModule,
     OrganizationsModule,

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { BullModule } from '@nestjs/bullmq';
-import { TasksProcessor } from './tasks.worker';
 
 @Module({
   imports: [
@@ -12,12 +11,9 @@ import { TasksProcessor } from './tasks.worker';
       name: 'meal',
     }),
     BullModule.registerQueue({
-      name: 'task',
-    }),
-    BullModule.registerQueue({
-      name: 'user-state',
+      name: 'webhook',
     }),
   ],
-  providers: [TasksService, TasksProcessor],
+  providers: [TasksService],
 })
 export class TasksModule {}
