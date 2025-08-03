@@ -14,7 +14,8 @@ export class TasksService {
   constructor(
     @InjectQueue('follower') private readonly followerQueue: Queue,
     @InjectQueue('meal') private readonly mealQueue: Queue,
-    @InjectQueue('webhook') private readonly webhookQueue: Queue,
+    @InjectQueue('task') private readonly taskQueue: Queue,
+    @InjectQueue('user-state') private readonly userStateQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -35,24 +36,24 @@ export class TasksService {
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเช้า
   @Cron('0 7 * * *')
   async handleMorningCron() {
-    const job = await this.webhookQueue.add('task-breakfast', '');
-    const result = await this.waitForJobResult(job, this.webhookQueue);
+    const job = await this.taskQueue.add('task-breakfast', '');
+    const result = await this.waitForJobResult(job, this.taskQueue);
     return result;
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเที่ยง
   @Cron('0 11 * * *')
   async handleLunchCron() {
-    const job = await this.webhookQueue.add('task-lunch', '');
-    const result = await this.waitForJobResult(job, this.webhookQueue);
+    const job = await this.taskQueue.add('task-lunch', '');
+    const result = await this.waitForJobResult(job, this.taskQueue);
     return result;
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเย็น
-  @Cron('0 16 * * *')
+  @Cron('30 16 * * *')
   async handleEveningCron() {
-    const job = await this.webhookQueue.add('task-dinner', '');
-    const result = await this.waitForJobResult(job, this.webhookQueue);
+    const job = await this.taskQueue.add('task-dinner', '');
+    const result = await this.waitForJobResult(job, this.taskQueue);
     return result;
   }
 
@@ -92,10 +93,20 @@ export class TasksService {
       ),
     );
 
+    const stateJob = await this.userStateQueue.add(
+      'get-all-iids-user-states',
+      {},
+    );
+
+    const stateIds = (await this.waitForJobResult(
+      stateJob,
+      this.userStateQueue,
+    )) as string[];
+
     const followersToSend: string[] = [];
     for (const follower of AllFollowers) {
       const internalId = await getInternalId(undefined, follower);
-      if (!internalIds.includes(internalId)) {
+      if (!internalIds.includes(internalId) || stateIds.includes(internalId)) {
         followersToSend.push(follower);
       }
     }

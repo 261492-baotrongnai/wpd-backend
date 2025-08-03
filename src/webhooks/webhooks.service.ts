@@ -2,12 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AskForImageFlex, ClassifyFlex, GreetingFlex } from './flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
-import { UserStatesService } from 'src/user-states/user-states.service';
 import { getInternalId } from 'src/users/user-utility';
 import axios from 'axios';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { RecordCaseHandler } from './record-case';
 import { RegistConfirmFlex } from 'src/users/user-flex';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Job, Queue, QueueEvents } from 'bullmq';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -19,8 +20,8 @@ export class WebhooksService {
   // Initialize LINE SDK client and import user service
   constructor(
     private readonly userService: UsersService,
-    private readonly userStatesService: UserStatesService,
     private readonly recordCaseHandler: RecordCaseHandler,
+    @InjectQueue('user-state') private readonly userStateQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -29,7 +30,16 @@ export class WebhooksService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
-  async processEvents(events: line.WebhookEvent[]): Promise<void> {
+  private async waitForJobResult(job: Job, queue: Queue) {
+    const queueEvents = new QueueEvents(queue.name, {
+      connection: queue.opts.connection,
+    });
+    const result: unknown = await job.waitUntilFinished(queueEvents);
+    await queueEvents.close();
+    return result;
+  }
+
+  async processEvents(events: line.WebhookEvent[]): Promise<string> {
     for (const event of events) {
       try {
         this.logger.debug('Processing event:', event);
@@ -88,6 +98,7 @@ export class WebhooksService {
         this.logger.error(`Error processing event: ${JSON.stringify(event)}`);
       }
     }
+    return 'Events processed successfully';
   }
 
   async checkUserState(uid: string) {
@@ -99,7 +110,17 @@ export class WebhooksService {
       this.logger.error('User not found or no states in checkUserState');
       return null;
     } else {
-      const user_states = await this.userStatesService.findAllByUser(user.id);
+      const userStatesJob = await this.userStateQueue.add(
+        'find-all-by-user',
+        user.id,
+      );
+      const user_states: UserState[] = (await this.waitForJobResult(
+        userStatesJob,
+        this.userStateQueue,
+      )) as UserState[];
+      this.logger.debug(
+        `User states found: ${user_states.map((us) => us.state).join(', ')}`,
+      );
       return user_states;
     }
   }
@@ -182,10 +203,12 @@ export class WebhooksService {
     const user = await this.userService.findUserByInternalId(iid);
     if (!user) this.logger.error('User not found in handleMealRecord');
     else {
-      await this.userStatesService.create({
-        user,
+      const createJob = await this.userStateQueue.add('create-user-state', {
+        user: user,
         state: 'waiting for meal image',
       });
+
+      await this.waitForJobResult(createJob, this.userStateQueue);
     }
   }
 
