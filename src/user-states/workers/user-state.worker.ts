@@ -1,87 +1,85 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { UserStatesService } from '../user-states.service';
 import { Job } from 'bullmq';
-import { CreateUserStateDto } from '../dto/create-user-state.dto';
-import { UpdateUserStateDto } from '../dto/update-user-state.dto';
+import { In, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserState } from '../entities/user-state.entity';
 
-@Processor('user-state', {
-  concurrency: 150,
-})
+@Injectable()
+@Processor('user-state', { concurrency: 150 })
 export class UserStateProcessor extends WorkerHost {
   private logger = new Logger(UserStateProcessor.name);
 
-  constructor(private readonly userStatesService: UserStatesService) {
+  constructor(
+    private readonly userStatesService: UserStatesService,
+    @InjectRepository(UserState)
+    private readonly userStatesRepository: Repository<UserState>,
+  ) {
     super();
   }
 
   async process(job: Job) {
-    if (job.name === 'get-all-iids-user-states') {
-      this.logger.debug(
-        `Processing get-all-iids-user-states job id: ${job.id}`,
-      );
-      return await this.userStatesService.getAllUserInternalIds();
-    } else if (job.name === 'create-user-state') {
-      this.logger.debug(
-        `Processing create-user-state job id: ${job.id} with data: ${JSON.stringify(job.data)}`,
-      );
-      return await this.userStatesService.create(
-        job.data as CreateUserStateDto,
-      );
-    } else if (job.name === 'update-user-state') {
-      this.logger.debug(
-        `Processing update-user-state job id: ${job.id} with data: ${JSON.stringify(job.data)}`,
-      );
-      const { id, updateUserStateDto } = job.data as {
-        id: number;
-        updateUserStateDto: UpdateUserStateDto;
-      };
-      return await this.userStatesService.update(id, updateUserStateDto);
-    } else if (job.name === 'find-user-state-by-id') {
-      this.logger.debug(
-        `Processing find-user-state-by-id job id: ${job.id} with data: ${job.data}`,
-      );
-      return await this.userStatesService.findOne(job.data as number);
-    } else if (job.name === 'find-all-by-user') {
-      this.logger.debug(
-        `Processing find-all-by-user job id: ${job.id} with data: ${job.data}`,
-      );
-      return await this.userStatesService.findAllByUser(job.data as number);
-    } else if (job.name === 'remove-user-state') {
-      this.logger.debug(
-        `Processing remove-user-state job id: ${job.id} with data: ${job.data}`,
-      );
-      return await this.userStatesService.remove(job.data as number);
-    } else if (job.name === 'get-candidates') {
-      this.logger.debug(
-        `Processing get-candidates job id: ${job.id} with data: ${job.data}`,
-      );
-      return await this.userStatesService.findCandidates(job.data as number);
+    this.logger.debug(`Processing ${job.name} job id: ${job.id}`);
+    switch (job.name) {
+      case 'get-all-iids-user-states':
+        return await this.userStatesService.getAllUserInternalIds();
+      case 'create-user-state':
+        return await this.userStatesService.create(job.data);
+      case 'update-user-state':
+        return await this.userStatesService.update(
+          job.data.id,
+          job.data.updateUserStateDto,
+        );
+      case 'find-user-state-by-id':
+        return await this.userStatesService.findOne(job.data);
+      case 'find-all-by-user':
+        const userId = job.data;
+        const userStates = await this.userStatesRepository.find({
+          where: { user: { id: userId } },
+          relations: ['user'],
+        });
+        return userStates.map((us) => ({
+          ...us,
+          user: {
+            id: us.user.id,
+            internalId: us.user.internalId,
+            isActive: us.user.isActive,
+            createdAt: us.user.createdAt,
+            updatedAt: us.user.updatedAt,
+          },
+        }));
+      // return await this.userStatesService.findAllByUser(job.data);
+      case 'remove-user-state':
+        return await this.userStatesService.remove(job.data);
+      case 'get-candidates':
+        return await this.userStatesService.findCandidates(job.data);
+      default:
+        this.logger.warn(`Unknown job name: ${job.name}`);
+        return null;
     }
   }
 
   @OnWorkerEvent('progress')
   onProgress(job: Job) {
-    const progressStr =
-      typeof job.progress === 'object'
-        ? JSON.stringify(job.progress)
-        : String(job.progress);
-    this.logger.log(`Job ${job.id} progress: ${progressStr}%`);
+    this.logger.log(
+      `Job ${job.name} ${job.id} progress: ${JSON.stringify(job.progress)}%`,
+    );
   }
 
   @OnWorkerEvent('active')
   onAdded(job: Job) {
-    this.logger.log(`Got job ${job.id} of type ${job.name}`);
+    this.logger.log(`Got job ${job.name} ${job.id} of type ${job.name}`);
   }
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed successfully`);
+    this.logger.log(`Job ${job.name} ${job.id} completed successfully`);
   }
 
   @OnWorkerEvent('failed')
   onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed with error: ${error.message}`);
+    this.logger.error(`Job ${job.name} ${job.id} failed: ${error.message}`);
     this.logger.error(`Attempts: ${job.attemptsMade}`);
   }
 }

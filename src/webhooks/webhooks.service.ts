@@ -12,6 +12,11 @@ import { Job, Queue, QueueEvents } from 'bullmq';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
+// type UserStateInfo = {
+//   user: { id: number; internalId: string };
+//   states: UserState[];
+// };
+
 @Injectable()
 export class WebhooksService {
   private readonly client: line.messagingApi.MessagingApiClient;
@@ -39,7 +44,22 @@ export class WebhooksService {
     return result;
   }
 
+  private async waitForJobUserStateResult(
+    job: Job,
+    queue: Queue,
+  ): Promise<UserState[]> {
+    const queueEvents = new QueueEvents(queue.name, {
+      connection: queue.opts.connection,
+    });
+    const result: UserState[] = (await job.waitUntilFinished(
+      queueEvents,
+    )) as UserState[];
+    await queueEvents.close();
+    return result;
+  }
+
   async processEvents(events: line.WebhookEvent[]): Promise<string> {
+    let result = 'No result';
     for (const event of events) {
       try {
         this.logger.debug('Processing event:', event);
@@ -57,23 +77,27 @@ export class WebhooksService {
         if (event.type === 'message') {
           // check if user has any waiting state before processing the message
           const user_states = await this.checkUserState(uid);
+          // this log not processed after await checkUserState
           this.logger.debug('User states: ', user_states);
           // if there no waiting state, process the message normally
           if (user_states === null) {
             if (event.message?.type === 'text') {
               if (uid && (await this.isUserExist(uid)) === true) {
+                result = 'Out of case';
                 switch (event.message.text) {
                   case 'ยันยันการบันทึกผู้ใช้':
                     this.logger.debug('User requested to confirm registration');
                     await this.handleConfirmRegistration(event.replyToken);
+                    result = 'Registration confirmed';
                     break;
                   case 'ยันยันการแก้ไขโค้ด':
                     this.logger.debug('User requested to confirm code change');
                     await this.handleConfirmCodeChange(event.replyToken, uid);
+                    result = 'Code change confirmed';
                     break;
                   case 'บันทึกอาหารที่ทาน':
                     this.logger.debug('User requested to record meal:');
-                    await this.handleMealRecord(event.replyToken, uid);
+                    result = await this.handleMealRecord(event.replyToken, uid);
                 }
               } else {
                 this.logger.warn(
@@ -81,47 +105,55 @@ export class WebhooksService {
                   event.message.text,
                 );
                 await this.handleNonRegisteredUser(event.replyToken, uid);
+                result = 'Non-registered user handled';
               }
             }
           } else {
             this.logger.log('handle waiting state');
             for (const user_state of user_states) {
-              await this.handleWaitingState(event, user_state);
+              result = await this.handleWaitingState(event, user_state);
             }
           }
         } else if (event.type === 'follow') {
           await this.handleFollowEvent(event.replyToken);
+          result = 'Follow event handled';
         } else {
           this.logger.warn(`Unsupported event type: ${event.type}`);
+          throw new Error(`Unsupported event type: ${event.type}`);
         }
-      } catch {
-        this.logger.error(`Error processing event: ${JSON.stringify(event)}`);
+        return result;
+      } catch (error) {
+        this.logger.error(
+          `Error processing event: ${JSON.stringify(event)}`,
+          error,
+        );
+        throw error;
       }
     }
-    return 'Events processed successfully';
+    return result;
   }
 
-  async checkUserState(uid: string) {
+  async checkUserState(uid: string): Promise<UserState[] | null> {
     const iid = await getInternalId(undefined, uid);
-
     const user = await this.userService.findUserByInternalId(iid);
     this.logger.debug(`CheckUserState - User found: ${user?.id}`);
     if (!user || user.states.length === 0) {
       this.logger.error('User not found or no states in checkUserState');
       return null;
     } else {
-      const userStatesJob = await this.userStateQueue.add(
-        'find-all-by-user',
-        user.id,
-      );
-      const user_states: UserState[] = (await this.waitForJobResult(
-        userStatesJob,
-        this.userStateQueue,
-      )) as UserState[];
-      this.logger.debug(
-        `User states found: ${user_states.map((us) => us.state).join(', ')}`,
-      );
-      return user_states;
+      try {
+        // const result = {
+        //   user: { id: user.id, internalId: user.internalId },
+        //   states: user.states,
+        // };
+        user.states.forEach((state) => {
+          state.user = user;
+        });
+        return user.states;
+      } catch (err) {
+        this.logger.error('Error waiting for user state job result:', err);
+        throw err;
+      }
     }
   }
 
@@ -193,7 +225,7 @@ export class WebhooksService {
     }
   }
 
-  async handleMealRecord(replyToken: string, uid: string) {
+  async handleMealRecord(replyToken: string, uid: string): Promise<string> {
     await this.client.replyMessage({
       replyToken,
       messages: [AskForImageFlex],
@@ -201,36 +233,53 @@ export class WebhooksService {
     const iid = await getInternalId(undefined, uid);
 
     const user = await this.userService.findUserByInternalId(iid);
-    if (!user) this.logger.error('User not found in handleMealRecord');
-    else {
+    if (!user) {
+      this.logger.error('User not found in handleMealRecord');
+      throw new Error('User not found');
+    } else {
       const createJob = await this.userStateQueue.add('create-user-state', {
         user: user,
         state: 'waiting for meal image',
       });
 
       await this.waitForJobResult(createJob, this.userStateQueue);
+      return 'Waiting for meal image state is created';
     }
   }
 
-  async handleWaitingState(event: line.WebhookEvent, user_state: UserState) {
+  async handleWaitingState(
+    event: line.WebhookEvent,
+    user_state: UserState,
+  ): Promise<string> {
+    let result = 'Handling waiting state No Result';
     this.logger.debug('Handling waiting state:', user_state.state);
     if (!event.source.userId) {
       this.logger.error('User ID not found in event source');
-      return;
+      throw new Error('User ID not found');
     }
     if (event.type === 'message') {
       switch (user_state.state) {
         case 'waiting for meal image':
-          await this.recordCaseHandler.waitingMealImage(event, user_state);
+          result = await this.recordCaseHandler.waitingMealImage(
+            event,
+            user_state,
+          );
           break;
         case 'waiting for what meal':
-          await this.recordCaseHandler.waitingWhatMeal(event, user_state);
+          result = await this.recordCaseHandler.waitingWhatMeal(
+            event,
+            user_state,
+          );
           break;
         case 'is prediction correct':
-          await this.recordCaseHandler.MenuChoicesConfirm(event, user_state);
+          result = await this.recordCaseHandler.MenuChoicesConfirm(
+            event,
+            user_state,
+          );
           break;
       }
     }
+    return result;
   }
 
   async handleNonRegisteredUser(replyToken: string, userId?: string) {

@@ -52,38 +52,35 @@ export class WebhooksController {
     res.status(200).json({ message: 'Webhook received' });
 
     // // Process the events asynchronously after sending the response
-    // const events_job = await this.webhooksQueue.add('process-event', events);
+    const events_job = await this.webhooksQueue.add('process-event', events);
 
-    // const result: unknown = await this.waitForJobResult(
-    //   events_job,
-    //   this.webhooksQueue,
-    // );
-    // this.logger.debug(
-    //   `Job ${events_job.id} completed with result: ${JSON.stringify(result)}`,
-    // );
-    // return result;
+    try {
+      const result: unknown = await this.waitForJobResult(
+        events_job,
+        this.webhooksQueue,
+      );
+      this.logger.debug(
+        `Job ${events_job.id} completed with result: ${JSON.stringify(result)}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Error waiting for job result: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
 
-    await this.webhookService
-      .processEvents(events)
-      .then((result) => {
-        this.logger.debug(`Events processed successfully: ${result}`);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Error) {
-          this.logger.error(`Error processing events: ${error.message}`);
-        } else {
-          this.logger.error(
-            `Error processing events: ${JSON.stringify(error)}`,
-          );
-        }
-      });
+    // Process the events asynchronously after sending the response
+    // return await this.webhookService.processEvents(events).catch((error) => {
+    //   this.logger.error('Error processing events:', error);
+    // });
   }
 
   private async waitForJobResult(job: Job, queue: Queue) {
     const queueEvents = new QueueEvents(queue.name, {
       connection: queue.opts.connection,
     });
-    const result: unknown = await job.waitUntilFinished(queueEvents);
+    const result: string = (await job.waitUntilFinished(queueEvents)) as string;
     await queueEvents.close();
     return result;
   }

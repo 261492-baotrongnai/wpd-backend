@@ -20,12 +20,31 @@ export class UserStatesService {
     return await this.entityManager.save(new_user_state);
   }
 
-  async findAllByUser(userId: number): Promise<UserState[]> {
+  async findAllByUser(userId: number) {
     this.logger.debug(`Finding all user states for user ID: ${userId}`);
-    return await this.userStatesRepository.find({
+    const result = await this.userStatesRepository.find({
       where: { user: { id: userId } },
       relations: ['user'],
     });
+    this.logger.debug(
+      `Found ${result.length} user states : ${JSON.stringify(result)}`,
+    );
+    const plainStates = result.map((state) => {
+      return {
+        ...state,
+        user: {
+          id: state.user.id,
+          internalId: state.user.internalId,
+          isActive: state.user.isActive,
+          createdAt: state.user.createdAt,
+          updatedAt: state.user.updatedAt,
+        },
+        updatedAt: state.updatedAt,
+        createdAt: state.createdAt,
+      };
+    });
+
+    return plainStates;
   }
 
   async getAllUserInternalIds(): Promise<string[]> {

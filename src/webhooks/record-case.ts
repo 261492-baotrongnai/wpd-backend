@@ -79,6 +79,7 @@ export class RecordCaseHandler {
       userStateId,
     );
     await this.waitForJobResult(removeJob, this.userStateQueue);
+    return;
   }
 
   private async handleCancel(
@@ -90,6 +91,7 @@ export class RecordCaseHandler {
       messages: [{ type: 'text', text: 'ยกเลิกการบันทึกอาหาร' }],
     });
     await this.removeUserState(userStateId);
+    return;
   }
 
   async getMessageContent(
@@ -165,14 +167,17 @@ export class RecordCaseHandler {
 
       await parallelUpload.done();
       this.logger.log(`File uploaded successfully: ${file_name}`);
+      return;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(
           `Error uploading file: ${error.message}`,
           error.stack,
         );
+        throw new Error(`Error uploading file: ${error.message}`);
       } else {
         this.logger.error('Error uploading file: Unknown error', error);
+        throw new Error('Error uploading file: Unknown error');
       }
     }
   }
@@ -180,7 +185,7 @@ export class RecordCaseHandler {
   async waitingMealImage(
     event: line.MessageEvent,
     user_state: UserState,
-  ): Promise<void> {
+  ): Promise<string> {
     // const userId = this.checkSourceUser(event);
     try {
       if (event.message.type === 'image') {
@@ -205,7 +210,7 @@ export class RecordCaseHandler {
               },
             ],
           });
-          return;
+          return 'Waiting Meal Image Not Food';
         }
 
         // Define the file name with the correct extension
@@ -235,11 +240,13 @@ export class RecordCaseHandler {
             WhatMealFlex,
           ],
         });
+        return 'Waiting Meal Image Completed';
       } else if (
         event.message.type === 'text' &&
         event.message.text === 'ยกเลิก'
       ) {
         await this.handleCancel(event, user_state.id);
+        return 'Waiting Meal Image Cancelled';
       } else {
         await this.client.replyMessage({
           replyToken: event.replyToken,
@@ -251,6 +258,7 @@ export class RecordCaseHandler {
             },
           ],
         });
+        return 'Waiting Meal Image Failed';
       }
     } catch (error) {
       this.logger.error('Error at [waitingMealImage]:', error);
@@ -264,13 +272,18 @@ export class RecordCaseHandler {
           },
         ],
       });
+      throw new Error(
+        `Error at [waitingMealImage]: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 
   async waitingWhatMeal(
     event: line.MessageEvent,
     user_state: UserState,
-  ): Promise<void> {
+  ): Promise<string> {
     try {
       // const userId = this.checkSourceUser(event);
 
@@ -279,7 +292,7 @@ export class RecordCaseHandler {
 
         if (messageText.includes('ยกเลิก')) {
           await this.handleCancel(event, user_state.id);
-          return;
+          return 'Waiting What Meal Cancelled';
         }
 
         const filePath = user_state.pendingFile?.filePath;
@@ -355,9 +368,16 @@ export class RecordCaseHandler {
             },
           });
 
-          await this.waitForJobResult(updateJob, this.userStateQueue);
+          try {
+            await this.waitForJobResult(updateJob, this.userStateQueue);
+          } catch (error) {
+            this.logger.error(
+              'Error waiting for update user state job result:',
+              error instanceof Error ? error.message : String(error),
+            );
+          }
 
-          return;
+          return `Waiting What Meal Completed`;
         }
       }
       // Handle other message types (e.g., stickers, images)
@@ -371,6 +391,7 @@ export class RecordCaseHandler {
           },
         ],
       });
+      return 'Waiting What Meal Failed';
     } catch (error) {
       this.logger.error('Error at [waitingWhatMeal]:', error);
       await this.client.replyMessage({
@@ -383,13 +404,18 @@ export class RecordCaseHandler {
           },
         ],
       });
+      throw new Error(
+        `Error at [waitingWhatMeal]: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 
   async MenuChoicesConfirm(
     event: line.MessageEvent,
     user_state: UserState,
-  ): Promise<void> {
+  ): Promise<string> {
     // const userId = this.checkSourceUser(event);
     try {
       this.logger.debug('Processing prediction confirmation');
@@ -402,7 +428,7 @@ export class RecordCaseHandler {
         const messageText = event.message.text;
         if (messageText.includes('ยกเลิก')) {
           await this.handleCancel(event, user_state.id);
-          return;
+          return 'MenuChoicesConfirm Cancelled';
         }
 
         // Parse the messageText into a string array
@@ -426,7 +452,7 @@ export class RecordCaseHandler {
               },
             ],
           });
-          return;
+          return 'MenuChoicesConfirm Not Food';
         }
         let GradeFlex: line.messagingApi.FlexMessage;
         switch (avgGrade) {
@@ -516,7 +542,7 @@ export class RecordCaseHandler {
           ],
         });
 
-        return;
+        return 'MenuChoicesConfirm Completed';
       }
       await this.client.replyMessage({
         replyToken: event.replyToken,
@@ -528,7 +554,7 @@ export class RecordCaseHandler {
           },
         ],
       });
-      return;
+      return 'MenuChoicesConfirm Failed';
     } catch (error) {
       this.logger.error('Error at [MenuChoicesConfirm]:', error);
       await this.client.replyMessage({
@@ -541,6 +567,11 @@ export class RecordCaseHandler {
           },
         ],
       });
+      throw new Error(
+        `Error at [MenuChoicesConfirm]: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 }
