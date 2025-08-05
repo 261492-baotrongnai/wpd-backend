@@ -22,9 +22,8 @@ export class ProgramsJobService {
     return program;
   }
 
-  async handleValidateCodeJob(code: string) {
+  async handleValidateCodeJob(code: string): Promise<boolean> {
     this.logger.debug(`Validating program with code: ${code}`);
-    const program = await this.programsService.findProgramByCode(code);
-    return !!program; // Return true if program exists, false otherwise
+    return await this.programsService.isProgramCodeExist(code);
   }
 }

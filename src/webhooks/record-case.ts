@@ -19,7 +19,7 @@ import { MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradeAFlex, GradeBFlex, GradeCFlex } from './flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
 // import { UpdateUserStateDto } from 'src/user-states/dto/update-user-state.dto';
 
@@ -65,19 +65,16 @@ export class RecordCaseHandler {
     });
   }
 
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    return result;
-  }
-
   private async removeUserState(userStateId: number): Promise<void> {
     this.logger.debug('User state removed:', userStateId);
     const removeJob = await this.userStateQueue.add(
       'remove-user-state',
       userStateId,
     );
-    await this.waitForJobResult(removeJob, this.userStateQueue);
+    await this.queueEventsRegistryService.waitForJobResult(
+      removeJob,
+      this.userStateQueue,
+    );
     return;
   }
 
@@ -227,7 +224,10 @@ export class RecordCaseHandler {
           },
         });
 
-        await this.waitForJobResult(updateJob, this.userStateQueue);
+        await this.queueEventsRegistryService.waitForJobResult(
+          updateJob,
+          this.userStateQueue,
+        );
 
         await this.client.replyMessage({
           replyToken: event.replyToken,
@@ -368,7 +368,10 @@ export class RecordCaseHandler {
           });
 
           try {
-            await this.waitForJobResult(updateJob, this.userStateQueue);
+            await this.queueEventsRegistryService.waitForJobResult(
+              updateJob,
+              this.userStateQueue,
+            );
           } catch (error) {
             this.logger.error(
               'Error waiting for update user state job result:',
@@ -526,7 +529,10 @@ export class RecordCaseHandler {
           user_state.id,
         );
 
-        await this.waitForJobResult(removeJob, this.userStateQueue);
+        await this.queueEventsRegistryService.waitForJobResult(
+          removeJob,
+          this.userStateQueue,
+        );
 
         this.logger.debug(`User state removed: ${user_state.id}`);
 

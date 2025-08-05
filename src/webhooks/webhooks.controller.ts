@@ -3,7 +3,7 @@ import { WebhooksService } from './webhooks.service';
 import * as line from '@line/bot-sdk';
 import { Response } from 'express';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Controller('webhooks')
@@ -57,10 +57,11 @@ export class WebhooksController {
     const events_job = await this.webhooksQueue.add('process-event', events);
 
     try {
-      const result: unknown = await this.waitForJobResult(
-        events_job,
-        this.webhooksQueue,
-      );
+      const result: unknown =
+        await this.queueEventsRegistryService.waitForJobResult(
+          events_job,
+          this.webhooksQueue,
+        );
       this.logger.debug(
         `Job ${events_job.id} completed with result: ${JSON.stringify(result)}`,
       );
@@ -76,12 +77,5 @@ export class WebhooksController {
     // return await this.webhookService.processEvents(events).catch((error) => {
     //   this.logger.error('Error processing events:', error);
     // });
-  }
-
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: string = (await job.waitUntilFinished(queueEvents)) as string;
-    await queueEvents.close();
-    return result;
   }
 }

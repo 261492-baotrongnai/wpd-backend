@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { Queue, QueueEvents } from 'bullmq';
+import { Injectable, Logger } from '@nestjs/common';
+import { Job, Queue, QueueEvents } from 'bullmq';
 
 @Injectable()
 export class QueueEventsRegistryService {
+  private readonly logger = new Logger(QueueEventsRegistryService.name);
   private queueEventsMap: Map<string, QueueEvents> = new Map();
 
   getQueueEvents(queue: Queue): QueueEvents {
@@ -13,5 +14,11 @@ export class QueueEventsRegistryService {
       this.queueEventsMap.set(queue.name, queueEvents);
     }
     return this.queueEventsMap.get(queue.name)!;
+  }
+
+  async waitForJobResult(job: Job, queue: Queue) {
+    const queueEvents = this.getQueueEvents(queue);
+    const result: unknown = await job.waitUntilFinished(queueEvents);
+    return result;
   }
 }

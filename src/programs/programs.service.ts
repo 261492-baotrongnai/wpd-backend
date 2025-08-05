@@ -59,4 +59,14 @@ export class ProgramsService {
     this.logger.debug(`Program found: ${JSON.stringify(program)}`);
     return program;
   }
+
+  async isProgramCodeExist(code: string): Promise<boolean> {
+    const program = await this.programRepository.findOne({
+      where: { code },
+    });
+    const exists = !!program;
+    this.logger.debug(`Program code ${code} existence check: ${exists}`);
+
+    return exists;
+  }
 }

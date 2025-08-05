@@ -4,9 +4,7 @@ import { Job } from 'bullmq';
 import { ProgramsJobService } from './programs.job';
 import { CreateProgramDto } from './dto/create.dto';
 
-@Processor('program', {
-  concurrency: 10,
-})
+@Processor('program')
 export class ProgramProcessor extends WorkerHost {
   private logger = new Logger(ProgramProcessor.name);
   constructor(private readonly programJobService: ProgramsJobService) {
@@ -34,14 +32,14 @@ export class ProgramProcessor extends WorkerHost {
     }
   }
 
-  @OnWorkerEvent('progress')
-  onProgress(job: Job) {
-    const progressStr =
-      typeof job.progress === 'object'
-        ? JSON.stringify(job.progress)
-        : String(job.progress);
-    this.logger.log(`Job ${job.id} progress: ${progressStr}%`);
-  }
+  // @OnWorkerEvent('progress')
+  // onProgress(job: Job) {
+  //   const progressStr =
+  //     typeof job.progress === 'object'
+  //       ? JSON.stringify(job.progress)
+  //       : String(job.progress);
+  //   this.logger.log(`Job ${job.id} progress: ${progressStr}%`);
+  // }
 
   @OnWorkerEvent('active')
   onAdded(job: Job) {

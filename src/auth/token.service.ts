@@ -16,6 +16,8 @@ export class TokenService {
     });
   }
 
+  // Generates a random token and stores it in Redis with an expiration time
+  // Default TTL is 300 seconds (5 minutes), can be overridden by passing ttlSeconds
   async generateToken(ttlSeconds = 300): Promise<string> {
     const token = crypto.randomBytes(32).toString('hex');
     await this.redis.set(token, '1', 'EX', ttlSeconds);

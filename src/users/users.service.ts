@@ -14,7 +14,7 @@ import { RegisterDto } from './dto/register.dto';
 import * as line from '@line/bot-sdk';
 import { RegistConfirmFlex } from './user-flex';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { Program } from 'src/programs/entities/programs.entity';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
@@ -39,13 +39,6 @@ export class UsersService {
       channelSecret: process.env.LINE_CHANNEL_SECRET || '',
     };
     this.client = new line.messagingApi.MessagingApiClient(config);
-  }
-
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
-    return result;
   }
 
   async generateToken(internalId: string): Promise<string> {
@@ -94,10 +87,11 @@ export class UsersService {
       const job = await this.programQueue.add('find-program-by-code', {
         code: registerDto.program_code,
       });
-      const program: unknown = await this.waitForJobResult(
-        job,
-        this.programQueue,
-      );
+      const program: unknown =
+        await this.queueEventsRegistryService.waitForJobResult(
+          job,
+          this.programQueue,
+        );
       this.logger.debug(`Program found: ${JSON.stringify(program)}`);
 
       if (user) {
@@ -138,10 +132,11 @@ export class UsersService {
       const followerJob = await this.followerQueue.add('create-follower', {
         userId: uid?.sub,
       });
-      const followerResult: unknown = await this.waitForJobResult(
-        followerJob,
-        this.followerQueue,
-      );
+      const followerResult: unknown =
+        await this.queueEventsRegistryService.waitForJobResult(
+          followerJob,
+          this.followerQueue,
+        );
       this.logger.debug(
         `Follower job result: ${JSON.stringify(followerResult)}`,
       );

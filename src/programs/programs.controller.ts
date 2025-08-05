@@ -1,16 +1,16 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Logger,
+  NotFoundException,
   Post,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { CreateProgramDto } from './dto/create.dto';
 import { ShortTokenGuard } from 'src/auth/short-token.guard';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
@@ -22,13 +22,6 @@ export class ProgramsController {
     @InjectQueue('program') private readonly programQueue: Queue,
     private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {}
-
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
-    return result;
-  }
 
   @Post('create')
   @UseGuards(JwtAuthGuard)
@@ -42,7 +35,11 @@ export class ProgramsController {
       id: req.user.id,
       body: body,
     });
-    const result: unknown = await this.waitForJobResult(job, this.programQueue);
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      );
     return result;
   }
 
@@ -55,7 +52,11 @@ export class ProgramsController {
     const job = await this.programQueue.add('get-program-info', {
       id: req.user.id,
     });
-    const result: unknown = await this.waitForJobResult(job, this.programQueue);
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      );
     return result;
   }
 
@@ -65,15 +66,21 @@ export class ProgramsController {
     const job = await this.programQueue.add('validate-code', {
       code: code,
     });
-    const result: boolean = (await this.waitForJobResult(
-      job,
-      this.programQueue,
-    )) as boolean;
-
-    if (!result) {
-      this.logger.error(`Program code ${code} does not exist ${result}`);
-      throw new BadRequestException('Program code does not exist');
+    try {
+      const result = await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      );
+      if (result === true) {
+        this.logger.debug(`Program code ${code} is valid.`);
+        return { valid: true };
+      } else {
+        this.logger.warn(`Program code ${code} is invalid.`);
+        throw new NotFoundException(`Program code ${code} does not exist`);
+      }
+    } catch (error) {
+      this.logger.error(`Error validating program code ${code}: ${error}`);
+      throw error;
     }
-    return { isExist: result };
   }
 }

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import * as line from '@line/bot-sdk';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { MealType } from 'src/meals/entities/meal.entity';
 import { getInternalId } from 'src/users/user-utility';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
@@ -26,18 +26,14 @@ export class TasksService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
-    return result;
-  }
-
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเช้า
   @Cron('0 7 * * *')
   async handleMorningCron() {
     const job = await this.taskQueue.add('task-breakfast', '');
-    const result = await this.waitForJobResult(job, this.taskQueue);
+    const result = await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.taskQueue,
+    );
     return result;
   }
 
@@ -45,7 +41,10 @@ export class TasksService {
   @Cron('0 11 * * *')
   async handleLunchCron() {
     const job = await this.taskQueue.add('task-lunch', '');
-    const result = await this.waitForJobResult(job, this.taskQueue);
+    const result = await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.taskQueue,
+    );
     return result;
   }
 
@@ -53,14 +52,20 @@ export class TasksService {
   @Cron('30 16 * * *')
   async handleEveningCron() {
     const job = await this.taskQueue.add('task-dinner', '');
-    const result = await this.waitForJobResult(job, this.taskQueue);
+    const result = await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.taskQueue,
+    );
     return result;
   }
 
   async getFollowersToSent(mealType: MealType): Promise<string[]> {
     const job = await this.followerQueue.add('get-user-id', '');
 
-    const result = (await this.waitForJobResult(job, this.followerQueue)) as {
+    const result = (await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.followerQueue,
+    )) as {
       id: number;
       userId: string;
     }[];
@@ -70,7 +75,7 @@ export class TasksService {
 
     const allMealsJob = await this.mealQueue.add('find-today-all-meals', '');
 
-    const mealsResult = await this.waitForJobResult(
+    const mealsResult = await this.queueEventsRegistryService.waitForJobResult(
       allMealsJob,
       this.mealQueue,
     );
@@ -98,7 +103,7 @@ export class TasksService {
       {},
     );
 
-    const stateIds = (await this.waitForJobResult(
+    const stateIds = (await this.queueEventsRegistryService.waitForJobResult(
       stateJob,
       this.userStateQueue,
     )) as string[];

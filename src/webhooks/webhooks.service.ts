@@ -37,13 +37,6 @@ export class WebhooksService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
-  // Refactor your waitForJobResult and waitForJobUserStateResult:
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    return result;
-  }
-
   private async waitForJobUserStateResult(
     job: Job,
     queue: Queue,
@@ -257,7 +250,10 @@ export class WebhooksService {
         state: 'waiting for meal image',
       });
 
-      await this.waitForJobResult(createJob, this.userStateQueue);
+      await this.queueEventsRegistryService.waitForJobResult(
+        createJob,
+        this.userStateQueue,
+      );
       return 'Waiting for meal image state is created';
     }
   }

@@ -12,7 +12,7 @@ import {
 } from './dto/create-admin.dto';
 import { AdminJobService } from './admin-job.service';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
@@ -24,21 +24,17 @@ export class AdminController {
     private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {}
 
-  private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-
-    const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
-    return result;
-  }
-
   @Post('line-register')
   async lineRegister(@Body() createAdminLineDto: CreateAdminLineDto) {
     const job = await this.adminQueue.add(
       'create-admin-line',
       createAdminLineDto,
     );
-    const result: unknown = await this.waitForJobResult(job, this.adminQueue);
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.adminQueue,
+      );
     return result;
   }
 
@@ -51,7 +47,11 @@ export class AdminController {
       internalId: req.user.internalId,
       id: req.user.id,
     });
-    const result: unknown = await this.waitForJobResult(job, this.adminQueue);
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.adminQueue,
+      );
     return result;
   }
 
