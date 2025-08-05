@@ -7,6 +7,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AdminProcessor } from './admin.worker';
 import { AdminJobService } from './admin-job.service';
 import { JwtService } from '@nestjs/jwt';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -16,7 +17,13 @@ import { JwtService } from '@nestjs/jwt';
     }),
   ],
   controllers: [AdminController],
-  providers: [AdminService, AdminProcessor, AdminJobService, JwtService],
+  providers: [
+    AdminService,
+    AdminProcessor,
+    AdminJobService,
+    JwtService,
+    QueueEventsRegistryService,
+  ],
   exports: [AdminService, AdminJobService, TypeOrmModule],
 })
 export class AdminModule {}

@@ -12,20 +12,21 @@ import {
 } from './dto/create-admin.dto';
 import { AdminJobService } from './admin-job.service';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Controller('admin')
 export class AdminController {
   constructor(
     private readonly adminJobService: AdminJobService,
     @InjectQueue('admin') private readonly adminQueue: Queue,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {}
 
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
+
     const result: unknown = await job.waitUntilFinished(queueEvents);
     await queueEvents.close();
     return result;

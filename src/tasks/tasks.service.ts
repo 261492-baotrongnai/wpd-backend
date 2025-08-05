@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import * as line from '@line/bot-sdk';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { MealType } from 'src/meals/entities/meal.entity';
 import { getInternalId } from 'src/users/user-utility';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Injectable()
 export class TasksService {
@@ -16,6 +17,7 @@ export class TasksService {
     @InjectQueue('meal') private readonly mealQueue: Queue,
     @InjectQueue('task') private readonly taskQueue: Queue,
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -25,9 +27,7 @@ export class TasksService {
   }
 
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: unknown = await job.waitUntilFinished(queueEvents);
     await queueEvents.close();
     return result;

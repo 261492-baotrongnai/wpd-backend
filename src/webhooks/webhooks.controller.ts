@@ -3,7 +3,8 @@ import { WebhooksService } from './webhooks.service';
 import * as line from '@line/bot-sdk';
 import { Response } from 'express';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -12,6 +13,7 @@ export class WebhooksController {
   constructor(
     readonly webhookService: WebhooksService,
     @InjectQueue('webhook') private readonly webhooksQueue: Queue,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {}
 
   @Post('')
@@ -77,9 +79,7 @@ export class WebhooksController {
   }
 
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: string = (await job.waitUntilFinished(queueEvents)) as string;
     await queueEvents.close();
     return result;

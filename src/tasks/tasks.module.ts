@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { BullModule } from '@nestjs/bullmq';
 import { TasksProcessor } from './tasks.worker';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { TasksProcessor } from './tasks.worker';
       name: 'user-state',
     }),
   ],
-  providers: [TasksService, TasksProcessor],
+  providers: [TasksService, TasksProcessor, QueueEventsRegistryService],
 })
 export class TasksModule {}

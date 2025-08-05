@@ -19,7 +19,8 @@ import { MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradeAFlex, GradeBFlex, GradeCFlex } from './flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
 // import { UpdateUserStateDto } from 'src/user-states/dto/update-user-state.dto';
 
 @Injectable()
@@ -38,6 +39,7 @@ export class RecordCaseHandler {
     private readonly foodService: FoodsService,
     @InjectQueue('user-choice-logs') private readonly logsQueue: Queue,
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -64,11 +66,8 @@ export class RecordCaseHandler {
   }
 
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
     return result;
   }
 

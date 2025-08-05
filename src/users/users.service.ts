@@ -14,8 +14,9 @@ import { RegisterDto } from './dto/register.dto';
 import * as line from '@line/bot-sdk';
 import { RegistConfirmFlex } from './user-flex';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { Program } from 'src/programs/entities/programs.entity';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Injectable()
 export class UsersService {
@@ -31,6 +32,7 @@ export class UsersService {
 
     private readonly entityManager: EntityManager,
     private readonly jwtService: JwtService,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -40,9 +42,7 @@ export class UsersService {
   }
 
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: unknown = await job.waitUntilFinished(queueEvents);
     await queueEvents.close();
     return result;

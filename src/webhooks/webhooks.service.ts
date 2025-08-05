@@ -8,7 +8,8 @@ import { UserState } from 'src/user-states/entities/user-state.entity';
 import { RecordCaseHandler } from './record-case';
 import { RegistConfirmFlex } from 'src/users/user-flex';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
 
 // const secretKey = process.env.INTERNAL_ID_SECRET;
 
@@ -27,6 +28,7 @@ export class WebhooksService {
     private readonly userService: UsersService,
     private readonly recordCaseHandler: RecordCaseHandler,
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -35,12 +37,10 @@ export class WebhooksService {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
+  // Refactor your waitForJobResult and waitForJobUserStateResult:
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: unknown = await job.waitUntilFinished(queueEvents);
-    await queueEvents.close();
     return result;
   }
 
@@ -48,13 +48,10 @@ export class WebhooksService {
     job: Job,
     queue: Queue,
   ): Promise<UserState[]> {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: UserState[] = (await job.waitUntilFinished(
       queueEvents,
     )) as UserState[];
-    await queueEvents.close();
     return result;
   }
 

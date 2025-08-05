@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserState } from './entities/user-state.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { UserStateProcessor } from './workers/user-state.worker';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -14,7 +15,11 @@ import { UserStateProcessor } from './workers/user-state.worker';
     }),
   ],
   controllers: [UserStatesController],
-  providers: [UserStatesService, UserStateProcessor],
+  providers: [
+    UserStatesService,
+    UserStateProcessor,
+    QueueEventsRegistryService,
+  ],
   exports: [UserStatesService],
 })
 export class UserStatesModule {}

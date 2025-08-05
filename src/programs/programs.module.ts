@@ -9,6 +9,7 @@ import { ProgramsJobService } from './programs.job';
 import { ProgramProcessor } from './programs.worker';
 import { Admin } from 'src/admin/entities/admin.entity';
 import { TokenService } from 'src/auth/token.service';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TokenService } from 'src/auth/token.service';
     ProgramsJobService,
     ProgramProcessor,
     TokenService,
+    QueueEventsRegistryService,
   ],
   exports: [ProgramsService, ProgramsJobService, TypeOrmModule],
 })

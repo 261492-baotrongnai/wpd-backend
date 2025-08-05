@@ -10,19 +10,21 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { CreateProgramDto } from './dto/create.dto';
 import { ShortTokenGuard } from 'src/auth/short-token.guard';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Controller('program')
 export class ProgramsController {
   private readonly logger = new Logger(ProgramsController.name);
-  constructor(@InjectQueue('program') private readonly programQueue: Queue) {}
+  constructor(
+    @InjectQueue('program') private readonly programQueue: Queue,
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
+  ) {}
 
   private async waitForJobResult(job: Job, queue: Queue) {
-    const queueEvents = new QueueEvents(queue.name, {
-      connection: queue.opts.connection,
-    });
+    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
     const result: unknown = await job.waitUntilFinished(queueEvents);
     await queueEvents.close();
     return result;

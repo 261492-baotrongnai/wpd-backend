@@ -12,6 +12,7 @@ import { FoodGradesModule } from 'src/food-grades/food-grades.module';
 import { MealsModule } from 'src/meals/meals.module';
 import { FoodsModule } from 'src/foods/foods.module';
 import { WebhookProcessor } from './workers/webhooks.worker';
+import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { WebhookProcessor } from './workers/webhooks.worker';
     ChoiceLogsProcessor,
     ExternalApiService,
     WebhookProcessor,
+    QueueEventsRegistryService,
   ],
   exports: [],
 })

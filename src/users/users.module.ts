@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ProgramsModule } from 'src/programs/programs.module';
 import { BullModule } from '@nestjs/bullmq';
 import { FollowersModule } from 'src/followers/followers.module';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { FollowersModule } from 'src/followers/followers.module';
     BullModule.registerQueue({ name: 'follower' }),
   ],
   controllers: [UsersController],
-  providers: [UsersService, JwtService],
+  providers: [UsersService, JwtService, QueueEventsRegistryService],
   exports: [UsersService],
 })
 export class UsersModule {}

@@ -23,6 +23,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AdminService } from 'src/admin/admin.service';
 import { AdminModule } from 'src/admin/admin.module';
 import { TokenService } from './token.service';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   controllers: [AuthController],
@@ -38,6 +39,7 @@ import { TokenService } from './token.service';
     FoodsService,
     AdminService,
     TokenService,
+    QueueEventsRegistryService,
   ],
   imports: [
     UsersModule,
