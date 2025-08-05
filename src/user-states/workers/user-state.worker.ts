@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserState } from '../entities/user-state.entity';
 import { UpdateUserStateDto } from '../dto/update-user-state.dto';
+import { CreateUserStateDto } from '../dto/create-user-state.dto';
 
 @Injectable()
 @Processor('user-state', { concurrency: 150 })
@@ -26,6 +27,9 @@ export class UserStateProcessor extends WorkerHost {
       case 'get-all-iids-user-states':
         return await this.userStatesService.getAllUserInternalIds();
       case 'create-user-state':
+        return await this.userStatesService.create(
+          job.data as CreateUserStateDto,
+        );
       case 'update-user-state': {
         const { id, updateUserStateDto } = job.data as {
           id: number;

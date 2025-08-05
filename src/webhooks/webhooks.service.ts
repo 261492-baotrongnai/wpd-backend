@@ -134,8 +134,11 @@ export class WebhooksService {
     const iid = await getInternalId(undefined, uid);
     const user = await this.userService.findUserByInternalId(iid);
     this.logger.debug(`CheckUserState - User found: ${user?.id}`);
-    if (!user || user.states.length === 0) {
+    if (!user) {
       this.logger.error('User not found or no states in checkUserState');
+      return null;
+    } else if (user.states.length === 0) {
+      this.logger.debug('No user states found, returning null');
       return null;
     } else {
       try {
@@ -223,11 +226,26 @@ export class WebhooksService {
   }
 
   async handleMealRecord(replyToken: string, uid: string): Promise<string> {
-    await this.client.replyMessage({
-      replyToken,
-      messages: [AskForImageFlex],
+    this.logger.debug('Handling meal record for user:', uid);
+    this.logger.debug('Reply token:', replyToken);
+    try {
+      const response = await this.client.replyMessage({
+        replyToken,
+        messages: [AskForImageFlex],
+      });
+      this.logger.debug('AskForImageFlex sent successfully:', response);
+    } catch (error) {
+      this.logger.error(
+        `Error sending AskForImageFlex with reply ${replyToken}:`,
+        error,
+      );
+      throw new Error('Failed to send AskForImageFlex');
+    }
+    const iid = await getInternalId(undefined, uid).catch((error) => {
+      this.logger.error('Error getting internal ID:', error);
+      throw new Error('Failed to get internal ID');
     });
-    const iid = await getInternalId(undefined, uid);
+    this.logger.debug('Internal ID:', iid);
 
     const user = await this.userService.findUserByInternalId(iid);
     if (!user) {
