@@ -1,5 +1,5 @@
 import { messagingApi } from '@line/bot-sdk';
-import { ImageQuickReply, CancleQuickReply } from './quick-reply';
+import { ImageQuickReply, CancleQuickReply } from '../quick-reply';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -134,9 +134,11 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       contents: [
         {
           type: 'text',
-          text: 'ถ่ายรูปอาหาร📸 หรือ เลือกรูปอาหารจากมือถือ📱 ส่งมาให้มะลิหน่อยนะคะ~',
+          text: 'ถ่ายรูปอาหาร📸 หรือ เลือกรูปอาหารจากมือถือ📱 ส่งมาให้มะลิหน่อยนะคะ',
+          margin: 'sm',
+          size: 'md',
+          scaling: true,
           wrap: true,
-          margin: 'none',
         },
       ],
       paddingBottom: 'xl',
@@ -148,7 +150,7 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       contents: [
         {
           type: 'image',
-          url: 'https://i.postimg.cc/vTGTd9kd/how-to-take-pic-or-send-pic.png',
+          url: 'https://i.postimg.cc/Dyx3Q8Tw/how-to-take-pic-or-send-pic.png',
           size: 'full',
           aspectRatio: '2:1',
           aspectMode: 'cover',
@@ -263,6 +265,7 @@ export const WhatMealFlex: messagingApi.FlexMessage = {
   quickReply: CancleQuickReply,
 };
 
+// ไม่ใช้แล้ว
 export const TrueFalseMenuConfirmFlex = (
   menu_name: string,
 ): Promise<messagingApi.FlexMessage> => {

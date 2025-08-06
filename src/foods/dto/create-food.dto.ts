@@ -6,4 +6,6 @@ export class CreateFoodDto {
   description?: string;
   grade: FoodGradeType;
   meal: Meal;
+  grading_by_ai?: boolean;
+  is_confirmed?: boolean;
 }

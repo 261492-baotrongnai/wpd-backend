@@ -47,6 +47,7 @@ export class FoodGradesService {
         name: string;
         grade: FoodGradeType;
         description: string;
+        grading_by_ai: boolean;
       }> = [];
       for (const menu of menus) {
         // step 1: exact matching
@@ -64,6 +65,7 @@ export class FoodGradesService {
             name: menu,
             grade: this.validateGrade(exactFoodGrade.grade),
             description: `exactly match with {id: ${exactFoodGrade.id}, food: ${exactFoodGrade.name}, grade: ${exactFoodGrade.grade} } in database`,
+            grading_by_ai: false,
           });
           continue;
         }
@@ -88,6 +90,7 @@ export class FoodGradesService {
               name: menu,
               grade: this.validateGrade(matchedFood.grade),
               description: `partially match(over 80%) with {id: ${matchedFood.id}, food: ${matchedFood.name}, grade: ${matchedFood.grade} } in database`,
+              grading_by_ai: false,
             });
             continue;
           }
@@ -104,6 +107,7 @@ export class FoodGradesService {
               name: menu,
               grade: this.validateGrade(response.answer),
               description: response.descp,
+              grading_by_ai: true,
             });
           });
 

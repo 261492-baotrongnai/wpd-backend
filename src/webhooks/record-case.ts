@@ -1,7 +1,7 @@
 import * as line from '@line/bot-sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
-import { MenuChoiceConfirmFlex, WhatMealFlex } from './flex-message';
+import { WhatMealFlex } from './flex/flex-message';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import axios from 'axios';
 import { createS3Client } from 'src/images/spaceUtil';
@@ -17,10 +17,15 @@ import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { MealsService } from 'src/meals/meals.service';
 import { MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
-import { GradeAFlex, GradeBFlex, GradeCFlex } from './flex-grade';
+import { GradeFlex } from './flex/flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
+import {
+  CandidateContents,
+  MenuChoiceConfirmFlex,
+} from './flex/flex-what-meal';
+import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 // import { UpdateUserStateDto } from 'src/user-states/dto/update-user-state.dto';
 
 @Injectable()
@@ -350,9 +355,11 @@ export class RecordCaseHandler {
                   'Unknown meal response',
               },
               MenuChoiceConfirmFlex(
-                candidates.map((candidate) => ({
-                  name: candidate.name.join(', '),
-                })),
+                CandidateContents(
+                  candidates.map((candidate) => ({
+                    name: candidate.name.join(', '),
+                  })),
+                ),
               ),
             ],
           });
@@ -414,6 +421,19 @@ export class RecordCaseHandler {
     }
   }
 
+  gradingByAIMenu(
+    foods: {
+      name: string;
+      grade: FoodGradeType;
+      description: string;
+      grading_by_ai: boolean;
+    }[],
+  ): string[] {
+    return foods
+      .filter((food) => food.grading_by_ai)
+      .map((food) => `${food.name}`);
+  }
+
   async MenuChoicesConfirm(
     event: line.MessageEvent,
     user_state: UserState,
@@ -444,6 +464,8 @@ export class RecordCaseHandler {
         const { avgGrade, avgScore, foods } =
           await this.foodGrade.getMenuGrade(parsedMenuNames);
 
+        const ai_grading_menus = this.gradingByAIMenu(foods);
+
         if (!avgGrade || !avgScore) {
           await this.client.replyMessage({
             replyToken: event.replyToken,
@@ -456,16 +478,18 @@ export class RecordCaseHandler {
           });
           return 'MenuChoicesConfirm Not Food';
         }
-        let GradeFlex: line.messagingApi.FlexMessage;
+        let GradeResult: line.messagingApi.FlexMessage;
         switch (avgGrade) {
           case 'A':
-            GradeFlex = GradeAFlex(messageText);
+            GradeResult = GradeFlex('A', messageText, ai_grading_menus);
+
             break;
           case 'B':
-            GradeFlex = GradeBFlex(messageText);
+            GradeResult = GradeFlex('B', messageText, ai_grading_menus);
+
             break;
           case 'C':
-            GradeFlex = GradeCFlex(messageText);
+            GradeResult = GradeFlex('C', messageText, ai_grading_menus);
             break;
         }
 
@@ -514,6 +538,7 @@ export class RecordCaseHandler {
             grade: food.grade,
             description: food.description,
             meal,
+            grading_by_ai: food.grading_by_ai,
           });
         }
 
@@ -543,7 +568,7 @@ export class RecordCaseHandler {
               type: 'text',
               text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
             },
-            GradeFlex,
+            GradeResult,
           ],
         });
 

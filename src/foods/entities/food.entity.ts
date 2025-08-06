@@ -16,6 +16,12 @@ export class Food {
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
   grade: FoodGradeType;
 
+  @Column({ type: 'boolean', default: false, nullable: true })
+  grading_by_ai: boolean;
+
+  @Column({ type: 'boolean', default: false, nullable: true })
+  is_confirmed: boolean;
+
   @ManyToOne(() => Meal, (meal) => meal.foods, { onDelete: 'CASCADE' })
   meal: Meal;
 

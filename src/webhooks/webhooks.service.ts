@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AskForImageFlex, ClassifyFlex, GreetingFlex } from './flex-message';
+import {
+  AskForImageFlex,
+  ClassifyFlex,
+  GreetingFlex,
+} from './flex/flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
 import { getInternalId } from 'src/users/user-utility';
@@ -10,13 +14,6 @@ import { RegistConfirmFlex } from 'src/users/user-flex';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
-
-// const secretKey = process.env.INTERNAL_ID_SECRET;
-
-// type UserStateInfo = {
-//   user: { id: number; internalId: string };
-//   states: UserState[];
-// };
 
 @Injectable()
 export class WebhooksService {
