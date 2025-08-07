@@ -24,7 +24,7 @@ import { QueueEventsRegistryService } from '../queue-events/queue-events.service
 import {
   CandidateContents,
   MenuChoiceConfirmFlex,
-} from './flex/flex-what-meal';
+} from './flex/flex-menu-choice';
 import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 // import { UpdateUserStateDto } from 'src/user-states/dto/update-user-state.dto';
 
