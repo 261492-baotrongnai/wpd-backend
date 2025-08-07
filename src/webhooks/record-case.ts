@@ -1,7 +1,7 @@
 import * as line from '@line/bot-sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
-import { WhatMealFlex } from './flex/flex-message';
+import { WhatMealFlex } from './flex/flex-what-meal';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import axios from 'axios';
 import { createS3Client } from 'src/images/spaceUtil';
