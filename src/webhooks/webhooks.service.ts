@@ -14,6 +14,7 @@ import { RegistConfirmFlex } from 'src/users/user-flex';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
+import { OutOfCaseFlex } from './flex/flex-no-case';
 
 @Injectable()
 export class WebhooksService {
@@ -108,7 +109,10 @@ export class WebhooksService {
           this.logger.warn(`Unsupported event type: ${event.type}`);
           throw new Error(`Unsupported event type: ${event.type}`);
         }
-        return result;
+        if (result === 'No result' || result === 'Out of case') {
+          await this.handleOutOfCase(event.replyToken);
+          this.logger.debug('Handled out of case for event:', event);
+        }
       } catch (error) {
         this.logger.error(
           `Error processing event: ${JSON.stringify(event)}`,
@@ -117,6 +121,7 @@ export class WebhooksService {
         throw error;
       }
     }
+
     return result;
   }
 
@@ -166,6 +171,19 @@ export class WebhooksService {
       replyToken: replyToken,
       messages: [{ type: 'text', text: `You said: ${userMessage}` }],
     });
+  }
+
+  async handleOutOfCase(replyToken: string) {
+    try {
+      await this.client.replyMessage({
+        replyToken,
+        messages: [OutOfCaseFlex],
+      });
+      console.log('Out of case message sent successfully');
+    } catch (error) {
+      console.error('Error handling out of case:', error);
+      throw error;
+    }
   }
 
   async handleFollowEvent(replyToken: string) {
