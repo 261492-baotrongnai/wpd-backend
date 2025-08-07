@@ -34,7 +34,7 @@ export class FollowerProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('active')
-  onAdded(job: Job) {
+  onActive(job: Job) {
     this.logger.log(`Got job ${job.id} of type ${job.name}`);
   }
 

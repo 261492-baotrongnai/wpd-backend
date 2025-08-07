@@ -15,7 +15,18 @@ export class FollowersService {
   }
 
   async addUserId(userId: string): Promise<Follower> {
-    const newFollower = this.followersRepository.create({ userId });
-    return this.followersRepository.save(newFollower);
+    try {
+      const existingFollower = await this.followersRepository.findOne({
+        where: { userId },
+      });
+      if (existingFollower) {
+        return existingFollower; // Return existing follower if found
+      }
+      const newFollower = this.followersRepository.create({ userId });
+      return this.followersRepository.save(newFollower);
+    } catch (error) {
+      console.error('Error adding user ID:', error);
+      throw error;
+    }
   }
 }

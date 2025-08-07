@@ -15,6 +15,8 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
 import { OutOfCaseFlex } from './flex/flex-no-case';
+import { ProgramUserFlex } from './flex/flex-program-user';
+import { CommonUserFlex } from './flex/flex-common-user';
 
 @Injectable()
 export class WebhooksService {
@@ -75,7 +77,7 @@ export class WebhooksService {
                 switch (event.message.text) {
                   case 'ยันยันการบันทึกผู้ใช้':
                     this.logger.debug('User requested to confirm registration');
-                    await this.handleConfirmRegistration(event.replyToken);
+                    await this.handleConfirmRegistration(event.replyToken, uid);
                     result = 'Registration confirmed';
                     break;
                   case 'ยันยันการแก้ไขโค้ด':
@@ -200,12 +202,27 @@ export class WebhooksService {
     }
   }
 
-  async handleConfirmRegistration(replyToken: string) {
+  async handleConfirmRegistration(replyToken: string, uid: string) {
     try {
-      await this.client.replyMessage({
-        replyToken,
-        messages: [RegistConfirmFlex],
-      });
+      const iid = await getInternalId(undefined, uid);
+      const user = await this.userService.findUserByInternalId(iid);
+      this.logger.debug(`User found: ${user?.id}`);
+      if (!user) {
+        this.logger.error('User not found in handleConfirmRegistration');
+        throw new Error('User not found');
+      }
+      const latest_program = user.programs[user.programs.length - 1]?.name;
+      if (!latest_program) {
+        await this.client.replyMessage({
+          replyToken,
+          messages: [RegistConfirmFlex, CommonUserFlex],
+        });
+      } else {
+        await this.client.replyMessage({
+          replyToken,
+          messages: [RegistConfirmFlex, ProgramUserFlex(latest_program)],
+        });
+      }
       console.log('Registration confirmation message sent successfully');
     } catch (error) {
       console.error('Error handling confirm registration:', error);
@@ -217,15 +234,14 @@ export class WebhooksService {
       const iid = await getInternalId(undefined, uid);
       const user = await this.userService.findUserByInternalId(iid);
       this.logger.debug(`User found: ${user?.id}`);
-      const latest_program = user?.programs[user.programs.length - 1].name;
+      const latest_program = user?.programs[user.programs.length - 1]?.name;
+      if (!latest_program) {
+        this.logger.error('No latest program found for user:', user?.id);
+        throw new Error('No latest program found');
+      }
       await this.client.replyMessage({
         replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: `คุณได้เข้าร่วมโครงการ "${latest_program}"`,
-          },
-        ],
+        messages: [ProgramUserFlex(latest_program)],
       });
       console.log('Code change confirmation message sent successfully');
     } catch (error) {

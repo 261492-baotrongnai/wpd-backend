@@ -1,4 +1,5 @@
-export const CommonUserFlex = {
+import * as line from '@line/bot-sdk';
+export const CommonUserFlex: line.messagingApi.FlexMessage = {
   type: 'flex',
   altText: 'ตั้งค่าให้เป็นผู้ใช้ทั่วไป',
   contents: {

@@ -29,176 +29,288 @@ export class TasksService {
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเช้า
   @Cron('0 7 * * *')
   async handleMorningCron() {
-    const job = await this.taskQueue.add('task-breakfast', '');
-    const result = await this.queueEventsRegistryService.waitForJobResult(
-      job,
-      this.taskQueue,
-    );
-    return result;
+    this.logger.log('Starting morning cron job');
+    try {
+      const job = await this.taskQueue.add('task-breakfast', '', {
+        removeOnComplete: 10,
+        removeOnFail: 50,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      });
+
+      const result = await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.taskQueue,
+        300000, // 5 minutes timeout
+      );
+
+      this.logger.log('Morning cron job completed successfully');
+      return result;
+    } catch (error) {
+      this.logger.error('Morning cron job failed:', error);
+      throw error;
+    }
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเที่ยง
   @Cron('0 11 * * *')
   async handleLunchCron() {
-    const job = await this.taskQueue.add('task-lunch', '');
-    const result = await this.queueEventsRegistryService.waitForJobResult(
-      job,
-      this.taskQueue,
-    );
-    return result;
+    this.logger.log('Starting lunch cron job');
+    try {
+      const job = await this.taskQueue.add('task-lunch', '', {
+        removeOnComplete: 10,
+        removeOnFail: 50,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      });
+
+      const result = await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.taskQueue,
+        300000, // 5 minutes timeout
+      );
+
+      this.logger.log('Lunch cron job completed successfully');
+      return result;
+    } catch (error) {
+      this.logger.error('Lunch cron job failed:', error);
+      throw error;
+    }
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเย็น
   @Cron('30 16 * * *')
   async handleEveningCron() {
-    const job = await this.taskQueue.add('task-dinner', '');
-    const result = await this.queueEventsRegistryService.waitForJobResult(
-      job,
-      this.taskQueue,
-    );
-    return result;
+    this.logger.log('Starting evening cron job');
+    try {
+      const job = await this.taskQueue.add('task-dinner', '', {
+        removeOnComplete: 10,
+        removeOnFail: 50,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      });
+
+      const result = await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.taskQueue,
+        300000, // 5 minutes timeout
+      );
+
+      this.logger.log('Evening cron job completed successfully');
+      return result;
+    } catch (error) {
+      this.logger.error('Evening cron job failed:', error);
+      throw error;
+    }
   }
 
   async getFollowersToSent(mealType: MealType): Promise<string[]> {
-    const job = await this.followerQueue.add('get-user-id', '');
+    this.logger.debug(`Getting followers for meal type: ${mealType}`);
 
-    const result = (await this.queueEventsRegistryService.waitForJobResult(
-      job,
-      this.followerQueue,
-    )) as {
-      id: number;
-      userId: string;
-    }[];
+    try {
+      // Step 1: Get all followers with timeout
+      const followerJob = await this.followerQueue.add('get-user-id', '', {
+        removeOnComplete: 5,
+        removeOnFail: 10,
+      });
 
-    const AllFollowers: string[] = result.map((u) => u.userId);
-    this.logger.log('All followers:', AllFollowers);
+      const result = (await this.queueEventsRegistryService.waitForJobResult(
+        followerJob,
+        this.followerQueue,
+        60000, // 1 minute timeout
+      )) as { id: number; userId: string }[];
 
-    const allMealsJob = await this.mealQueue.add('find-today-all-meals', '');
+      const allFollowers: string[] = result.map((u) => u.userId);
+      this.logger.log('All followers:', allFollowers);
 
-    const mealsResult = await this.queueEventsRegistryService.waitForJobResult(
-      allMealsJob,
-      this.mealQueue,
-    );
+      // Step 2: Get today's meals with timeout
+      const allMealsJob = await this.mealQueue.add('find-today-all-meals', '', {
+        removeOnComplete: 5,
+        removeOnFail: 10,
+      });
 
-    type MealUser = { internalId: string };
-    type Meal = { mealType: MealType; user?: MealUser };
+      const mealsResult =
+        await this.queueEventsRegistryService.waitForJobResult(
+          allMealsJob,
+          this.mealQueue,
+          60000, // 1 minute timeout
+        );
 
-    const meals: Meal[] = Array.isArray(mealsResult)
-      ? (mealsResult as Meal[])
-      : [];
+      type MealUser = { internalId: string };
+      type Meal = { mealType: MealType; user?: MealUser };
 
-    const internalIds: string[] = Array.from(
-      new Set(
-        meals
-          .filter(
-            (meal) =>
-              meal.mealType === mealType && meal.user && meal.user.internalId,
-          )
-          .map((meal) => meal.user!.internalId),
-      ),
-    );
+      const meals: Meal[] = Array.isArray(mealsResult)
+        ? (mealsResult as Meal[])
+        : [];
 
-    const stateJob = await this.userStateQueue.add(
-      'get-all-iids-user-states',
-      {},
-    );
+      const internalIds: string[] = Array.from(
+        new Set(
+          meals
+            .filter(
+              (meal) =>
+                meal.mealType === mealType && meal.user && meal.user.internalId,
+            )
+            .map((meal) => meal.user!.internalId),
+        ),
+      );
 
-    const stateIds = (await this.queueEventsRegistryService.waitForJobResult(
-      stateJob,
-      this.userStateQueue,
-    )) as string[];
+      // Step 3: Get user states with timeout
+      const stateJob = await this.userStateQueue.add(
+        'get-all-iids-user-states',
+        {},
+        {
+          removeOnComplete: 5,
+          removeOnFail: 10,
+        },
+      );
 
-    const followersToSend: string[] = [];
-    for (const follower of AllFollowers) {
-      const internalId = await getInternalId(undefined, follower);
-      if (!internalIds.includes(internalId) || stateIds.includes(internalId)) {
-        followersToSend.push(follower);
+      const stateIds = (await this.queueEventsRegistryService.waitForJobResult(
+        stateJob,
+        this.userStateQueue,
+        60000, // 1 minute timeout
+      )) as string[];
+      this.logger.debug(
+        `Internal IDs: ${JSON.stringify(internalIds)}, State IDs: ${JSON.stringify(stateIds)}`,
+      );
+
+      // Step 4: Filter followers
+      const followersToSend: string[] = [];
+      for (const follower of allFollowers) {
+        try {
+          const internalId = await getInternalId(undefined, follower);
+          if (
+            !internalIds.includes(internalId) ||
+            !stateIds.includes(internalId)
+          ) {
+            followersToSend.push(follower);
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to get internal ID for follower ${follower}:`,
+            error,
+          );
+          // Continue processing other followers
+        }
       }
-    }
 
-    return followersToSend;
+      this.logger.debug(
+        `Found ${followersToSend.length} followers to send ${mealType} message`,
+      );
+      return followersToSend;
+    } catch (error) {
+      this.logger.error(`Error in getFollowersToSent for ${mealType}:`, error);
+      throw error;
+    }
   }
 
   async handleBreakfastJob() {
+    this.logger.debug('Starting breakfast job processing');
     const message =
       'มื้อเช้านี้จะกินอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิดูด้วยน้าาา 😉';
 
-    const userIds = await this.getFollowersToSent('breakfast');
-    this.logger.log('send message to user IDs:', userIds);
-
-    if (userIds.length === 0) {
-      this.logger.warn('No users to send breakfast message');
-      return 'No users to send breakfast message';
-    }
-
     try {
+      const userIds = await this.getFollowersToSent('breakfast');
+      this.logger.log('send message to user IDs:', userIds);
+
+      if (userIds.length === 0) {
+        this.logger.warn('No users to send breakfast message');
+        return 'No users to send breakfast message';
+      }
+
       await this.client
         .multicast({ to: userIds, messages: [{ type: 'text', text: message }] })
         .then(() =>
           this.logger.log('breakfast message sent successfully: ' + message),
         );
 
-      return {
+      const result = {
         result: 'Breakfast job completed successfully',
         userIds,
+        timestamp: new Date().toISOString(),
       };
+
+      this.logger.debug('Breakfast job completed:', result);
+      return result;
     } catch (error) {
-      this.logger.error('Error sending breakfast job message:', error);
+      this.logger.error('Error in breakfast job:', error);
+      throw error;
     }
   }
 
   async handleLunchJob() {
+    this.logger.debug('Starting lunch job processing');
     const message =
-      'มื้อเที่ยงนี้จะกินเมนูอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิดูด้วยน้าาา 😉';
-
-    const userIds = await this.getFollowersToSent('lunch');
-    this.logger.log('send message to user IDs:', userIds);
-
-    if (userIds.length === 0) {
-      this.logger.warn('No users to send lunch message');
-      return 'No users to send lunch message';
-    }
+      'มื้อเที่ยงนี้จะกินเมนูอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิดูด้วยน้ااา 😉';
 
     try {
+      const userIds = await this.getFollowersToSent('lunch');
+      this.logger.log('send message to user IDs:', userIds);
+
+      if (userIds.length === 0) {
+        this.logger.warn('No users to send lunch message');
+        return 'No users to send lunch message';
+      }
+
       await this.client
         .multicast({ to: userIds, messages: [{ type: 'text', text: message }] })
         .then(() =>
           this.logger.log('lunch message sent successfully: ' + message),
         );
-      return {
+
+      const result = {
         result: 'Lunch job completed successfully',
         userIds,
+        timestamp: new Date().toISOString(),
       };
+
+      this.logger.debug('Lunch job completed:', result);
+      return result;
     } catch (error) {
-      this.logger.error('Error sending lunch job message:', error);
+      this.logger.error('Error in lunch job:', error);
+      throw error;
     }
   }
 
   async handleDinnerJob() {
+    this.logger.debug('Starting dinner job processing');
     const message =
       'มื้อเย็นนี้จะกินเมนูอะไรดีคะ? กินแล้วอย่าลืมถ่ายรูปส่งมาให้มะลิดูด้วยน้าาา 😉';
 
-    const userIds = await this.getFollowersToSent('dinner');
-    this.logger.log('send message to user IDs:', userIds);
-
-    if (userIds.length === 0) {
-      this.logger.warn('No users to send dinner message');
-      return 'No users to send dinner message';
-    }
-
     try {
+      const userIds = await this.getFollowersToSent('dinner');
+      this.logger.log('send message to user IDs:', userIds);
+
+      if (userIds.length === 0) {
+        this.logger.warn('No users to send dinner message');
+        return 'No users to send dinner message';
+      }
+
       await this.client
         .multicast({ to: userIds, messages: [{ type: 'text', text: message }] })
         .then(() =>
           this.logger.log('dinner message sent successfully: ' + message),
         );
 
-      return {
+      const result = {
         result: 'Dinner job completed successfully',
         userIds,
+        timestamp: new Date().toISOString(),
       };
+
+      this.logger.debug('Dinner job completed:', result);
+      return result;
     } catch (error) {
-      this.logger.error('Error sending dinner job message:', error);
+      this.logger.error('Error in dinner job:', error);
+      throw error;
     }
   }
 }

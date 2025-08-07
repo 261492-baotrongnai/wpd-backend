@@ -162,7 +162,7 @@ export class UsersService {
   async findUserByInternalId(internalId: string) {
     const user = await this.usersRepository.findOne({
       where: { internalId },
-      relations: ['programs', 'images', 'states'],
+      relations: ['programs', 'states'],
     });
 
     return user;
