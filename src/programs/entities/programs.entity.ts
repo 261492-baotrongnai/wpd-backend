@@ -1,4 +1,5 @@
 import { Admin } from 'src/admin/entities/admin.entity';
+import { Organization } from 'src/organizations/entities/organization.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -6,6 +7,7 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -17,12 +19,6 @@ export class Program {
 
   @Column({ type: 'text', nullable: false })
   name: string;
-
-  @Column({ type: 'text', nullable: true })
-  hospitalName?: string;
-
-  @Column({ type: 'text', nullable: true })
-  organizationName?: string;
 
   @Column({ type: 'text', nullable: true })
   code?: string;
@@ -39,10 +35,13 @@ export class Program {
   @ManyToMany(() => User, (user) => user.programs)
   @JoinTable({
     name: 'user_programs',
-    joinColumns: [{ name: 'programId' }],
-    inverseJoinColumns: [{ name: 'userId' }],
+    joinColumn: { name: 'programId' },
+    inverseJoinColumn: { name: 'userId' },
   })
   users: User[];
+
+  @ManyToOne(() => Organization, (organization) => organization.programs)
+  organization: Organization;
 
   constructor(program: Partial<Program>) {
     Object.assign(this, program);

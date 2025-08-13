@@ -15,6 +15,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { Organization } from 'src/organizations/entities/organization.entity';
 
 @Controller('admin')
 export class AdminController {
@@ -52,6 +53,19 @@ export class AdminController {
         job,
         this.adminQueue,
       );
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('find-organization-admins')
+  async findOrganizationAdmins(@Request() req: { user: { id: number } }) {
+    const job = await this.adminQueue.add('find-organization-admins', {
+      adminId: req.user.id,
+    });
+    const result = (await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.adminQueue,
+    )) as Organization[];
     return result;
   }
 

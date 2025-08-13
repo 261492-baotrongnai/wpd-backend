@@ -3,6 +3,7 @@ import { IdTokenAuthGuard } from './idToken-auth.guard'; // your new guard
 import { AuthService } from './auth.service';
 import { AdminIdTokenAuthGuard } from './admin-idToken-auth.guard';
 import { TokenService } from './token.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -34,5 +35,12 @@ export class AuthController {
   async getShortToken() {
     const token = await this.tokenService.generateToken(300);
     return { token };
+  }
+
+  @Get('validate-token')
+  @UseGuards(JwtAuthGuard)
+  validateToken(@Request() req: { user: { internalId: string; id: number } }) {
+    console.log('Validating token for user:', req.user.internalId);
+    return { valid: true };
   }
 }

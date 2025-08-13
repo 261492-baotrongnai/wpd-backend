@@ -1,3 +1,4 @@
+import { Organization } from 'src/organizations/entities/organization.entity';
 import { Program } from 'src/programs/entities/programs.entity';
 import {
   Column,
@@ -42,4 +43,12 @@ export class Admin {
     inverseJoinColumns: [{ name: 'programId' }],
   })
   programs: Program[];
+
+  @ManyToMany(() => Organization, (organization) => organization.admins)
+  @JoinTable({
+    name: 'admin_organizations',
+    joinColumns: [{ name: 'adminId' }],
+    inverseJoinColumns: [{ name: 'organizationId' }],
+  })
+  organizations: Organization[];
 }

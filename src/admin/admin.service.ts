@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Admin } from './entities/admin.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { Organization } from 'src/organizations/entities/organization.entity';
 
 @Injectable()
 export class AdminService {
@@ -52,5 +53,17 @@ export class AdminService {
       return null;
     }
     return admin;
+  }
+
+  async findOrganizationsOfAdmin(adminId: number): Promise<Organization[]> {
+    const admin = await this.adminRepository.findOne({
+      where: { id: adminId },
+      relations: ['organizations'],
+    });
+    if (!admin) {
+      this.logger.warn(`Admin with id ${adminId} not found.`);
+      throw new NotFoundException(`Admin with id ${adminId} not found.`);
+    }
+    return admin.organizations;
   }
 }
