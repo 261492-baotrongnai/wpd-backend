@@ -114,7 +114,12 @@ export class FoodGradesService {
         continue;
       }
 
+      const scores = foods.map((food) => { return this.gradeToScore(food.grade) })
+      const maxScore = Math.max(...scores);
+
       return {
+        lowestGrade: this.scoreToGrade(maxScore),
+        maxScore: maxScore,
         avgGrade: this.scoreToGrade(totalGrade / menus.length),
         avgScore: totalGrade / menus.length,
         foods,
