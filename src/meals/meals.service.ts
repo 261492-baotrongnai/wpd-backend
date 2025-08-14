@@ -24,6 +24,8 @@ export class MealsService {
       avgScore: createMealDto.avgScore,
       avgGrade: createMealDto.avgGrade,
       user: createMealDto.user,
+      maxScore: createMealDto.maxScore,
+      lowestGrade: createMealDto.lowestGrade,
     });
 
     return this.entityManager.save(new_meal);

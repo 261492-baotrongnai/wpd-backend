@@ -8,4 +8,6 @@ export class CreateMealDto {
   avgScore: number;
   avgGrade: FoodGradeType;
   user: User;
+  maxScore: number;
+  lowestGrade: FoodGradeType;
 }

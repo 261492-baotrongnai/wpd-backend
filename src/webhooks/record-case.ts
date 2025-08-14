@@ -460,8 +460,8 @@ export class RecordCaseHandler {
           .filter((name) => name.length > 0); // Remove empty strings
         this.logger.debug('Parsed menu names:', parsedMenuNames);
 
-        // get the average grade and score from the foodGrade service
-        const { avgGrade, avgScore, foods } =
+        // get the lowest grade, max score, average grade and score from the foodGrade service
+        const { lowestGrade, maxScore, avgGrade, avgScore, foods } =
           await this.foodGrade.getMenuGrade(parsedMenuNames);
 
         const ai_grading_menus = this.gradingByAIMenu(foods);
@@ -479,7 +479,7 @@ export class RecordCaseHandler {
           return 'MenuChoicesConfirm Not Food';
         }
         let GradeResult: line.messagingApi.FlexMessage;
-        switch (avgGrade) {
+        switch (lowestGrade) {
           case 'A':
             GradeResult = GradeFlex('A', messageText, ai_grading_menus);
 
@@ -531,6 +531,8 @@ export class RecordCaseHandler {
           imageName: fileName,
           avgGrade,
           avgScore,
+          maxScore, 
+          lowestGrade,
         });
         for (const food of foods) {
           await this.foodService.create({
