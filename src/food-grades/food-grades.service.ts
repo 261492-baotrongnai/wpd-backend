@@ -40,7 +40,18 @@ export class FoodGradesService {
     return `This action returns a #${id} foodGrade`;
   }
 
-  async getMenuGrade(menus: string[]) {
+  async getMenuGrade(menus: string[]): Promise<{
+    lowestGrade: FoodGradeType;
+    maxScore: number;
+    avgGrade: FoodGradeType;
+    avgScore: number;
+    foods: Array<{
+      name: string;
+      grade: FoodGradeType;
+      description: string;
+      grading_by_ai: boolean;
+    }>;
+  }> {
     try {
       let totalGrade = 0;
       const foods: Array<{
@@ -114,7 +125,9 @@ export class FoodGradesService {
         continue;
       }
 
-      const scores = foods.map((food) => { return this.gradeToScore(food.grade) })
+      const scores = foods.map((food) => {
+        return this.gradeToScore(food.grade);
+      });
       const maxScore = Math.max(...scores);
 
       return {

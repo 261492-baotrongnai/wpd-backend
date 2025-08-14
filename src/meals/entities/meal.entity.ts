@@ -33,10 +33,10 @@ export class Meal {
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
   avgGrade: FoodGradeType;
 
-  @Column({ type: 'number', default: 0 })
+  @Column({ type: 'float', default: 0 })
   maxScore: number;
 
-  @Column({ type: 'enum', enum: ['A', 'B', 'C' ]})
+  @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
   lowestGrade: FoodGradeType;
 
   @ManyToOne(() => User, (user) => user.meals, { onDelete: 'CASCADE' })

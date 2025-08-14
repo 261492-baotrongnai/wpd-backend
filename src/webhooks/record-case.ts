@@ -531,7 +531,7 @@ export class RecordCaseHandler {
           imageName: fileName,
           avgGrade,
           avgScore,
-          maxScore, 
+          maxScore,
           lowestGrade,
         });
         for (const food of foods) {
