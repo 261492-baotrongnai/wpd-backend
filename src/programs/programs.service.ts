@@ -50,7 +50,7 @@ export class ProgramsService {
 
       if (existingCodes.length === 0) {
         // If no existing codes, start with 01
-        newProgram.code = `${organization.code_name}-01`;
+        newProgram.code = `${organization.code_name}-001`;
         this.logger.debug(
           `No existing codes found for organization ${organization.code_name}. Starting with code ${newProgram.code}`,
         );
