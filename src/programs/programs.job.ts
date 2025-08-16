@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ProgramsService } from './programs.service';
 import { CreateProgramDto } from './dto/create.dto';
 
@@ -11,9 +11,18 @@ export class ProgramsJobService {
     return await this.programsService.createProgram(id, body);
   }
 
-  async handleGetProgramInfoJob(id: number) {
+  async handleGetProgramInfoJob(id: number, userId: number) {
     this.logger.debug(`Fetching program info for ID: ${id}`);
-    return await this.programsService.getProgramInfoFromUser(id);
+    const isOwned = await this.programsService.isAdminOwnProgram(userId, id);
+    if (!isOwned) {
+      this.logger.warn(
+        `User ${userId} is not authorized to access program ${id}`,
+      );
+      throw new UnauthorizedException(
+        `User ${userId} is not authorized to access program ${id}`,
+      );
+    }
+    return await this.programsService.getProgramInfo(id);
   }
 
   async handleFindProgramByCodeJob(code: string) {

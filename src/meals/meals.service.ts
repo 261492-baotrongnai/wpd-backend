@@ -198,4 +198,19 @@ export class MealsService {
   remove(id: number) {
     return `This action removes a #${id} meal`;
   }
+
+  async FindLatestMeal(userId: number) {
+    this.logger.debug(`Finding latest meal for userId: ${userId}`);
+    const latestMeal = await this.mealsRepository.findOne({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      relations: ['foods'],
+    });
+    if (!latestMeal) {
+      this.logger.warn(`No meals found for userId: ${userId}`);
+      return null;
+    }
+    this.logger.debug(`Latest meal found:`, latestMeal);
+    return latestMeal;
+  }
 }
