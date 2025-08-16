@@ -27,6 +27,7 @@ export class AuthController {
     const token = await this.authService.generateToken(
       admin.internalId,
       'admin',
+      '7d',
     );
     return { access_token: token };
   }
