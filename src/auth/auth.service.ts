@@ -11,11 +11,15 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly adminService: AdminService,
   ) {}
-  async generateToken(internalId: string, role: string): Promise<string> {
+  async generateToken(
+    internalId: string,
+    role: string,
+    expiresIn: string = '1h',
+  ): Promise<string> {
     const secretKey = process.env.JWT_SECRET;
     return await this.jwtService.signAsync(
       { internalId, role },
-      { secret: secretKey, expiresIn: '1h' },
+      { secret: secretKey, expiresIn: expiresIn },
     );
   }
 
