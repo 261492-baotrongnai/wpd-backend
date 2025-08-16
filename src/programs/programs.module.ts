@@ -14,9 +14,12 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
 @Module({
   imports: [
     TypeOrmModule.forFeature([Program]),
-    BullModule.registerQueue({
-      name: 'program',
-    }),
+    BullModule.registerQueue(
+      {
+        name: 'program',
+      },
+      { name: 'meal' },
+    ),
     Admin,
   ],
   controllers: [ProgramsController],

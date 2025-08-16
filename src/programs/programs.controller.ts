@@ -4,6 +4,7 @@ import {
   Get,
   Logger,
   NotFoundException,
+  Param,
   Post,
   Put,
   Request,
@@ -46,14 +47,16 @@ export class ProgramsController {
     return result;
   }
 
-  @Get('info')
+  @Get('/:id/info')
   @UseGuards(JwtAuthGuard)
   async getProgramInfo(
     @Request() req: { user: { internalId: string; id: number } },
+    @Param('id') id: number,
   ) {
     this.logger.debug(`Fetching program info for ID: ${req.user.id}`);
     const job = await this.programQueue.add('get-program-info', {
-      id: req.user.id,
+      id: id,
+      userId: req.user.id,
     });
     const result: unknown =
       await this.queueEventsRegistryService.waitForJobResult(
@@ -175,6 +178,111 @@ export class ProgramsController {
     this.logger.debug(`Fetching program table for admin ID: ${req.user.id}`);
     const job = await this.programQueue.add('get-program-table', {
       adminId: req.user.id,
+    });
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      );
+    return result;
+  }
+
+  @Get('/:id/users')
+  @UseGuards(JwtAuthGuard)
+  async getProgramUsers(
+    @Request() req: { user: { internalId: string; id: number } },
+    @Param('id') programId: number,
+  ) {
+    this.logger.debug(`Fetching users for program ID: ${programId}`);
+    const job = await this.programQueue.add('get-program-users', {
+      programId: programId,
+    });
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      );
+    return result;
+  }
+
+  @Put('org')
+  @UseGuards(JwtAuthGuard)
+  async updateProgramOrg(
+    @Request() req: { user: { internalId: string; id: number } },
+
+    @Body() body: { organizationId: number; programId: number },
+  ) {
+    this.logger.debug(
+      `Updating organization for program ID: ${body.programId} by admin ID: ${req.user.id}`,
+    );
+
+    const checkJob = await this.programQueue.add('check-admin-program-exists', {
+      adminId: req.user.id,
+      programId: body.programId,
+    });
+    const checkResult = (await this.queueEventsRegistryService.waitForJobResult(
+      checkJob,
+      this.programQueue,
+    )) as { isExists: boolean };
+    if (!checkResult.isExists) {
+      this.logger.error(
+        `Admin with ID ${req.user.id} does not own program with ID ${body.programId}`,
+      );
+      throw new UnauthorizedException(
+        `Admin with ID ${req.user.id} does not own program with ID ${body.programId}`,
+      );
+    }
+    this.logger.debug(
+      `Admin with ID ${req.user.id} owns program with ID ${body.programId}, proceeding with update.`,
+    );
+    const job = await this.programQueue.add('update-program-org', {
+      body: {
+        id: body.programId,
+        organizationId: body.organizationId,
+      },
+    });
+    const result: unknown =
+      await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      );
+    return result;
+  }
+
+  @Put('name')
+  @UseGuards(JwtAuthGuard)
+  async updateProgramName(
+    @Request() req: { user: { internalId: string; id: number } },
+    @Body() body: { name: string; programId: number },
+  ) {
+    this.logger.debug(
+      `Updating name for program ID: ${body.programId} by admin ID: ${req.user.id}`,
+    );
+
+    const checkJob = await this.programQueue.add('check-admin-program-exists', {
+      adminId: req.user.id,
+      programId: body.programId,
+    });
+    const checkResult = (await this.queueEventsRegistryService.waitForJobResult(
+      checkJob,
+      this.programQueue,
+    )) as { isExists: boolean };
+    if (!checkResult.isExists) {
+      this.logger.error(
+        `Admin with ID ${req.user.id} does not own program with ID ${body.programId}`,
+      );
+      throw new UnauthorizedException(
+        `Admin with ID ${req.user.id} does not own program with ID ${body.programId}`,
+      );
+    }
+    this.logger.debug(
+      `Admin with ID ${req.user.id} owns program with ID ${body.programId}, proceeding with update.`,
+    );
+    const job = await this.programQueue.add('update-program-name', {
+      body: {
+        id: body.programId,
+        name: body.name,
+      },
     });
     const result: unknown =
       await this.queueEventsRegistryService.waitForJobResult(

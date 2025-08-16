@@ -6,6 +6,10 @@ import { Admin } from 'src/admin/entities/admin.entity';
 import { UpdateProgramDto } from './dto/update.dto';
 import { Organization } from 'src/organizations/entities/organization.entity';
 import { CreateProgramDto } from './dto/create.dto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { Meal } from 'src/meals/entities/meal.entity';
 
 @Injectable()
 export class ProgramsService {
@@ -14,6 +18,11 @@ export class ProgramsService {
     @InjectRepository(Program)
     private readonly programRepository: Repository<Program>,
     private readonly entityManager: EntityManager,
+
+    @InjectQueue('meal')
+    private readonly mealQueue: Queue,
+
+    private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {}
 
   async createProgram(id: number, program: CreateProgramDto): Promise<Program> {
@@ -72,21 +81,21 @@ export class ProgramsService {
     return savedProgram;
   }
 
-  async getProgramInfoFromUser(admin_id: number): Promise<Program[] | null> {
-    this.logger.debug(`Fetching programs for admin ID: ${admin_id}`);
+  async getProgramInfo(program_id: number) {
+    this.logger.debug(`Fetching programs for program ID: ${program_id}`);
 
-    const programs = await this.programRepository.find({
-      where: { admins: { id: admin_id } },
-      relations: ['admins', 'users'],
+    const program = await this.programRepository.findOne({
+      where: { id: program_id },
+      relations: ['users', 'admins', 'organization'],
     });
-    if (programs.length === 0) {
-      this.logger.warn(`No programs found for admin ID: ${admin_id}`);
-      return null;
+    if (!program) {
+      this.logger.warn(`Program with ID ${program_id} not found.`);
+      return new NotFoundException(`Program with ID ${program_id} not found.`);
     }
-    this.logger.debug(
-      `Found ${programs.length} programs for admin ID: ${admin_id}`,
-    );
-    return programs;
+    const totalParticipants = program.users.length;
+
+    this.logger.debug(`Program found: ${JSON.stringify(program)}`);
+    return { program, totalParticipants };
   }
 
   async findProgramByCode(code: string): Promise<Program | null> {
@@ -196,5 +205,40 @@ export class ProgramsService {
       `Program table for admin ID ${adminId}: ${JSON.stringify(programTable)}`,
     );
     return programTable;
+  }
+
+  async getProgramUsers(programId: number) {
+    this.logger.debug(`Fetching users for program ID: ${programId}`);
+    const program = await this.programRepository.findOne({
+      where: { id: programId },
+      relations: ['users'],
+    });
+    if (!program) {
+      this.logger.warn(`Program with ID ${programId} not found.`);
+      return { users: [] };
+    }
+    const users_with_last_recorded_at = await Promise.all(
+      program.users.map(async (user) => {
+        const latest_meal_job = await this.mealQueue.add('find-latest-meal', {
+          userId: user.id,
+        });
+        const latestMeal =
+          (await this.queueEventsRegistryService.waitForJobResult(
+            latest_meal_job,
+            this.mealQueue,
+          )) as Meal | null;
+        return {
+          ...user,
+          last_recorded_at: latestMeal?.createdAt || null,
+        };
+      }),
+    );
+    this.logger.debug(
+      `Program users for program ID ${programId}: ${JSON.stringify(
+        users_with_last_recorded_at,
+      )}`,
+    );
+
+    return { users: users_with_last_recorded_at };
   }
 }

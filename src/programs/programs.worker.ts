@@ -26,6 +26,7 @@ export class ProgramProcessor extends WorkerHost {
     } else if (job.name === 'get-program-info') {
       return await this.programJobService.handleGetProgramInfoJob(
         (job.data as { id: number }).id,
+        (job.data as { userId: number }).userId,
       );
     } else if (job.name === 'find-program-by-code') {
       return await this.programJobService.handleFindProgramByCodeJob(
@@ -34,8 +35,15 @@ export class ProgramProcessor extends WorkerHost {
     } else if (job.name === 'validate-code') {
       const { code } = job.data as { code: string };
       return await this.programJobService.handleValidateCodeJob(code);
-    } else if (job.name === 'update-program') {
+    } else if (
+      job.name === 'update-program' ||
+      job.name === 'update-program-name' ||
+      job.name === 'update-program-org'
+    ) {
       const { body } = job.data as { body: UpdateProgramDto };
+      this.logger.debug(
+        `Processing update-program job with data: ${JSON.stringify(body)}`,
+      );
       return await this.programService.updateProgram(body);
     } else if (job.name === 'check-admin-program-exists') {
       const { adminId, programId } = job.data as {
@@ -46,6 +54,9 @@ export class ProgramProcessor extends WorkerHost {
     } else if (job.name === 'get-program-table') {
       const { adminId } = job.data as { adminId: number };
       return await this.programService.getProgramTable(adminId);
+    } else if (job.name === 'get-program-users') {
+      const { programId } = job.data as { programId: number };
+      return await this.programService.getProgramUsers(programId);
     }
   }
   // @OnWorkerEvent('progress')
