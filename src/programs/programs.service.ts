@@ -101,7 +101,7 @@ export class ProgramsService {
   async findProgramByCode(code: string): Promise<Program | null> {
     const program = await this.programRepository.findOne({
       where: { code },
-      relations: ['admins', 'users'],
+      relations: ['admins', 'users', 'organization'],
     });
     if (!program) {
       this.logger.warn(`Program with code ${code} not found.`);

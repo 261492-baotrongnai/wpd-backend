@@ -18,6 +18,7 @@ import { CreateProgramDto } from './dto/create.dto';
 import { ShortTokenGuard } from 'src/auth/short-token.guard';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 import { UpdateProgramDto } from './dto/update.dto';
+import { Program } from './entities/programs.entity';
 
 @Controller('program')
 export class ProgramsController {
@@ -151,24 +152,24 @@ export class ProgramsController {
     }
   }
 
-  @Post('check-admin-program-exists')
-  async checkAdminProgramExists(
-    @Body() body: { adminId: number; programId: number },
-  ) {
-    this.logger.debug(
-      `Checking if admin with ID ${body.adminId} owns program with ID ${body.programId}`,
-    );
-    const job = await this.programQueue.add('check-admin-program-exists', {
-      adminId: body.adminId,
-      programId: body.programId,
-    });
-    const result: unknown =
-      await this.queueEventsRegistryService.waitForJobResult(
-        job,
-        this.programQueue,
-      );
-    return result;
-  }
+  // @Post('check-admin-program-exists')
+  // async checkAdminProgramExists(
+  //   @Body() body: { adminId: number; programId: number },
+  // ) {
+  //   this.logger.debug(
+  //     `Checking if admin with ID ${body.adminId} owns program with ID ${body.programId}`,
+  //   );
+  //   const job = await this.programQueue.add('check-admin-program-exists', {
+  //     adminId: body.adminId,
+  //     programId: body.programId,
+  //   });
+  //   const result: unknown =
+  //     await this.queueEventsRegistryService.waitForJobResult(
+  //       job,
+  //       this.programQueue,
+  //     );
+  //   return result;
+  // }
 
   @Get('table')
   @UseGuards(JwtAuthGuard)
@@ -289,6 +290,48 @@ export class ProgramsController {
         job,
         this.programQueue,
       );
+    return result;
+  }
+
+  @Get('find-by-code/:code')
+  @UseGuards(JwtAuthGuard)
+  async findProgramByCode(
+    @Request() req: { user: { internalId: string; id: number } },
+    @Param('code') code: string,
+  ) {
+    this.logger.debug(`Finding program by code: ${code}`);
+    const job = await this.programQueue.add('find-program-by-code', {
+      code: code,
+    });
+    const result: Program =
+      (await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.programQueue,
+      )) as Program;
+    if (!result) {
+      this.logger.warn(`Program with code ${code} not found.`);
+      throw new NotFoundException(`Program with code ${code} not found`);
+    }
+
+    const checkJob = await this.programQueue.add('check-admin-program-exists', {
+      adminId: req.user.id,
+      programId: result.id,
+    });
+    const checkResult = (await this.queueEventsRegistryService.waitForJobResult(
+      checkJob,
+      this.programQueue,
+    )) as { isExists: boolean };
+    if (!checkResult.isExists) {
+      this.logger.error(
+        `Admin with ID ${req.user.id} does not own program with ID ${result.id}`,
+      );
+      throw new UnauthorizedException(
+        `Admin with ID ${req.user.id} does not own program with ID ${result.id}`,
+      );
+    }
+    this.logger.debug(
+      `Admin with ID ${req.user.id} owns program with code ${code}, returning program info.`,
+    );
     return result;
   }
 }
