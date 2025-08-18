@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Request,
   UnauthorizedException,
   UseGuards,
@@ -293,11 +294,11 @@ export class ProgramsController {
     return result;
   }
 
-  @Get('find-by-code/:code')
+  @Get('find-by-code')
   @UseGuards(JwtAuthGuard)
   async findProgramByCode(
     @Request() req: { user: { internalId: string; id: number } },
-    @Param('code') code: string,
+    @Query('code') code: string,
   ) {
     this.logger.debug(`Finding program by code: ${code}`);
     const job = await this.programQueue.add('find-program-by-code', {
