@@ -68,7 +68,7 @@ export class ImagesService {
       Key: key,
     });
 
-    // Create a pre-signed URL that expires in 24 hour
+    // Create a pre-signed URL that expires in 12 hours
     const signed_url = await getSignedUrl(this.s3Client, command, {
       expiresIn: 3600 * 12,
     });

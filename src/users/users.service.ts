@@ -98,6 +98,7 @@ export class UsersService {
         const acct = await this.generateToken(user.internalId);
 
         user.programs.push(program as Program);
+        user.userId = uid?.sub; // Set userId from decoded token
         await this.entityManager.save(user);
         this.logger.log(
           `User with internalId: ${user.internalId} already exists, added to program`,
@@ -111,6 +112,7 @@ export class UsersService {
         newUser = new User({
           internalId: iid,
           programs: [program as Program],
+          userId: uid?.sub, // Set userId from decoded token
         });
       } else {
         newUser = new User({

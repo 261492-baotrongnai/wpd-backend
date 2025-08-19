@@ -12,12 +12,11 @@ import { UserState } from 'src/user-states/entities/user-state.entity';
 import { RecordCaseHandler } from './record-case';
 import { RegistConfirmFlex } from 'src/users/user-flex';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
 import { OutOfCaseFlex } from './flex/flex-no-case';
 import { ProgramUserFlex } from './flex/flex-program-user';
 import { CommonUserFlex } from './flex/flex-common-user';
-
 @Injectable()
 export class WebhooksService {
   private readonly client: line.messagingApi.MessagingApiClient;
@@ -35,17 +34,6 @@ export class WebhooksService {
       channelSecret: process.env.LINE_CHANNEL_SECRET || '',
     };
     this.client = new line.messagingApi.MessagingApiClient(config);
-  }
-
-  private async waitForJobUserStateResult(
-    job: Job,
-    queue: Queue,
-  ): Promise<UserState[]> {
-    const queueEvents = this.queueEventsRegistryService.getQueueEvents(queue);
-    const result: UserState[] = (await job.waitUntilFinished(
-      queueEvents,
-    )) as UserState[];
-    return result;
   }
 
   async processEvents(events: line.WebhookEvent[]): Promise<string> {
@@ -88,6 +76,16 @@ export class WebhooksService {
                   case 'บันทึกอาหารที่ทาน':
                     this.logger.debug('User requested to record meal:');
                     result = await this.handleMealRecord(event.replyToken, uid);
+                    break;
+                  case 'โปสเตอร์บันทึกอาหาร':
+                    this.logger.debug(
+                      'User requested to add meal record poster:',
+                    );
+                    result = await this.handleMealRecordPoster(
+                      event.replyToken,
+                      uid,
+                    );
+                    break;
                 }
               } else {
                 this.logger.warn(
@@ -100,8 +98,23 @@ export class WebhooksService {
             }
           } else {
             this.logger.log('handle waiting state');
-            for (const user_state of user_states) {
-              result = await this.handleWaitingState(event, user_state);
+            const datePosterState = user_states.find(
+              (state) => state.state === 'date-poster',
+            );
+            if (
+              datePosterState &&
+              event.message?.type === 'text' &&
+              event.message.text === 'โปสเตอร์บันทึกอาหาร'
+            ) {
+              this.logger.debug(
+                'User has date poster state, sending poster:',
+                datePosterState.pendingFile?.filePath,
+              );
+              result = await this.handleMealRecordPoster(event.replyToken, uid);
+            } else {
+              for (const user_state of user_states) {
+                result = await this.handleWaitingState(event, user_state);
+              }
             }
           }
         } else if (event.type === 'follow') {
@@ -354,5 +367,53 @@ export class WebhooksService {
         },
       },
     );
+  }
+
+  async handleMealRecordPoster(
+    replyToken: string,
+    uid: string,
+  ): Promise<string> {
+    this.logger.debug(`user ${uid} requested to get meal record poster`);
+    try {
+      const iid = await getInternalId(undefined, uid);
+      const user = await this.userService.findUserByInternalId(iid);
+      if (!user) {
+        this.logger.error('User not found in handleMealRecordPoster');
+        throw new Error('User not found');
+      }
+      const posterState = user.states.find(
+        (state) => state.state === 'date-poster',
+      );
+      if (!posterState) {
+        this.logger.warn('No date poster state found for user:', user.id);
+        throw new Error('No date poster state found');
+      }
+      try {
+        await this.client.replyMessage({
+          replyToken,
+          messages: [posterState.messageToSend],
+        });
+      } catch (error) {
+        this.logger.error(
+          `Error sending meal record poster with reply ${replyToken}:`,
+          error,
+        );
+        throw new Error('Failed to send meal record poster');
+      }
+      this.logger.debug('Meal record poster sent successfully');
+      const removeJob = await this.userStateQueue.add('remove-user-state', {
+        id: posterState.id,
+      });
+      await this.queueEventsRegistryService.waitForJobResult(
+        removeJob,
+        this.userStateQueue,
+      );
+      this.logger.debug('Removed user state after sending poster');
+
+      return 'Meal record poster sent successfully';
+    } catch (error) {
+      this.logger.error('Error handling meal record poster:', error);
+      throw error;
+    }
   }
 }

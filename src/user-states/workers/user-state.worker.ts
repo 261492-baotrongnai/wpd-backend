@@ -61,6 +61,21 @@ export class UserStateProcessor extends WorkerHost {
         return await this.userStatesService.remove(job.data as number);
       case 'get-candidates':
         return await this.userStatesService.findCandidates(job.data as number);
+      case 'save-date-poster': {
+        const { filePath, uid, id, iid } = job.data as {
+          filePath: string;
+          uid: string;
+          id: number;
+          iid: string;
+        };
+        this.logger.debug(`Uploading export poster for user ${uid}`);
+        return await this.userStatesService.addDatePosterState(
+          filePath,
+          uid,
+          id,
+          iid,
+        );
+      }
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);
         return null;

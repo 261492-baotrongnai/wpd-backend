@@ -1,5 +1,6 @@
 import { MealType } from 'src/meals/entities/meal.entity';
 import { User } from 'src/users/entities/user.entity';
+import * as line from '@line/bot-sdk';
 
 export class CreateUserStateDto {
   user: User;
@@ -7,4 +8,9 @@ export class CreateUserStateDto {
   menuName?: { name: string[] }[] | null;
   pendingFile?: { fileName: string; filePath: string } | null;
   mealType?: MealType;
+  messageToSend?:
+    | line.messagingApi.TextMessage
+    | line.messagingApi.ImageMessage
+    | line.messagingApi.FlexMessage;
+  lineUserId?: string;
 }
