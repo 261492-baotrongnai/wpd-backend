@@ -9,9 +9,16 @@ import { FoodGradesModule } from 'src/food-grades/food-grades.module';
 import { ExternalApiService } from 'src/external-api/external-api.service';
 import { MealsJobService } from './meals.job';
 import { MealsProcessor } from './meals.worker';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Meal]), FoodGradesModule],
+  imports: [
+    TypeOrmModule.forFeature([Meal]),
+    FoodGradesModule,
+    BullModule.registerQueue({
+      name: 'meal',
+    }),
+  ],
   controllers: [MealsController],
   providers: [
     MealsService,

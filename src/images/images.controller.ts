@@ -2,10 +2,10 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
+  // Body,
+  // Patch,
+  // Param,
+  // Delete,
   UseInterceptors,
   UploadedFile,
   UseGuards,
@@ -13,8 +13,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ImagesService } from './images.service';
-import { CreateImageDto } from './dto/create-image.dto';
-import { UpdateImageDto } from './dto/update-image.dto';
+// import { CreateImageDto } from './dto/create-image.dto';
+// import { UpdateImageDto } from './dto/update-image.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
@@ -24,12 +24,23 @@ export class ImagesController {
 
   @UseGuards(JwtAuthGuard)
   @Get('meal_image')
-  getMealsImageUrsl(
+  getMealsImageUrl(
     @Request() req: { user: { id: number } },
     @Query('file_name') file_name: string,
   ) {
     console.log('file_name:', file_name);
     const key = `meal_images/${req.user.id}/${file_name}`;
+    const response = this.imagesService.getSignedUrl(key);
+    return response;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/signed-url')
+  getAdminSignedUrl(
+    @Request() req: { user: { id: number } },
+    @Query('key') key: string,
+  ) {
+    console.log('key:', key);
     const response = this.imagesService.getSignedUrl(key);
     return response;
   }
@@ -42,28 +53,28 @@ export class ImagesController {
     return response;
   }
 
-  @Post()
-  async create(@Body() createImageDto: CreateImageDto) {
-    return this.imagesService.create(createImageDto);
-  }
+  // @Post()
+  // async create(@Body() createImageDto: CreateImageDto) {
+  //   return this.imagesService.create(createImageDto);
+  // }
 
-  @Get()
-  findAll() {
-    return this.imagesService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.imagesService.findAll();
+  // }
 
   // @Get(':id')
   // async findOne(@Param('id') id: string) {
   //   return this.imagesService.findOne(+id);
   // }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
-    return this.imagesService.update(+id, updateImageDto);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
+  //   return this.imagesService.update(+id, updateImageDto);
+  // }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.imagesService.remove(+id);
-  }
+  // @Delete(':id')
+  // async remove(@Param('id') id: string) {
+  //   return this.imagesService.remove(+id);
+  // }
 }

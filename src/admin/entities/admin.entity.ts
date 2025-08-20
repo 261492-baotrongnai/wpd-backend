@@ -30,6 +30,12 @@ export class Admin {
   @Column({ nullable: true })
   lastName: string;
 
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  isEditor: boolean;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 

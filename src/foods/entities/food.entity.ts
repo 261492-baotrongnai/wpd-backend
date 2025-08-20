@@ -22,6 +22,9 @@ export class Food {
   @Column({ type: 'boolean', default: false, nullable: true })
   is_confirmed: boolean;
 
+  @Column({ type: 'boolean', default: false, nullable: true })
+  is_rejected: boolean;
+
   @ManyToOne(() => Meal, (meal) => meal.foods, { onDelete: 'CASCADE' })
   meal: Meal;
 
