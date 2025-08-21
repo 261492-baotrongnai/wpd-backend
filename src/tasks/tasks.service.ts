@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+// import { Cron } from '@nestjs/schedule';
 import * as line from '@line/bot-sdk';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -27,7 +27,7 @@ export class TasksService {
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเช้า
-  @Cron('0 7 * * *')
+  // @Cron('0 7 * * *')
   async handleMorningCron() {
     this.logger.log('Starting morning cron job');
     try {
@@ -56,7 +56,7 @@ export class TasksService {
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเที่ยง
-  @Cron('0 11 * * *')
+  // @Cron('0 11 * * *')
   async handleLunchCron() {
     this.logger.log('Starting lunch cron job');
     try {
@@ -85,7 +85,7 @@ export class TasksService {
   }
 
   // ส่งข้อความไปยังผู้ใช้ที่ไม่ได้ตอบมื้อเย็น
-  @Cron('30 16 * * *')
+  // @Cron('30 16 * * *')
   async handleEveningCron() {
     this.logger.log('Starting evening cron job');
     try {
