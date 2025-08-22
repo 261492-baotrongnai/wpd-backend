@@ -17,6 +17,9 @@ import { FoodsProcessor } from './foods.worker';
       {
         name: 'meal',
       },
+      {
+        name: 'food-grade',
+      },
     ),
   ],
   controllers: [FoodsController],

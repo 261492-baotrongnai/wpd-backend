@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Admin } from 'src/admin/entities/admin.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
+import { EditFoodDto } from './dto/edit-food.dto';
 
 @Injectable()
 export class FoodsService {
@@ -56,5 +57,31 @@ export class FoodsService {
 
     return result;
     // return 'okay';
+  }
+
+  async edit(editFoodDto: EditFoodDto) {
+    this.logger.log('Editing food with data:', editFoodDto);
+    const food = await this.foodRepository.findOne({
+      where: { id: editFoodDto.id },
+    });
+
+    if (!food) {
+      this.logger.error(`Food with ID ${editFoodDto.id} not found`);
+      throw new Error(`Food with ID ${editFoodDto.id} not found`);
+    }
+
+    food.name = editFoodDto.name;
+    if (editFoodDto.description !== food.description) {
+      food.unconfirmed_description = food.description;
+    }
+    food.description = editFoodDto.description;
+    if (editFoodDto.grade !== food.grade) {
+      food.unconfirmed_grade = food.grade;
+    }
+    food.grade = editFoodDto.grade;
+
+    food.is_confirmed = editFoodDto.is_confirmed;
+    food.is_rejected = editFoodDto.is_rejected;
+    return this.foodRepository.save(food);
   }
 }

@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { Admin } from 'src/admin/entities/admin.entity';
+import { EditFoodDto } from './dto/edit-food.dto';
 
 @Processor('food')
 export class FoodsProcessor extends WorkerHost {
@@ -37,6 +38,13 @@ export class FoodsProcessor extends WorkerHost {
           throw new Error(`Admin with ID ${id} not found or is not an editor`);
         }
         return { isEditor: admin.isEditor };
+      }
+      case 'edit-food': {
+        const data: { foodData: EditFoodDto } = job.data as {
+          foodData: EditFoodDto;
+        };
+        this.logger.log(`Editing food with data:`, data.foodData);
+        return await this.foodsService.edit(data.foodData);
       }
       default:
         throw new Error(`Unknown job type: ${job.name}`);

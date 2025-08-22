@@ -25,6 +25,12 @@ export class Food {
   @Column({ type: 'boolean', default: false, nullable: true })
   is_rejected: boolean;
 
+  @Column({ type: 'enum', enum: ['A', 'B', 'C'], nullable: true })
+  unconfirmed_grade: FoodGradeType;
+
+  @Column({ type: 'longtext', nullable: true })
+  unconfirmed_description: string;
+
   @ManyToOne(() => Meal, (meal) => meal.foods, { onDelete: 'CASCADE' })
   meal: Meal;
 

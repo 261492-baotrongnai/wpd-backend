@@ -18,17 +18,26 @@ export class FoodGradesService {
   ) {}
 
   async create(createFoodGradeDto: CreateFoodGradeDto) {
+    this.logger.log('Creating food grade with data:', createFoodGradeDto);
     const grade = createFoodGradeDto.grade;
     const category = createFoodGradeDto.category;
-    for (const name of createFoodGradeDto.names) {
-      const foodGrade = new FoodGrade();
-      foodGrade.grade = grade;
-      foodGrade.category = category;
-      foodGrade.name = name;
-      await this.foodGradesRepository.save(foodGrade);
-    }
-    return this.foodGradesRepository.find({
-      where: { grade, category },
+    const name = createFoodGradeDto.name;
+    const description = createFoodGradeDto.description ?? '';
+
+    const foodGrade = new FoodGrade();
+    foodGrade.grade = grade;
+    foodGrade.category = category;
+    foodGrade.name = name;
+    foodGrade.description = description;
+
+    this.logger.log(
+      `Saving food grade: { name: ${name}, grade: ${grade}, category: ${category}, description: ${description} }`,
+    );
+
+    const savedFoodGrade = await this.foodGradesRepository.save(foodGrade);
+
+    return this.foodGradesRepository.findOne({
+      where: { id: savedFoodGrade.id },
     });
   }
 

@@ -19,6 +19,12 @@ export class FoodGrade {
     nullable: true,
   })
   category: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  // @Column({ type: 'text', nullable: true })
+  // imageUrl: string;
 }
 
 export const FoodGradeType = {
