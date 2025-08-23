@@ -226,6 +226,7 @@ export class RecordCaseHandler {
             state: 'waiting for what meal',
             menuName: response.candidates,
             pendingFile: { fileName, filePath },
+            geminiImageName: response.geminiImageName,
           },
         });
 
@@ -371,6 +372,7 @@ export class RecordCaseHandler {
               mealType: mealResponses[response as keyof typeof mealResponses]
                 .mealType as MealType,
               menuName: candidates,
+              geminiImageName: user_state.geminiImageName,
             },
           });
 
@@ -462,7 +464,10 @@ export class RecordCaseHandler {
 
         // get the lowest grade, max score, average grade and score from the foodGrade service
         const { lowestGrade, maxScore, avgGrade, avgScore, foods } =
-          await this.foodGrade.getMenuGrade(parsedMenuNames);
+          await this.foodGrade.getMenuGrade(
+            parsedMenuNames,
+            user_state.geminiImageName,
+          );
 
         const ai_grading_menus = this.gradingByAIMenu(foods);
 
@@ -514,6 +519,7 @@ export class RecordCaseHandler {
             candidates: user_state.menuName,
             selected: parsedMenuNames,
             filePath: filePath,
+            geminiImageName: user_state.geminiImageName,
           },
           {
             removeOnComplete: false, // Keep this job forever

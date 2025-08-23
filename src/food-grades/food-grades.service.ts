@@ -49,7 +49,7 @@ export class FoodGradesService {
     return `This action returns a #${id} foodGrade`;
   }
 
-  async getMenuGrade(menus: string[]): Promise<{
+  async getMenuGrade(menus: string[], geminiImageName: string): Promise<{
     lowestGrade: FoodGradeType;
     maxScore: number;
     avgGrade: FoodGradeType;
@@ -118,7 +118,7 @@ export class FoodGradesService {
         // step 3: no match, send to Gemini
         const top5BestMatch = this.getTop5BestMatch(bestMatch, allFood);
         await this.api
-          .geminiRequestGrade(menu, top5BestMatch)
+          .geminiRequestGrade(menu, top5BestMatch, geminiImageName)
           .then((response) => {
             if (response === null)
               throw new Error('Gemini detected non food name');
