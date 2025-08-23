@@ -519,7 +519,6 @@ export class RecordCaseHandler {
             candidates: user_state.menuName,
             selected: parsedMenuNames,
             filePath: filePath,
-            geminiImageName: user_state.geminiImageName,
           },
           {
             removeOnComplete: false, // Keep this job forever

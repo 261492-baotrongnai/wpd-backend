@@ -3,6 +3,7 @@ import {
   createUserContent,
   GoogleGenAI,
   Type,
+  Part,
 } from '@google/genai';
 import { Injectable, Logger } from '@nestjs/common';
 import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
@@ -134,10 +135,7 @@ export class ExternalApiService {
       this.logger.debug('Top best match:', topBestMatch);
     }
     try {
-      const contentParts: (
-        | string
-        | { fileData: { mimeType: string; name: string } }
-      )[] = [
+      const contentParts: (string | Part)[] = [
         `บอกเกรดอาหารของเมนูชื่อ "${menu}"`,
         `โดยที่ประเมินเกรดตามเกณฑ์ "จัดหมวดหมู่อาหารที่กลุ่มเสี่ยงเบาหวาน(ไม่ใช่ผู้ป่วยเบาหวาน)ควรเลือกบริโภคตามกลุ่มค่ามวลน้ำตาล ค่านี้เป็นค่าที่ได้มาจากการคำนวณค่าดัชนีน้ำตาล (Glycemic Index: GI) ร่วมกับปริมาณอาหารที่รับประทานในแต่ละครั้ง เกรด A คือ ค่ามวลน้ำตาลต่ำกว่า 10 เกรด B คือ ค่ามวลน้ำตาล 11-19 เกรด C คือ ค่ามวลน้ำตาลตั้งแต่ 20ขึ้นไป`,
         `ให้ประเมินค่ามวลน้ำตาลจากชื่อเมนูอาหารที่ให้มาข้อมูลเฉลี่ยโดยทั่วไปของอาหารประเภทนั้นๆก่อน สามารถอ้างอิงจากข้อมูลในเว็บไซต์หรือแหล่งข้อมูลอื่นที่เชื่อถือได้`,
@@ -154,12 +152,13 @@ export class ExternalApiService {
       }
 
       if (geminiImageName) {
-        contentParts.push(`ให้ดูในรูปประกอบ เพื่อป้องกันการสับสนของชื่อเมนู`, {
-          fileData: {
-            mimeType: 'image/jpeg',
-            name: geminiImageName,
-          },
+        const file = await this.gemini.files.get({
+          name: geminiImageName,
         });
+        if (file.uri && file.mimeType) {
+          contentParts.push(`ให้ดูในรูปประกอบ เพื่อป้องกันการสับสนจากชื่อเมนู`);
+          contentParts.push(createPartFromUri(file.uri, file.mimeType));
+        }
       }
 
       const response = await this.gemini.models.generateContent({
