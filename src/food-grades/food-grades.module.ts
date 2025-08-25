@@ -6,6 +6,7 @@ import { FoodGrade } from './entities/food-grade.entity';
 import { ExternalApiService } from 'src/external-api/external-api.service';
 import { BullModule } from '@nestjs/bullmq';
 import { FoodGradesProcessor } from './food-grades.worker';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
@@ -15,7 +16,12 @@ import { FoodGradesProcessor } from './food-grades.worker';
     }),
   ],
   controllers: [FoodGradesController],
-  providers: [FoodGradesService, ExternalApiService, FoodGradesProcessor],
+  providers: [
+    FoodGradesService,
+    ExternalApiService,
+    FoodGradesProcessor,
+    QueueEventsRegistryService,
+  ],
   exports: [FoodGradesService, TypeOrmModule],
 })
 export class FoodGradesModule {}

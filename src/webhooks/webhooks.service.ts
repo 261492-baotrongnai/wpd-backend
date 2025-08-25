@@ -401,9 +401,10 @@ export class WebhooksService {
         throw new Error('Failed to send meal record poster');
       }
       this.logger.debug('Meal record poster sent successfully');
-      const removeJob = await this.userStateQueue.add('remove-user-state', {
-        id: posterState.id,
-      });
+      const removeJob = await this.userStateQueue.add(
+        'remove-user-state',
+        posterState.id,
+      );
       await this.queueEventsRegistryService.waitForJobResult(
         removeJob,
         this.userStateQueue,
