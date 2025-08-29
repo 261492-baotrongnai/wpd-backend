@@ -5,4 +5,5 @@ export class CreateFoodGradeDto {
   category: string;
   name: string;
   description?: string;
+  addedFromUser?: boolean;
 }

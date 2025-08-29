@@ -5,6 +5,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { CreateFoodGradeDto } from './dto/create-food-grade.dto';
 import * as fuzzball from 'fuzzball';
 import { ExternalApiService } from 'src/external-api/external-api.service';
+import { UpdateFoodGradeDto } from './dto/update-food-grade.dto';
 // import { UpdateFoodGradeDto } from './dto/update-food-grade.dto';
 
 @Injectable()
@@ -23,12 +24,14 @@ export class FoodGradesService {
     const category = createFoodGradeDto.category;
     const name = createFoodGradeDto.name;
     const description = createFoodGradeDto.description ?? '';
+    const addedFromUser = createFoodGradeDto.addedFromUser ? true : false;
 
     const foodGrade = new FoodGrade();
     foodGrade.grade = grade;
     foodGrade.category = category;
     foodGrade.name = name;
     foodGrade.description = description;
+    foodGrade.addedFromUser = addedFromUser;
 
     this.logger.log(
       `Saving food grade: { name: ${name}, grade: ${grade}, category: ${category}, description: ${description} }`,
@@ -193,5 +196,19 @@ export class FoodGradesService {
       return 'B';
     }
     return 'C';
+  }
+
+  async update(updateFoodGradeDto: UpdateFoodGradeDto) {
+    this.logger.log(
+      'Updating food grade with: ' + JSON.stringify(updateFoodGradeDto),
+    );
+    const foodGrade = await this.foodGradesRepository.findOne({
+      where: { id: updateFoodGradeDto.id },
+    });
+    if (!foodGrade) {
+      throw new Error(`Food grade with ID ${updateFoodGradeDto.id} not found`);
+    }
+    Object.assign(foodGrade, updateFoodGradeDto);
+    return await this.foodGradesRepository.save(foodGrade);
   }
 }

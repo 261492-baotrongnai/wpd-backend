@@ -70,7 +70,7 @@ export class FoodsController {
       this.logger.log('Food confirmed, adding to food-grade queue...');
       this.logger.log('Adding job to food-grade queue...');
       const addJob = await this.foodGradeQueue.add('create-food-grade', {
-        foodData: editFoodDto,
+        foodData: { ...editFoodDto, addedFromUser: true },
       });
       this.logger.log(
         `Job ${addJob.id} added to the queue for creating food grade`,
