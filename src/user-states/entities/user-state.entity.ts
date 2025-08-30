@@ -43,6 +43,9 @@ export class UserState {
   })
   mealType: MealType;
 
+  @Column({ type: 'text', nullable: true })
+  geminiImageName: string;
+
   @UpdateDateColumn()
   updatedAt: Date;
 

@@ -29,7 +29,7 @@ export class ExternalApiService implements OnModuleInit {
       if (!filePath && !content) {
         throw new Error('Either filePath or buffer must be provided');
       }
-      let image: { uri?: string; mimeType?: string } = {};
+      let image: { uri?: string; mimeType?: string; name?: string } = {};
       if (filePath) {
         // Determine mimeType
         image = await this.gemini.files.upload({
@@ -47,11 +47,13 @@ export class ExternalApiService implements OnModuleInit {
           },
         });
       }
+      this.logger.log('Uploaded Image to gemini name:', image.name);
       if (!image.uri || !image.mimeType) {
         this.logger.error('Image upload failed:', image);
         throw new Error('Image upload failed');
       }
       const response = await this.geminiRequestMenus(image);
+      response.geminiImageName = image.name;
       return response;
     } catch (error) {
       this.logger.error('Error in askMenuName:', error);
@@ -121,6 +123,7 @@ export class ExternalApiService implements OnModuleInit {
       return JSON.parse(response.text) as {
         isFood: boolean;
         candidates: { name: string[] }[];
+        geminiImageName: string | undefined;
       };
     } catch (error) {
       this.logger.error('Error at [geminiRequestMenusFromBuffer]:', error);
@@ -131,29 +134,42 @@ export class ExternalApiService implements OnModuleInit {
   async geminiRequestGrade(
     menu: string,
     topBestMatch?: Array<{ name: string; grade: string }>,
+    geminiImageName?,
   ): Promise<{ answer: FoodGradeType; descp: string } | null> {
     if (topBestMatch) {
       this.logger.debug('Top best match:', topBestMatch);
     }
     try {
+      const contentParts: string[] = [
+        `บอกเกรดอาหารของเมนูชื่อ "${menu}"`,
+        `โดยที่ประเมินเกรดตามเกณฑ์ "จัดหมวดหมู่อาหารที่กลุ่มเสี่ยงเบาหวาน(ไม่ใช่ผู้ป่วยเบาหวาน)ควรเลือกบริโภคตามกลุ่มค่ามวลน้ำตาล ค่านี้เป็นค่าที่ได้มาจากการคำนวณค่าดัชนีน้ำตาล (Glycemic Index: GI) ร่วมกับปริมาณอาหารที่รับประทานในแต่ละครั้ง เกรด A คือ ค่ามวลน้ำตาลต่ำกว่า 10 เกรด B คือ ค่ามวลน้ำตาล 11-19 เกรด C คือ ค่ามวลน้ำตาลตั้งแต่ 20ขึ้นไป`,
+        `ให้ประเมินค่ามวลน้ำตาลจากชื่อเมนูอาหารที่ให้มาข้อมูลเฉลี่ยโดยทั่วไปของอาหารประเภทนั้นๆก่อน สามารถอ้างอิงจากข้อมูลในเว็บไซต์หรือแหล่งข้อมูลอื่นที่เชื่อถือได้`,
+        `จากนั้นนำค่าน้ำตาลที่ได้มาจัดเกรดตามเกณฑ์ที่กำหนด`,
+        `หาก "${menu}" ไม่ใช่ชื่ออาหารที่มีอยู่จริงในฐานข้อมูลอาหาร ให้ response กลับมาเป็น null`,
+      ];
+
+      if (topBestMatch) {
+        contentParts.push(
+          `และนี่คือข้อมูลอาหารที่มีdatabase ซึ่งมีความคล้ายคลึงกับเมนูที่ให้มามากที่สุด แต่ไม่ถึง 80% ${JSON.stringify(
+            topBestMatch,
+          )} ถสามารถอ้างอิงได้`,
+        );
+      }
+
+      if (geminiImageName) {
+        const file = await this.gemini.files.get({
+          name: geminiImageName,
+        });
+        if (file.uri && file.mimeType) {
+          contentParts.push(`ให้ดูในรูปประกอบ เพื่อป้องกันการสับสนจากชื่อเมนู`);
+          contentParts.push(createPartFromUri(file.uri, file.mimeType));
+        }
+      }
+
       const response = await this.gemini.models.generateContent({
         model: 'gemini-2.0-flash',
-        contents: [
-          this.createUserContent([
-            `บอกเกรดอาหารของเมนูชื่อ "${menu}"`,
-            `โดยที่ประเมินเกรดตามเกณฑ์ "จัดหมวดหมู่อาหารที่กลุ่มเสี่ยงเบาหวาน(ไม่ใช่ผู้ป่วยเบาหวาน)ควรเลือกบริโภคตามกลุ่มค่ามวลน้ำตาล ค่านี้เป็นค่าที่ได้มาจากการคำนวณค่าดัชนีน้ำตาล (Glycemic Index: GI) ร่วมกับปริมาณอาหารที่รับประทานในแต่ละครั้ง เกรด A คือ ค่ามวลน้ำตาลต่ำกว่า 10 เกรด B คือ ค่ามวลน้ำตาล 11-19 เกรด C คือ ค่ามวลน้ำตาลตั้งแต่ 20ขึ้นไป`,
-            `ให้ประเมินค่ามวลน้ำตาลจากชื่อเมนูอาหารที่ให้มาข้อมูลเฉลี่ยโดยทั่วไปของอาหารประเภทนั้นๆก่อน สามารถอ้างอิงจากข้อมูลในเว็บไซต์หรือแหล่งข้อมูลอื่นที่เชื่อถือได้`,
-            `จากนั้นนำค่าน้ำตาลที่ได้มาจัดเกรดตามเกณฑ์ที่กำหนด`,
-            `หาก "${menu}" ไม่ใช่ชื่ออาหารที่มีอยู่จริงในฐานข้อมูลอาหาร ให้ response กลับมาเป็น null`,
-            ...(topBestMatch
-              ? [
-                  `และนี่คือข้อมูลอาหารที่มีdatabase ซึ่งมีความคล้ายคลึงกับเมนูที่ให้มามากที่สุด แต่ไม่ถึง 80% ${JSON.stringify(
-                    topBestMatch,
-                  )} ถสามารถอ้างอิงได้`,
-                ]
-              : []),
-          ]),
-        ],
+        // merged
+        contents: [createUserContent(contentParts)],
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
