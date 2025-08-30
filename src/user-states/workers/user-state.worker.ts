@@ -58,6 +58,7 @@ export class UserStateProcessor extends WorkerHost {
         // return await this.userStatesService.findAllByUser(job.data);
       }
       case 'remove-user-state':
+        this.logger.debug(`Removing user state with id: ${job.data}`);
         return await this.userStatesService.remove(job.data as number);
       case 'get-candidates':
         return await this.userStatesService.findCandidates(job.data as number);

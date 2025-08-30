@@ -77,15 +77,6 @@ export class WebhooksService {
                     this.logger.debug('User requested to record meal:');
                     result = await this.handleMealRecord(event.replyToken, uid);
                     break;
-                  case 'โปสเตอร์บันทึกอาหาร':
-                    this.logger.debug(
-                      'User requested to add meal record poster:',
-                    );
-                    result = await this.handleMealRecordPoster(
-                      event.replyToken,
-                      uid,
-                    );
-                    break;
                 }
               } else {
                 this.logger.warn(
@@ -98,24 +89,26 @@ export class WebhooksService {
             }
           } else {
             this.logger.log('handle waiting state');
-            const datePosterState = user_states.find(
-              (state) => state.state === 'date-poster',
-            );
-            if (
-              datePosterState &&
-              event.message?.type === 'text' &&
-              event.message.text === 'โปสเตอร์บันทึกอาหาร'
-            ) {
-              this.logger.debug(
-                'User has date poster state, sending poster:',
-                datePosterState.pendingFile?.filePath,
-              );
-              result = await this.handleMealRecordPoster(event.replyToken, uid);
-            } else {
-              for (const user_state of user_states) {
-                result = await this.handleWaitingState(event, user_state);
+
+            for (const user_state of user_states) {
+              if (
+                user_state.state === 'date-poster' &&
+                event.message?.type === 'text' &&
+                event.message?.text === 'โปสเตอร์บันทึกอาหาร'
+              ) {
+                this.logger.debug(
+                  'User has date poster state, sending poster:',
+                  user_state.pendingFile?.filePath,
+                );
+                result = await this.handleMealRecordPoster(
+                  event.replyToken,
+                  event.source.userId,
+                );
+                continue;
               }
+              result = await this.handleWaitingState(event, user_state);
             }
+            // }
           }
         } else if (event.type === 'follow') {
           await this.handleFollowEvent(event.replyToken);
@@ -398,12 +391,24 @@ export class WebhooksService {
           `Error sending meal record poster with reply ${replyToken}:`,
           error,
         );
+
+        const removeJob = await this.userStateQueue.add(
+          'remove-user-state',
+          posterState.id,
+        );
+        await this.queueEventsRegistryService.waitForJobResult(
+          removeJob,
+          this.userStateQueue,
+        );
+        this.logger.debug('Removed user state after sending poster');
+
         throw new Error('Failed to send meal record poster');
       }
       this.logger.debug('Meal record poster sent successfully');
-      const removeJob = await this.userStateQueue.add('remove-user-state', {
-        id: posterState.id,
-      });
+      const removeJob = await this.userStateQueue.add(
+        'remove-user-state',
+        posterState.id,
+      );
       await this.queueEventsRegistryService.waitForJobResult(
         removeJob,
         this.userStateQueue,

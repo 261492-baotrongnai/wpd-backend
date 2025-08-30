@@ -3,6 +3,7 @@ import { FoodGradesService } from './food-grades.service';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { CreateFoodGradeDto } from './dto/create-food-grade.dto';
+import { UpdateFoodGradeDto } from './dto/update-food-grade.dto';
 
 @Processor('food-grade')
 export class FoodGradesProcessor extends WorkerHost {
@@ -18,6 +19,13 @@ export class FoodGradesProcessor extends WorkerHost {
       case 'create-food-grade': {
         const data = job.data as { foodData: CreateFoodGradeDto };
         return await this.foodGradesService.create(data.foodData);
+      }
+      case 'get-all-food-grade': {
+        return await this.foodGradesService.findAll();
+      }
+      case 'update-food-grade': {
+        const data = job.data as UpdateFoodGradeDto;
+        return await this.foodGradesService.update(data);
       }
       default:
         throw new Error(`Unknown job type: ${job.name}`);
