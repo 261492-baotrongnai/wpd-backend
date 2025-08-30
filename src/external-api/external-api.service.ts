@@ -162,14 +162,14 @@ export class ExternalApiService implements OnModuleInit {
         });
         if (file.uri && file.mimeType) {
           contentParts.push(`ให้ดูในรูปประกอบ เพื่อป้องกันการสับสนจากชื่อเมนู`);
-          contentParts.push(createPartFromUri(file.uri, file.mimeType));
+          contentParts.push(this.createPartFromUri(file.uri, file.mimeType));
         }
       }
 
       const response = await this.gemini.models.generateContent({
         model: 'gemini-2.0-flash',
         // merged
-        contents: [createUserContent(contentParts)],
+        contents: [this.createUserContent(contentParts)],
         config: {
           responseMimeType: 'application/json',
           responseSchema: {

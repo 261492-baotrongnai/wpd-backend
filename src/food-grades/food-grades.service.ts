@@ -52,7 +52,10 @@ export class FoodGradesService {
     return `This action returns a #${id} foodGrade`;
   }
 
-  async getMenuGrade(menus: string[], geminiImageName: string): Promise<{
+  async getMenuGrade(
+    menus: string[],
+    geminiImageName: string,
+  ): Promise<{
     lowestGrade: FoodGradeType;
     maxScore: number;
     avgGrade: FoodGradeType;
@@ -101,7 +104,7 @@ export class FoodGradesService {
           { scorer: fuzzball.ratio },
         );
 
-        if (bestMatch[0][1] > 80) {
+        if (bestMatch[0][1] > 90) {
           const matchedFood = allFood.find((f) => f.name === bestMatch[0][0]);
           if (matchedFood) {
             this.logger.debug(
