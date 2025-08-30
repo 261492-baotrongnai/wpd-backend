@@ -13,4 +13,5 @@ export class CreateUserStateDto {
     | line.messagingApi.ImageMessage
     | line.messagingApi.FlexMessage;
   lineUserId?: string;
+  geminiImageName?: string;
 }
