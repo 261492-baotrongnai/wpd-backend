@@ -35,6 +35,7 @@ export class ExternalApiService {
         });
       } else if (content) {
         image = await this.gemini.files.upload({
+          // fix here
           file: new Blob([new Uint8Array(content.buffer)]),
           config: {
             mimeType: content.mimeType,
