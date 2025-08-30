@@ -24,4 +24,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     }),
   ],
 })
-export class DatabaseModule {}
+export class DatabaseModule {
+  constructor() {
+    // if data source is okay console.log
+    console.log('Database connection established');
+  }
+}
