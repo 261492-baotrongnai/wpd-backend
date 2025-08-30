@@ -1,4 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 @Entity('food_grades')
 export class FoodGrade {
   @PrimaryGeneratedColumn()
@@ -25,6 +31,15 @@ export class FoodGrade {
 
   // @Column({ type: 'text', nullable: true })
   // imageUrl: string;
+
+  @Column({ type: 'boolean', default: false })
+  addedFromUser: boolean;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updatedAt: Date;
 }
 
 export const FoodGradeType = {

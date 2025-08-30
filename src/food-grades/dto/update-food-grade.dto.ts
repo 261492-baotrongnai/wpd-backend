@@ -1,4 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateFoodGradeDto } from './create-food-grade.dto';
-
-export class UpdateFoodGradeDto extends PartialType(CreateFoodGradeDto) {}
+export class UpdateFoodGradeDto {
+  id: number;
+  name?: string;
+  description?: string;
+  grade?: string;
+  category?: string;
+}

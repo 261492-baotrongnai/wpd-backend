@@ -1,21 +1,25 @@
-import {
-  createPartFromUri,
-  createUserContent,
-  GoogleGenAI,
-  Type,
-  Part,
-} from '@google/genai';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 
 @Injectable()
-export class ExternalApiService {
+export class ExternalApiService implements OnModuleInit {
   private readonly logger = new Logger(ExternalApiService.name);
-  private readonly gemini = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-  });
+  private gemini: any;
+  private createPartFromUri: any;
+  private createUserContent: any;
+  private Type: any;
 
   constructor() {}
+
+  async onModuleInit() {
+    const genaiModule = await import('@google/genai');
+    this.gemini = new genaiModule.GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
+    this.createPartFromUri = genaiModule.createPartFromUri;
+    this.createUserContent = genaiModule.createUserContent;
+    this.Type = genaiModule.Type;
+  }
 
   async getMenuCandidates(
     filePath?: string,
@@ -36,7 +40,8 @@ export class ExternalApiService {
         });
       } else if (content) {
         image = await this.gemini.files.upload({
-          file: new Blob([content.buffer]),
+          // fix here
+          file: new Blob([new Uint8Array(content.buffer)]),
           config: {
             mimeType: content.mimeType,
           },
@@ -66,34 +71,34 @@ export class ExternalApiService {
       const response = await this.gemini.models.generateContent({
         model: 'gemini-2.0-flash',
         contents: [
-          createUserContent([
+          this.createUserContent([
             'บอกเมนูรายการอาหารที่มีในภาพนี้มาให้ครบถ้วนทุกองค์ประกอบของเมนู เป็นภาษาไทย ไม่ควรเป็นชื่อที่ความหมายกว้างเกินไป ควรเป็นชื่อที่บ่งบอกถึงวัตถุดิบในนั้นได้ด้วยจะดีมาก',
             'หากมีหลายเมนูในภาพ ให้ตอบมาแบบบอกชื่อให้ครบตามจำนวนของเมนูที่เห็นในภาพ เช่น หากในรูปมี 3 อย่าง ให้ตอบ name: /[ส้มตำ,ไก่ย่าง,ข้าวเหนียว/] หากมี 1 อย่างให้ตอบ name: /[ส้มตำ/] ดังนั้น สมาชิกใน array name จึงมักจะไม่ใช่ชื่ออาหารชนิดใกล้เคียงกัน (ทุกสมาชิกใน array name ต้องมีขนาดรวมกันไม่เกิน 40 characters)` )',
             'นอกจากได้ array name มา 1 คำตอบแล้ว ให้เพิ่มตัวเลือก array name ที่มั่นใจรองลงมาอีก 3 ตัวเลือก ในลักษณะเดียวกันแต่ห้ามซ้ำกับคำตอบอื่นๆ ก็จะได้ลักษณะของ response เช่น [{name: ["น้ำพริก"], name: ["น้ำพริกอ่อง","ผักลวก"], name: [คำตอบที่ 2], name: [คำตอบที่ 3]}]',
             '(หากรูปภาพไม่ใช่รูปอาหารที่คนกินจริงๆเข่น รูปวาดอาหาร หรือภาพที่ไม่ใช่อาหาร ให้ตอบ isFood: false)',
-            createPartFromUri(uploadedImage.uri, uploadedImage.mimeType),
+            this.createPartFromUri(uploadedImage.uri, uploadedImage.mimeType),
           ]),
         ],
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.OBJECT,
+            type: this.Type.OBJECT,
             properties: {
               isFood: {
-                type: Type.BOOLEAN,
+                type: this.Type.BOOLEAN,
                 description: 'Is the image food?',
               },
               candidates: {
-                type: Type.ARRAY,
+                type: this.Type.ARRAY,
                 minItems: '4',
                 items: {
-                  type: Type.OBJECT,
+                  type: this.Type.OBJECT,
                   properties: {
                     name: {
-                      type: Type.ARRAY,
+                      type: this.Type.ARRAY,
                       minItems: '1',
                       items: {
-                        type: Type.STRING,
+                        type: this.Type.STRING,
                       },
                     },
                   },
@@ -135,7 +140,7 @@ export class ExternalApiService {
       this.logger.debug('Top best match:', topBestMatch);
     }
     try {
-      const contentParts: (string | Part)[] = [
+      const contentParts: string[] = [
         `บอกเกรดอาหารของเมนูชื่อ "${menu}"`,
         `โดยที่ประเมินเกรดตามเกณฑ์ "จัดหมวดหมู่อาหารที่กลุ่มเสี่ยงเบาหวาน(ไม่ใช่ผู้ป่วยเบาหวาน)ควรเลือกบริโภคตามกลุ่มค่ามวลน้ำตาล ค่านี้เป็นค่าที่ได้มาจากการคำนวณค่าดัชนีน้ำตาล (Glycemic Index: GI) ร่วมกับปริมาณอาหารที่รับประทานในแต่ละครั้ง เกรด A คือ ค่ามวลน้ำตาลต่ำกว่า 10 เกรด B คือ ค่ามวลน้ำตาล 11-19 เกรด C คือ ค่ามวลน้ำตาลตั้งแต่ 20ขึ้นไป`,
         `ให้ประเมินค่ามวลน้ำตาลจากชื่อเมนูอาหารที่ให้มาข้อมูลเฉลี่ยโดยทั่วไปของอาหารประเภทนั้นๆก่อน สามารถอ้างอิงจากข้อมูลในเว็บไซต์หรือแหล่งข้อมูลอื่นที่เชื่อถือได้`,
@@ -167,14 +172,14 @@ export class ExternalApiService {
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.OBJECT,
+            type: this.Type.OBJECT,
             properties: {
               answer: {
-                type: Type.STRING,
+                type: this.Type.STRING,
                 enum: ['A', 'B', 'C'],
               },
               descp: {
-                type: Type.STRING,
+                type: this.Type.STRING,
                 description: 'Description of the grade',
               },
             },
