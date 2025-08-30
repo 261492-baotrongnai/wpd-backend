@@ -238,6 +238,8 @@ export class ProgramsService {
         users_with_last_recorded_at,
       )}`,
     );
+    this.logger.log(`Fetched users for program :`);
+    this.logger.log(users_with_last_recorded_at);
 
     return { users: users_with_last_recorded_at };
   }
