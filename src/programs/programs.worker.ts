@@ -6,7 +6,9 @@ import { CreateProgramDto } from './dto/create.dto';
 import { UpdateProgramDto } from './dto/update.dto';
 import { ProgramsService } from './programs.service';
 
-@Processor('program')
+@Processor('program', {
+  concurrency: 100,
+})
 export class ProgramProcessor extends WorkerHost {
   private logger = new Logger(ProgramProcessor.name);
   constructor(

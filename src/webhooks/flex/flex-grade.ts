@@ -325,6 +325,7 @@ export const GradeFlex = (
   ai_grading_menus?: string[],
 ): messagingApi.FlexMessage => {
   const { message, imageUrl, bgColor } = GradeInfo[grade];
+  console.log(ai_grading_menus);
   return {
     type: 'flex',
     altText: `มื้อนี้ของคุณได้ Grade ${grade}`,
@@ -420,13 +421,13 @@ export const GradeFlex = (
         paddingStart: 'lg',
         paddingEnd: 'lg',
         position: 'relative',
-        ...((ai_grading_menus?.length ?? 0) > 0
-          ? { offsetBottom: 'none' }
-          : {}),
+        // ...((ai_grading_menus?.length ?? 0) > 0
+        //   ? { offsetBottom: 'none' }
+        //   : {}),
       },
-      ...((ai_grading_menus ?? []).length > 0
-        ? { footer: AIWarningFooter(ai_grading_menus ?? []) }
-        : {}),
+      // ...((ai_grading_menus ?? []).length > 0
+      //   ? { footer: AIWarningFooter(ai_grading_menus ?? []) }
+      //   : {}),
     },
   };
 };

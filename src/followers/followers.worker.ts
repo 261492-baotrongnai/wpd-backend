@@ -4,7 +4,7 @@ import { Job } from 'bullmq';
 import { FollowersJobService } from './followers.job';
 
 @Processor('follower', {
-  concurrency: 10,
+  concurrency: 30,
 })
 export class FollowerProcessor extends WorkerHost {
   private logger = new Logger(FollowerProcessor.name);

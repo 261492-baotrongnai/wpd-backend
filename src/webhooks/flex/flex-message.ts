@@ -58,7 +58,7 @@ export const ClassifyFlex = (): messagingApi.FlexMessage => {
   };
 };
 
-export const GreetingFlex: messagingApi.FlexMessage = {
+export const GreetingFlex1: messagingApi.FlexMessage = {
   type: 'flex',
   altText: 'ยินดีต้อนรับสู่ LINE หวานพอดี',
   contents: {
@@ -66,7 +66,7 @@ export const GreetingFlex: messagingApi.FlexMessage = {
     size: 'mega',
     hero: {
       type: 'image',
-      url: 'https://i.postimg.cc/Kjkshsph/welcome.png',
+      url: 'https://i.postimg.cc/cJ3R3Gq8/welcome.png',
       size: 'full',
       aspectRatio: '2:1',
       aspectMode: 'cover',
@@ -82,33 +82,117 @@ export const GreetingFlex: messagingApi.FlexMessage = {
           contents: [
             {
               type: 'text',
-              text: 'สวัสดีค่ะ มะลิเองค่ะ😊',
+              text: 'ยินดีต้อนรับสู่ หวานพอดี',
+              weight: 'bold',
+              size: 'lg',
+            },
+            {
+              type: 'text',
+              text: 'ระบบช่วยติดตามพฤติกรรมการกิน เพื่อดูแลคนที่มีความเสี่ยงเบาหวานชนิดที่ 2',
               wrap: true,
-              contents: [],
-              size: 'md',
-              offsetBottom: 'none',
-              offsetTop: 'xs',
+              color: '#57564F',
+              offsetTop: 'sm',
+              contents: [
+                {
+                  type: 'span',
+                  text: 'ระบบช่วยติดตามพฤติกรรมการกิน เพื่อดูแลคนที่',
+                  color: '#717171',
+                },
+                {
+                  type: 'span',
+                  text: 'มีความเสี่ยงเบาหวานชนิดที่ 2',
+                  weight: 'bold',
+                  color: '#717171',
+                },
+              ],
+            },
+          ],
+          paddingBottom: 'lg',
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: 'สวัสดีค่ะ มะลิเองนะคะ',
+              size: 'lg',
+              weight: 'bold',
             },
             {
               type: 'text',
               text: 'มะลิจะคอยเป็นผู้ช่วยดูแลสุขภาพให้คุณเองนะคะ',
               wrap: true,
-              offsetTop: 'none',
-              margin: 'md',
-              size: 'md',
-              color: '#555555',
+              offsetTop: 'sm',
+              color: '#717171',
             },
           ],
+          paddingTop: 'md',
+        },
+      ],
+      margin: 'sm',
+      paddingAll: 'xxl',
+    },
+    styles: {
+      footer: {
+        separator: true,
+      },
+    },
+  },
+};
+
+export const GreetingFlex2: messagingApi.FlexMessage = {
+  type: 'flex',
+  altText:
+    'บางเมนูจาก AI อาจคลาดเคลื่อน แอดมินอัปเดตให้แม่นยำขึ้นเรื่อยๆค่ะ และกรุณาเลือกกลุ่มผู้ใช้ก่อนเริ่มค่ะ',
+  contents: {
+    type: 'bubble',
+    size: 'mega',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              wrap: true,
+              color: '#57564F',
+              offsetTop: 'sm',
+              contents: [
+                {
+                  type: 'span',
+                  text: '⚠️ บางเมนู',
+                },
+                {
+                  type: 'span',
+                  text: 'ใช้ AI ช่วยประมวลผล',
+                  weight: 'bold',
+                },
+                {
+                  type: 'span',
+                  text: 'ข้อมูลอาจมีคลาดเคลื่อนบ้าง แอดมินจะคอยตรวจสอบและอัปเดตให้แม่นยำขึ้นเรื่อยๆ ค่ะ 😊',
+                },
+              ],
+            },
+          ],
+          paddingBottom: 'lg',
         },
         {
-          type: 'text',
-          margin: 'xxl',
-          wrap: true,
-          color: '#434343',
-          contents: [],
-          size: 'md',
-          text: 'ก่อนเริ่มใช้งาน เลือกกลุ่มผู้ใช้ที่ตรงกับตัวเองด้านล่างก่อนนะคะ⬇️',
-          offsetBottom: 'xs',
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: 'ก่อนเริ่มใช้งาน เลือกกลุ่มผู้ใช้ที่ตรงกับตัวเองด้านล่างก่อนนะคะ⬇️',
+              wrap: true,
+              offsetTop: 'sm',
+            },
+          ],
+          paddingTop: 'md',
+          paddingBottom: 'md',
         },
       ],
       margin: 'sm',

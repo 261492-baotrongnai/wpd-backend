@@ -6,7 +6,7 @@ import { CreateMealDto } from './dto/create-meal.dto';
 import { MealsService } from './meals.service';
 
 @Processor('meal', {
-  concurrency: 20,
+  concurrency: 100,
 })
 export class MealsProcessor extends WorkerHost {
   private readonly logger = new Logger(MealsProcessor.name);

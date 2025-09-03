@@ -6,7 +6,9 @@ import { EntityManager } from 'typeorm';
 import { Admin } from 'src/admin/entities/admin.entity';
 import { EditFoodDto } from './dto/edit-food.dto';
 
-@Processor('food')
+@Processor('food', {
+  concurrency: 100,
+})
 export class FoodsProcessor extends WorkerHost {
   private readonly logger = new Logger(FoodsProcessor.name);
   constructor(

@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AskForImageFlex,
   ClassifyFlex,
-  GreetingFlex,
+  GreetingFlex1,
+  GreetingFlex2,
 } from './flex/flex-message';
 import * as line from '@line/bot-sdk';
 import { UsersService } from 'src/users/users.service';
@@ -17,6 +18,7 @@ import { QueueEventsRegistryService } from '../queue-events/queue-events.service
 import { OutOfCaseFlex } from './flex/flex-no-case';
 import { ProgramUserFlex } from './flex/flex-program-user';
 import { CommonUserFlex } from './flex/flex-common-user';
+import { FlexInProgress } from './flex/flex-inprogress';
 @Injectable()
 export class WebhooksService {
   private readonly client: line.messagingApi.MessagingApiClient;
@@ -75,7 +77,35 @@ export class WebhooksService {
                     break;
                   case 'บันทึกอาหารที่ทาน':
                     this.logger.debug('User requested to record meal:');
-                    result = await this.handleMealRecord(event.replyToken, uid);
+                    result = await this.handleMealRecord(
+                      event.replyToken,
+                      uid,
+                      event.source.userId,
+                    );
+                    break;
+                  case 'กินได้ก่อ':
+                    this.logger.debug('User requested to see ask food grade');
+                    await this.client.replyMessage({
+                      replyToken: event.replyToken,
+                      messages: [FlexInProgress],
+                    });
+                    result = 'Ask กินได้ก่อ';
+                    break;
+                  case 'วิธีใช้':
+                    this.logger.debug('User requested to see ask food grade');
+                    await this.client.replyMessage({
+                      replyToken: event.replyToken,
+                      messages: [FlexInProgress],
+                    });
+                    result = 'Ask วิธีใช้';
+                    break;
+                  case 'แต้มสะสม':
+                    this.logger.debug('User requested to see ask food grade');
+                    await this.client.replyMessage({
+                      replyToken: event.replyToken,
+                      messages: [FlexInProgress],
+                    });
+                    result = 'Ask แต้มสะสม';
                     break;
                 }
               } else {
@@ -199,7 +229,7 @@ export class WebhooksService {
       // Send a greeting flex messages
       await this.client.replyMessage({
         replyToken,
-        messages: [GreetingFlex, ClassifyFlex()],
+        messages: [GreetingFlex1, GreetingFlex2, ClassifyFlex()],
       });
       console.log('Welcome message sent successfully');
     } catch (error) {
@@ -255,7 +285,11 @@ export class WebhooksService {
     }
   }
 
-  async handleMealRecord(replyToken: string, uid: string): Promise<string> {
+  async handleMealRecord(
+    replyToken: string,
+    uid: string,
+    user_id: string,
+  ): Promise<string> {
     this.logger.debug('Handling meal record for user:', uid);
     this.logger.debug('Reply token:', replyToken);
     try {
@@ -285,6 +319,7 @@ export class WebhooksService {
       const createJob = await this.userStateQueue.add('create-user-state', {
         user: user,
         state: 'waiting for meal image',
+        lineUserId: user_id,
       });
 
       await this.queueEventsRegistryService.waitForJobResult(
@@ -311,18 +346,21 @@ export class WebhooksService {
           result = await this.recordCaseHandler.waitingMealImage(
             event,
             user_state,
+            user_state.lineUserId,
           );
           break;
         case 'waiting for what meal':
           result = await this.recordCaseHandler.waitingWhatMeal(
             event,
             user_state,
+            user_state.lineUserId,
           );
           break;
         case 'is prediction correct':
           result = await this.recordCaseHandler.MenuChoicesConfirm(
             event,
             user_state,
+            user_state.lineUserId,
           );
           break;
       }
@@ -382,10 +420,21 @@ export class WebhooksService {
         throw new Error('No date poster state found');
       }
       try {
-        await this.client.replyMessage({
-          replyToken,
-          messages: [posterState.messageToSend],
-        });
+        try {
+          await this.client.replyMessage({
+            replyToken,
+            messages: [posterState.messageToSend],
+          });
+        } catch (error) {
+          this.logger.error(
+            `Error sending meal record poster with reply ${replyToken}:`,
+            error,
+          );
+          await this.client.pushMessage({
+            to: posterState.lineUserId,
+            messages: [posterState.messageToSend],
+          });
+        }
       } catch (error) {
         this.logger.error(
           `Error sending meal record poster with reply ${replyToken}:`,

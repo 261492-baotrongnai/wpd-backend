@@ -4,7 +4,9 @@ import { Job } from 'bullmq';
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 
-@Processor('organization')
+@Processor('organization', {
+  concurrency: 100,
+})
 export class OrganizationsProcessor extends WorkerHost {
   private logger = new Logger(OrganizationsProcessor.name);
   constructor(private readonly organizationsService: OrganizationsService) {

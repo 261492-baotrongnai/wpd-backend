@@ -4,7 +4,7 @@ import { Job } from 'bullmq';
 import * as line from '@line/bot-sdk';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
 
-@Processor('webhook', { concurrency: 50 })
+@Processor('webhook', { concurrency: 150 })
 export class WebhookProcessor extends WorkerHost {
   private logger = new Logger(WebhookProcessor.name);
 

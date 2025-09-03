@@ -5,7 +5,9 @@ import { Job } from 'bullmq';
 import { CreateFoodGradeDto } from './dto/create-food-grade.dto';
 import { UpdateFoodGradeDto } from './dto/update-food-grade.dto';
 
-@Processor('food-grade')
+@Processor('food-grade', {
+  concurrency: 100,
+})
 export class FoodGradesProcessor extends WorkerHost {
   private readonly logger = new Logger(FoodGradesProcessor.name);
 

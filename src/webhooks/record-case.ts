@@ -60,7 +60,7 @@ export class RecordCaseHandler {
     return event.source.userId;
   }
 
-  private async sendReplyTextMessage(
+  private async sendPushTextMessage(
     userId: string,
     text: string,
   ): Promise<void> {
@@ -186,6 +186,7 @@ export class RecordCaseHandler {
   async waitingMealImage(
     event: line.MessageEvent,
     user_state: UserState,
+    user_id: string,
   ): Promise<string> {
     // const userId = this.checkSourceUser(event);
     try {
@@ -227,6 +228,7 @@ export class RecordCaseHandler {
             menuName: response.candidates,
             pendingFile: { fileName, filePath },
             geminiImageName: response.geminiImageName,
+            lineUserId: user_id,
           },
         });
 
@@ -235,16 +237,30 @@ export class RecordCaseHandler {
           this.userStateQueue,
         );
 
-        await this.client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: 'text',
-              text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
-            },
-            WhatMealFlex,
-          ],
-        });
+        try {
+          await this.client.replyMessage({
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: 'text',
+                text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
+              },
+              WhatMealFlex,
+            ],
+          });
+        } catch (error) {
+          this.logger.error('Error replying to user:', error);
+          await this.client.pushMessage({
+            to: user_id,
+            messages: [
+              {
+                type: 'text',
+                text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
+              },
+              WhatMealFlex,
+            ],
+          });
+        }
         return 'Waiting Meal Image Completed';
       } else if (
         event.message.type === 'text' &&
@@ -288,6 +304,7 @@ export class RecordCaseHandler {
   async waitingWhatMeal(
     event: line.MessageEvent,
     user_state: UserState,
+    user_id: string,
   ): Promise<string> {
     try {
       // const userId = this.checkSourceUser(event);
@@ -346,24 +363,46 @@ export class RecordCaseHandler {
           }
           this.logger.debug('Menu name: ', candidates);
           // Send the corresponding reply
-          await this.client.replyMessage({
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text:
-                  mealResponses[response as keyof typeof mealResponses].resp ||
-                  'Unknown meal response',
-              },
-              MenuChoiceConfirmFlex(
-                CandidateContents(
-                  candidates.map((candidate) => ({
-                    name: candidate.name.join(', '),
-                  })),
+          try {
+            await this.client.replyMessage({
+              replyToken: event.replyToken,
+              messages: [
+                {
+                  type: 'text',
+                  text:
+                    mealResponses[response as keyof typeof mealResponses]
+                      .resp || 'Unknown meal response',
+                },
+                MenuChoiceConfirmFlex(
+                  CandidateContents(
+                    candidates.map((candidate) => ({
+                      name: candidate.name.join(', '),
+                    })),
+                  ),
                 ),
-              ),
-            ],
-          });
+              ],
+            });
+          } catch (error) {
+            this.logger.error('Error at [waitingWhatMeal]:', error);
+            await this.client.pushMessage({
+              to: user_id,
+              messages: [
+                {
+                  type: 'text',
+                  text:
+                    mealResponses[response as keyof typeof mealResponses]
+                      .resp || 'Unknown meal response',
+                },
+                MenuChoiceConfirmFlex(
+                  CandidateContents(
+                    candidates.map((candidate) => ({
+                      name: candidate.name.join(', '),
+                    })),
+                  ),
+                ),
+              ],
+            });
+          }
 
           const updateJob = await this.userStateQueue.add('update-user-state', {
             id: user_state.id,
@@ -439,6 +478,7 @@ export class RecordCaseHandler {
   async MenuChoicesConfirm(
     event: line.MessageEvent,
     user_state: UserState,
+    user_id: string,
   ): Promise<string> {
     // const userId = this.checkSourceUser(event);
     try {
@@ -568,16 +608,33 @@ export class RecordCaseHandler {
 
         this.logger.debug(`User state removed: ${user_state.id}`);
 
-        await this.client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: 'text',
-              text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
-            },
-            GradeResult,
-          ],
-        });
+        try {
+          await this.client.replyMessage({
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: 'text',
+                text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
+              },
+              GradeResult,
+            ],
+          });
+        } catch (error) {
+          this.logger.error(
+            'Error replying to user at [record-case.ts/MenuChoicesConfirm]:',
+            error,
+          );
+          await this.client.pushMessage({
+            to: user_id,
+            messages: [
+              {
+                type: 'text',
+                text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
+              },
+              GradeResult,
+            ],
+          });
+        }
 
         return 'MenuChoicesConfirm Completed';
       }
