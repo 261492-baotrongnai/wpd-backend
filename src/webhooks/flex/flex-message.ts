@@ -234,7 +234,7 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       contents: [
         {
           type: 'image',
-          url: 'https://i.postimg.cc/Dyx3Q8Tw/how-to-take-pic-or-send-pic.png',
+          url: 'https://images-ext-1.discordapp.net/external/f1K_QDMdDv6MBFUA19EdqD4erT_FvXQEac9feI8XjVc/https/i.postimg.cc/PNs2T9QZ/how-to-take-pic-or-send-pic.png',
           size: 'full',
           aspectRatio: '2:1',
           aspectMode: 'cover',
