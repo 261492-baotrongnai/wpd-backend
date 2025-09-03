@@ -8,6 +8,8 @@ import { Admin } from 'src/admin/entities/admin.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
 import { EditFoodDto } from './dto/edit-food.dto';
 
+import * as fuzzball from 'fuzzball';
+
 @Injectable()
 export class FoodsService {
   logger = new Logger(FoodsService.name);
@@ -83,5 +85,61 @@ export class FoodsService {
     food.is_confirmed = editFoodDto.is_confirmed;
     food.is_rejected = editFoodDto.is_rejected;
     return this.foodRepository.save(food);
+  }
+
+  async getListOfSimilarityFoodNames() {
+    this.logger.log('Fetching list of similarity foods');
+    const foods = await this.foodRepository.find({
+      where: { grading_by_ai: true },
+    });
+
+    // Debug: Log all fetched foods
+    this.logger.debug('Fetched foods:', foods);
+
+    // Group foods by similar names (fuzzy match > 80%)
+    const groups: { [key: string]: Food[] } = {};
+
+    for (const food of foods) {
+      let foundKey: string | null = null;
+      for (const key of Object.keys(groups)) {
+        const similarity = fuzzball.token_set_ratio(food.name, key);
+        this.logger.debug(
+          `Comparing "${food.name}" with "${key}": similarity=${similarity}`,
+        );
+        if (similarity > 85 && similarity < 100) {
+          foundKey = key;
+          break;
+        }
+      }
+      if (foundKey) {
+        groups[foundKey].push(food);
+        this.logger.debug(`Added "${food.name}" to group "${foundKey}"`);
+      } else {
+        groups[food.name] = [food];
+        this.logger.debug(`Created new group for "${food.name}"`);
+      }
+    }
+
+    // Filter groups with more than one unique grade
+    const result = Object.entries(groups)
+      .map(([name, groupFoods]) => {
+        const grades = groupFoods.map((f) => f.grade); // <-- collect all grades, not distinct
+        this.logger.debug(`Group "${name}" has grades:`, grades);
+        if (new Set(grades).size > 1) {
+          // still check for more than one unique grade
+          return {
+            names: groupFoods.map((f) => f.name),
+            grades,
+            counts: groupFoods.length,
+            food_from_db: [name],
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    this.logger.debug('Final result:', result);
+
+    return result;
   }
 }
