@@ -19,6 +19,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         ssl: {
           rejectUnauthorized: false,
         },
+        connectTimeout: 60000,
       }),
       inject: [ConfigService],
     }),

@@ -524,7 +524,8 @@ export class RecordCaseHandler {
           return 'MenuChoicesConfirm Not Food';
         }
         let GradeResult: line.messagingApi.FlexMessage;
-        switch (lowestGrade) {
+        // switch (lowestGrade) {
+        switch (avgGrade) {
           case 'A':
             GradeResult = GradeFlex('A', messageText, ai_grading_menus);
 
