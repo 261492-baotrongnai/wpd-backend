@@ -53,6 +53,39 @@ export class RecordCaseHandler {
     this.client = new line.messagingApi.MessagingApiClient(config);
   }
 
+  /**
+   * Move image from Space 'meal_images/waitings/[fileName]' to 'meal_images/[user_id]/[fileName]'
+   * and delete the original in 'waitings'.
+   */
+  async moveImageFromWaitingToUser(
+    user_id: number,
+    fileName: string,
+  ): Promise<string> {
+    const sourceKey = `meal_images/waitings/${fileName}`;
+    const destKey = `meal_images/${user_id}/${fileName}`;
+    try {
+      // Copy object
+      await this.s3Client.copyObject({
+        Bucket: process.env.SPACE_NAME,
+        CopySource: `${process.env.SPACE_NAME}/${sourceKey}`,
+        Key: destKey,
+        ACL: 'private',
+      });
+      // Delete original
+      await this.s3Client.deleteObject({
+        Bucket: process.env.SPACE_NAME,
+        Key: sourceKey,
+      });
+      this.logger.log(`Moved image from ${sourceKey} to ${destKey}`);
+      return destKey;
+    } catch (error) {
+      this.logger.error(`Error moving image from waiting to user:`, error);
+      throw new Error(
+        `Error moving image: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
   private checkSourceUser(event: line.MessageEvent): string {
     if (event.source.type !== 'user') {
       throw new Error('Event source is not user type');
@@ -183,6 +216,38 @@ export class RecordCaseHandler {
     }
   }
 
+  async postToSpaceWithoutLocal(
+    user_id: number,
+    file_name: string,
+    image_content: Buffer,
+    file_type: string,
+  ): Promise<void> {
+    // Upload the image directly to the Space bucket without saving locally
+    const key = `meal_images/waitings/${file_name}`;
+    try {
+      const uploadParams = {
+        Bucket: process.env.SPACE_NAME,
+        Key: key,
+        Body: image_content,
+        ContentType: `image/${file_type}`,
+        ACL: 'private' as ObjectCannedACL,
+      };
+      const parallelUpload = new Upload({
+        client: this.s3Client,
+        params: uploadParams,
+      });
+      await parallelUpload.done();
+      this.logger.log(
+        `File uploaded directly to Space: ${file_name} for user ${user_id}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error uploading file to Space:`, error);
+      throw new Error(
+        `Error uploading file to Space: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
   async waitingMealImage(
     event: line.MessageEvent,
     user_state: UserState,
@@ -218,8 +283,15 @@ export class RecordCaseHandler {
         // Define the file name with the correct extension
         const fileName = `${event.message.id}.${fileType}`;
 
-        // Save the image content to the uploads directory
-        const filePath = await this.saveToUploadsDir(fileName, imageContent);
+        // Post the image content directly to Space (no local save)
+        const key = `meal_images/waitings/${fileName}`;
+        await this.postToSpaceWithoutLocal(
+          user_state.user.id,
+          fileName,
+          imageContent,
+          fileType,
+        );
+        const filePath = key; // Use Space key as filePath reference
 
         const updateJob = await this.userStateQueue.add('update-user-state', {
           id: user_state.id,
@@ -540,17 +612,16 @@ export class RecordCaseHandler {
         }
 
         const fileName = user_state.pendingFile?.fileName;
-        const filePath = user_state.pendingFile?.filePath;
-        if (!filePath) {
-          throw new Error(
-            'File path not found in user state [ isPredictionCorrect ]',
-          );
-        }
         if (!fileName) {
           throw new Error(
             'File name not found in user state [ isPredictionCorrect ]',
           );
         }
+        // Move image from waitings to user folder in Space
+        const filePath = await this.moveImageFromWaitingToUser(
+          user_state.user.id,
+          fileName,
+        );
 
         // log user choice
         await this.logsQueue.add(
@@ -589,13 +660,6 @@ export class RecordCaseHandler {
             grading_by_ai: food.grading_by_ai,
           });
         }
-
-        await this.postToSpace(
-          user_state.user.id,
-          fileName,
-          filePath,
-          fileName.split('.').pop() || 'jpg',
-        );
 
         const removeJob = await this.userStateQueue.add(
           'remove-user-state',
