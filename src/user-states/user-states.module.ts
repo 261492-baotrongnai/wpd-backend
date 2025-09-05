@@ -6,6 +6,8 @@ import { UserState } from './entities/user-state.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { UserStateProcessor } from './workers/user-state.worker';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { ImagesService } from 'src/images/images.service';
+import { ImagesModule } from 'src/images/images.module';
 
 @Module({
   imports: [
@@ -13,12 +15,14 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
     BullModule.registerQueue({
       name: 'user-state',
     }),
+    ImagesModule,
   ],
   controllers: [UserStatesController],
   providers: [
     UserStatesService,
     UserStateProcessor,
     QueueEventsRegistryService,
+    ImagesService,
   ],
   exports: [UserStatesService],
 })

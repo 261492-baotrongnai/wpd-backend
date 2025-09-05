@@ -5,20 +5,26 @@ import { UserState } from './entities/user-state.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import * as path from 'path';
-import * as fs from 'fs';
 import * as line from '@line/bot-sdk';
 import { ConfigService } from '@nestjs/config';
 import { User } from 'src/users/entities/user.entity';
+import { ObjectCannedACL } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+import { createS3Client } from 'src/images/spaceUtil';
+import { ImagesService } from 'src/images/images.service';
 
 @Injectable()
 export class UserStatesService {
   private readonly client: line.messagingApi.MessagingApiClient;
   private readonly logger = new Logger(UserStatesService.name);
+  private readonly s3Client = createS3Client();
+
   constructor(
     @InjectRepository(UserState)
     private readonly userStatesRepository: Repository<UserState>,
     private readonly entityManager: EntityManager,
     private configService: ConfigService,
+    private readonly imagesService: ImagesService,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -114,16 +120,11 @@ export class UserStatesService {
     return candidates;
   }
 
-  async addDatePosterState(
-    filePath: string,
-    uid: string,
-    id: number,
-    iid: string,
-  ) {
+  async addDatePosterState(signed_url: string, uid: string, id: number) {
     const message: line.messagingApi.ImageMessage = {
       type: 'image',
-      originalContentUrl: `${this.configService.get('BASE_URL')}/uploads/posters/${iid}/${path.basename(filePath)}`,
-      previewImageUrl: `${this.configService.get('BASE_URL')}/uploads/posters/${iid}/${path.basename(filePath)}`,
+      originalContentUrl: `${signed_url}`,
+      previewImageUrl: `${signed_url}`,
     };
     // Fetch the User entity by id
     const user = (await this.entityManager.findOne('User', {
@@ -137,13 +138,13 @@ export class UserStatesService {
       lineUserId: uid,
       messageToSend: message,
       state: 'date-poster',
-      pendingFile: { fileName: path.basename(filePath), filePath },
       user: user,
     });
     this.logger.debug(`Adding date poster state for user ${id}`);
     try {
       const savedState = await this.userStatesRepository.save(userState);
       this.logger.debug(`Date poster state added successfully for user ${id}`);
+      this.logger.log(`Date poster state added: ${JSON.stringify(savedState)}`);
       return savedState;
     } catch (error) {
       this.logger.error(
@@ -154,6 +155,7 @@ export class UserStatesService {
     }
   }
 
+  // เหมือนจะไม่ได้ใช้ที่ไหน
   async sendPosterToUser(filePath: string, uid: string) {
     this.logger.debug(`Sending poster to user ${uid} from path: ${filePath}`);
     const message: line.messagingApi.ImageMessage = {
@@ -176,19 +178,59 @@ export class UserStatesService {
     return { message: 'Poster sent successfully', uid };
   }
 
-  async saveToUploadsDir(
+  async saveToUploadsSpace(
     file: Express.Multer.File,
     iid: string,
-  ): Promise<string> {
-    const uploadsDir = path.join(__dirname, '../../uploads/posters', iid);
-    const filePath = path.join(uploadsDir, file.originalname);
+  ): Promise<{ signed_url: string }> {
+    const key = `posters/${iid}-${file.originalname}`;
+    const uploadParams = {
+      Bucket: process.env.SPACE_NAME,
+      Key: key,
+      Body: file.buffer,
+      ContentType: `image/${file.mimetype.split('/')[1]}`,
+      ACL: 'private' as ObjectCannedACL,
+    };
 
-    // Ensure the uploads directory exists
-    await fs.promises.mkdir(uploadsDir, { recursive: true });
+    const parallelUpload = new Upload({
+      client: this.s3Client,
+      params: uploadParams,
+    });
+    await parallelUpload.done();
+    this.logger.log(`File uploaded successfully to Space: ${key}`);
+    const result = await this.imagesService.getSignedUrl(key);
+    // this.logger.log(`Generated signed URL: ${result.signed_url}`);
+    return result;
+  }
 
-    // Save the buffer to the uploads directory
-    await fs.promises.writeFile(filePath, file.buffer);
-    this.logger.log(`File saved locally: ${filePath}`);
-    return filePath;
+  async postToSpaceWithoutLocal(
+    user_id: number,
+    file_name: string,
+    image_content: Buffer,
+    file_type: string,
+  ): Promise<void> {
+    // Upload the image directly to the Space bucket without saving locally
+    const key = `meal_images/waitings/${file_name}`;
+    try {
+      const uploadParams = {
+        Bucket: process.env.SPACE_NAME,
+        Key: key,
+        Body: image_content,
+        ContentType: `image/${file_type}`,
+        ACL: 'private' as ObjectCannedACL,
+      };
+      const parallelUpload = new Upload({
+        client: this.s3Client,
+        params: uploadParams,
+      });
+      await parallelUpload.done();
+      this.logger.log(
+        `File uploaded directly to Space: ${file_name} for user ${user_id}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error uploading file to Space:`, error);
+      throw new Error(
+        `Error uploading file to Space: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }

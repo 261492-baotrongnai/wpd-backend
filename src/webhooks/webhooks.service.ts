@@ -128,7 +128,7 @@ export class WebhooksService {
               ) {
                 this.logger.debug(
                   'User has date poster state, sending poster:',
-                  user_state.pendingFile?.filePath,
+                  user_state.messageToSend,
                 );
                 result = await this.handleMealRecordPoster(
                   event.replyToken,

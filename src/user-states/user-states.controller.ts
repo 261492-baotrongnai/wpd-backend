@@ -46,20 +46,19 @@ export class UserStatesController {
     @Body('uid') uid: string,
   ) {
     this.logger.debug(`Uploading export poster for user ${uid}`);
-    const filePath = await this.userStatesService.saveToUploadsDir(
+    const { signed_url } = await this.userStatesService.saveToUploadsSpace(
       file,
       req.user.internalId,
     );
-    if (!filePath) {
+    this.logger.debug(`Signed URL received: ${signed_url}`);
+    if (!signed_url) {
       this.logger.error('Failed to save file to uploads directory');
       throw new Error('Failed to save file');
     }
-    this.logger.debug(`File saved to: ${filePath}`);
     const job = await this.userStateQueue.add('save-date-poster', {
-      filePath: filePath,
+      signed_url,
       uid: uid,
       id: req.user.id,
-      iid: req.user.internalId,
     });
     return this.queueEventsRegistryService.waitForJobResult(
       job,
