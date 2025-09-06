@@ -62,6 +62,7 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
       { name: 'admin' },
       { name: 'user-choice-logs' },
       { name: 'user-state' },
+      { name: 'meal' },
     ),
   ],
 })

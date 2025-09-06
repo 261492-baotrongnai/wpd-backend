@@ -26,6 +26,15 @@ export class User {
   @Column({ nullable: true })
   userId: string;
 
+  @Column({ type: 'int', default: 0 })
+  streaks: number;
+
+  @Column({ type: 'int', default: 0 })
+  points: number;
+
+  @Column({ type: 'int', default: 0 })
+  totalDays: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

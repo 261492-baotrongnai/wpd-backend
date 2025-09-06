@@ -10,14 +10,20 @@ import { ExternalApiService } from 'src/external-api/external-api.service';
 import { MealsJobService } from './meals.job';
 import { MealsProcessor } from './meals.worker';
 import { BullModule } from '@nestjs/bullmq';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Meal]),
     FoodGradesModule,
-    BullModule.registerQueue({
-      name: 'meal',
-    }),
+    BullModule.registerQueue(
+      {
+        name: 'meal',
+      },
+      {
+        name: 'achievement',
+      },
+    ),
   ],
   controllers: [MealsController],
   providers: [
@@ -27,6 +33,7 @@ import { BullModule } from '@nestjs/bullmq';
     ExternalApiService,
     MealsJobService,
     MealsProcessor,
+    QueueEventsRegistryService,
   ],
   exports: [MealsService, TypeOrmModule],
 })

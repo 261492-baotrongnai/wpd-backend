@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, EntityManager, Repository } from 'typeorm';
 import moment from 'moment-timezone';
 import { FoodGradesService } from 'src/food-grades/food-grades.service';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class MealsService {
@@ -17,13 +18,19 @@ export class MealsService {
     private readonly entityManager: EntityManager,
     private readonly foodGrades: FoodGradesService,
   ) {}
-  create(createMealDto: CreateMealDto) {
+  async create(createMealDto: CreateMealDto) {
+    const user = await this.entityManager.findOne(User, {
+      where: { id: createMealDto.userId },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
     const new_meal = new Meal({
       imageName: createMealDto.imageName,
       mealType: createMealDto.mealType,
       avgScore: createMealDto.avgScore,
       avgGrade: createMealDto.avgGrade,
-      user: createMealDto.user,
+      user: user,
       maxScore: createMealDto.maxScore,
       lowestGrade: createMealDto.lowestGrade,
     });
@@ -212,5 +219,112 @@ export class MealsService {
     }
     this.logger.debug(`Latest meal found:`, latestMeal);
     return latestMeal;
+  }
+
+  async countUserStreaks(id: number) {
+    try {
+      const result: {
+        userId: number;
+        streakCount: number;
+        lastMealDate: string;
+      }[] = await this.entityManager.query(
+        `
+      WITH ranked_meals AS (
+        SELECT
+          userId,
+          DATE(createdAt) AS mealDate,
+          ROW_NUMBER() OVER (PARTITION BY userId ORDER BY DATE(createdAt)) AS rn
+        FROM meals
+        GROUP BY userId, DATE(createdAt)
+      ),
+      streaks AS (
+        SELECT
+          userId,
+          mealDate,
+          rn,
+          DATE_SUB(mealDate, INTERVAL rn DAY) AS streakGroup
+        FROM ranked_meals
+      ),
+      streak_counts AS (
+        SELECT
+          userId,
+          COUNT(*) AS streakCount,
+          MAX(mealDate) AS lastMealDate
+        FROM streaks
+        GROUP BY userId, streakGroup
+      )
+      SELECT
+        userId,
+        streakCount,
+        lastMealDate
+      FROM streak_counts
+      WHERE userId = ? 
+      ORDER BY lastMealDate DESC
+      LIMIT 1;
+    `,
+        [id],
+      );
+
+      this.logger.debug('Streak query result:', result);
+
+      const lastMealDate = result[0]?.lastMealDate;
+      const streakCount = result[0]?.streakCount || 0;
+
+      // Use moment-timezone to ensure all dates are in Asia/Bangkok timezone
+
+      const today = moment.tz('Asia/Bangkok').startOf('day');
+      const yesterday = moment
+        .tz('Asia/Bangkok')
+        .subtract(1, 'day')
+        .startOf('day');
+      const lastMealMoment = lastMealDate
+        ? moment.tz(lastMealDate, 'YYYY-MM-DD', 'Asia/Bangkok')
+        : null;
+
+      const lastMealDateStr = lastMealMoment
+        ? lastMealMoment.format('YYYY-MM-DD')
+        : null;
+      const todayStr = today.format('YYYY-MM-DD');
+      const yesterdayStr = yesterday.format('YYYY-MM-DD');
+
+      this.logger.debug(`Last meal date from database: ${lastMealDate}`);
+      this.logger.debug(
+        `Last meal date string (Asia/Bangkok): ${lastMealDateStr}`,
+      );
+      this.logger.debug(`Today (Asia/Bangkok): ${todayStr}`);
+      this.logger.debug(`Yesterday (Asia/Bangkok): ${yesterdayStr}`);
+      this.logger.debug(`Current streak count: ${streakCount}`);
+      this.logger.debug(
+        `Last meal date is today:`,
+        lastMealDateStr === todayStr,
+      );
+      this.logger.debug(
+        `Last meal date is yesterday:`,
+        lastMealDateStr === yesterdayStr,
+      );
+
+      if (lastMealDateStr === todayStr || lastMealDateStr === yesterdayStr) {
+        return streakCount;
+      } else {
+        return 0;
+      }
+    } catch (error) {
+      this.logger.error('Error at [getUserStreaks]:', error);
+      throw error;
+    }
+  }
+
+  async countTotalDays(userId: number) {
+    this.logger.debug(`Counting total days for userId: ${userId}`);
+    const result: { totalDays: number }[] = await this.entityManager.query(
+      `
+      SELECT COUNT(DISTINCT DATE(createdAt)) AS totalDays
+      FROM meals
+      WHERE userId = ?
+    `,
+      [userId],
+    );
+    this.logger.debug(`Total days result:`, result);
+    return result[0]?.totalDays || 0;
   }
 }

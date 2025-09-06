@@ -170,8 +170,12 @@ export class UsersService {
     return user;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findUserById(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+    });
+
+    return user;
   }
 
   // update(id: number, updateUserDto: UpdateUserDto) {
@@ -193,5 +197,22 @@ export class UsersService {
       this.logger.error('Error handling registration success:', error);
       throw error;
     }
+  }
+
+  async updateUserStreaks(streaks: number, id: number) {
+    await this.usersRepository.update(id, { streaks });
+  }
+
+  async updateUserTotalDays(totalDays: number, id: number) {
+    await this.usersRepository.update(id, { totalDays });
+  }
+
+  async addUserPoints(add_points: number, id: number) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new Error(`User not found: ${id}`);
+    }
+    const newPoints = (user.points || 0) + add_points;
+    await this.usersRepository.update(id, { points: newPoints });
   }
 }

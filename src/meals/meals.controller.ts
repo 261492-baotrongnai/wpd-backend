@@ -11,12 +11,20 @@ import {
 import { MealsService } from './meals.service';
 import { CreateMealDto } from './dto/create-meal.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 // import { UpdateMealDto } from './dto/update-meal.dto';
 
 @Controller('meals')
 export class MealsController {
   logger = new Logger(MealsController.name);
-  constructor(private readonly mealsService: MealsService) {}
+  constructor(
+    private readonly mealsService: MealsService,
+    @InjectQueue('meal') private mealsQueue: Queue,
+
+    private readonly queueEvents: QueueEventsRegistryService,
+  ) {}
 
   @Post()
   create(@Body() createMealDto: CreateMealDto) {
@@ -106,5 +114,32 @@ export class MealsController {
   ) {
     console.log('[/food-grades/month-summary] for user: ', req.user.id);
     return this.mealsService.getMonthSummary(req.user.id);
+  }
+
+  @Get('streaks')
+  async getUserStreaks() {
+    this.logger.log('[/meals/streaks] for user: ', 14);
+    const job = await this.mealsQueue.add('count-user-streaks', {
+      userId: 14,
+    });
+
+    const result = await this.queueEvents.waitForJobResult(
+      job,
+      this.mealsQueue,
+    );
+    return result;
+  }
+
+  @Get('totalDays')
+  async getTotalDays() {
+    const job = await this.mealsQueue.add('count-total-days', {
+      userId: 14,
+    });
+
+    const result = await this.queueEvents.waitForJobResult(
+      job,
+      this.mealsQueue,
+    );
+    return result;
   }
 }
