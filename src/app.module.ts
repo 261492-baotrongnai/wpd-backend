@@ -20,6 +20,7 @@ import { FollowersModule } from './followers/followers.module';
 import { WebhookModule } from './webhooks/webhook.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { TasksModule } from './tasks/tasks.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { TasksModule } from './tasks/tasks.module';
     FollowersModule,
     WebhookModule,
     OrganizationsModule,
+    AchievementsModule,
   ],
 })
 export class AppModule {}
