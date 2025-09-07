@@ -559,7 +559,10 @@ export class RecordCaseHandler {
         event.message.type === 'text' &&
         event.message.text !== 'บันทึกอาหารที่ทาน' &&
         event.message.text !== 'กินได้ก่อ' &&
-        event.message.text !== 'วิธีใช้'
+        event.message.text !== 'วิธีใช้' &&
+        !['มื้อเย็น☁️', 'มื้อเที่ยง☀️', 'มื้อเช้า⛅️', 'ของว่าง🍉🧃'].includes(
+          event.message.text,
+        )
       ) {
         const messageText = event.message.text;
         if (messageText.includes('ยกเลิก')) {
