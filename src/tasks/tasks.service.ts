@@ -313,4 +313,22 @@ export class TasksService {
       throw error;
     }
   }
+
+  async handleStreaksAlertJob() {
+    this.logger.debug('Starting streaks alert job processing');
+    // Implement the logic for sending streak alerts to users
+    // This could involve querying users with low streaks and sending them motivational messages
+    // For now, we'll just log that the job was called
+    this.logger.log('Streaks alert job executed');
+    return 'Streaks alert job executed';
+  }
+
+  async handleStreaksResetJob() {
+    this.logger.debug('Starting streaks reset job processing');
+    // Implement the logic for resetting streaks for users who have broken their streaks
+    // This could involve updating user records in the database
+    // For now, we'll just log that the job was called
+    this.logger.log('Streaks reset job executed');
+    return 'Streaks reset job executed';
+  }
 }

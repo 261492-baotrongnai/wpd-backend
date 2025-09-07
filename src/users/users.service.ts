@@ -200,7 +200,17 @@ export class UsersService {
   }
 
   async updateUserStreaks(streaks: number, id: number) {
-    await this.usersRepository.update(id, { streaks });
+    // If streak resets to 0 we keep previous streak value in carryStreak
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) return;
+    if (streaks === 0 && user.streaks > 0) {
+      await this.usersRepository.update(id, {
+        streaks,
+        carryStreak: user.carryStreak + user.streaks,
+      });
+    } else {
+      await this.usersRepository.update(id, { streaks });
+    }
   }
 
   async updateUserTotalDays(totalDays: number, id: number) {

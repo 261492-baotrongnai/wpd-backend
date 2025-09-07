@@ -21,6 +21,7 @@ import { WebhookModule } from './webhooks/webhook.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { AchievementsModule } from './achievements/achievements.module';
     WebhookModule,
     OrganizationsModule,
     AchievementsModule,
+    EventEmitterModule.forRoot(),
   ],
 })
 export class AppModule {}

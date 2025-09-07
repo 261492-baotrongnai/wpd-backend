@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('achievements')
 export class Achievement {
@@ -13,4 +14,7 @@ export class Achievement {
 
   @Column({ nullable: true })
   points: number;
+
+  @ManyToMany(() => User, (user) => user.achievements)
+  users: User[];
 }

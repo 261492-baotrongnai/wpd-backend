@@ -16,14 +16,9 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
   imports: [
     TypeOrmModule.forFeature([Meal]),
     FoodGradesModule,
-    BullModule.registerQueue(
-      {
-        name: 'meal',
-      },
-      {
-        name: 'achievement',
-      },
-    ),
+    BullModule.registerQueue({
+      name: 'meal',
+    }),
   ],
   controllers: [MealsController],
   providers: [
