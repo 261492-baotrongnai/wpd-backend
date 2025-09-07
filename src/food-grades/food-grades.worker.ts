@@ -29,6 +29,10 @@ export class FoodGradesProcessor extends WorkerHost {
         const data = job.data as UpdateFoodGradeDto;
         return await this.foodGradesService.update(data);
       }
+      case 'remove-food-grade': {
+        const data = job.data as { ids: number[] };
+        return await this.foodGradesService.remove(data.ids);
+      }
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }

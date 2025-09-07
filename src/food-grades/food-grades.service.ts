@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FoodGrade, FoodGradeType } from './entities/food-grade.entity';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, Repository, In } from 'typeorm';
 import { CreateFoodGradeDto } from './dto/create-food-grade.dto';
 import * as fuzzball from 'fuzzball';
 import { ExternalApiService } from 'src/external-api/external-api.service';
@@ -213,5 +213,40 @@ export class FoodGradesService {
     }
     Object.assign(foodGrade, updateFoodGradeDto);
     return await this.foodGradesRepository.save(foodGrade);
+  }
+
+  async remove(ids: number[]) {
+    this.logger.log('Removing food grades with IDs: ' + ids.join(', '));
+    // Sanitize & deduplicate
+    const uniqueIds = [...new Set(ids.filter((v) => typeof v === 'number'))];
+    if (!uniqueIds.length) {
+      this.logger.warn('Remove called with empty or invalid id list');
+      return { requested: 0, affected: 0, deletedIds: [], missing: [] };
+    }
+
+    // Fetch existing to report missing ones (optional but safer feedback)
+    const existing = await this.foodGradesRepository.findBy({
+      id: In(uniqueIds),
+    });
+    const existingIds = existing.map((e) => e.id);
+    const missing = uniqueIds.filter((id) => !existingIds.includes(id));
+
+    if (!existingIds.length) {
+      this.logger.warn('No matching food grades found for deletion');
+      return {
+        requested: uniqueIds.length,
+        affected: 0,
+        deletedIds: [],
+        missing,
+      };
+    }
+
+    const deleteResult = await this.foodGradesRepository.delete(existingIds);
+    return {
+      requested: uniqueIds.length,
+      affected: deleteResult.affected ?? 0,
+      deletedIds: existingIds,
+      missing,
+    };
   }
 }
