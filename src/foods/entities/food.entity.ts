@@ -11,6 +11,9 @@ export class Food {
   name: string;
 
   @Column({ type: 'longtext', nullable: true })
+  suggested_name: string;
+
+  @Column({ type: 'longtext', nullable: true })
   description: string;
 
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })

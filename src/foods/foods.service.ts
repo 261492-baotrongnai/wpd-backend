@@ -72,7 +72,7 @@ export class FoodsService {
       throw new Error(`Food with ID ${editFoodDto.id} not found`);
     }
 
-    food.name = editFoodDto.name;
+    food.suggested_name = editFoodDto.name;
     if (editFoodDto.description !== food.description) {
       food.unconfirmed_description = food.description;
     }
