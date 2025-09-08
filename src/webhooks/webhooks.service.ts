@@ -19,6 +19,7 @@ import { OutOfCaseFlex } from './flex/flex-no-case';
 import { ProgramUserFlex } from './flex/flex-program-user';
 import { CommonUserFlex } from './flex/flex-common-user';
 import { FlexInProgress } from './flex/flex-inprogress';
+import { CanEatCheckHandler } from './canEatCheck';
 @Injectable()
 export class WebhooksService {
   private readonly client: line.messagingApi.MessagingApiClient;
@@ -28,6 +29,7 @@ export class WebhooksService {
   constructor(
     private readonly userService: UsersService,
     private readonly recordCaseHandler: RecordCaseHandler,
+    private readonly canEatCheckHandler: CanEatCheckHandler,
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
     private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
@@ -85,11 +87,11 @@ export class WebhooksService {
                     break;
                   case 'กินได้ก่อ':
                     this.logger.debug('User requested to see ask food grade');
-                    await this.client.replyMessage({
-                      replyToken: event.replyToken,
-                      messages: [FlexInProgress],
-                    });
-                    result = 'Ask กินได้ก่อ';
+                    result = await this.handleCanEatCheck(
+                      event.replyToken,
+                      uid,
+                      event.source.userId,
+                    );
                     break;
                   case 'วิธีใช้':
                     this.logger.debug('User requested to see ask food grade');
@@ -363,6 +365,34 @@ export class WebhooksService {
             user_state.lineUserId,
           );
           break;
+        case 'canEatCheck: waiting for image':
+          result = await this.canEatCheckHandler.waitingForFoodImage(
+            event,
+            user_state,
+            user_state.lineUserId,
+          );
+          break;
+        case 'canEatCheck: waiting for menu names':
+          await this.canEatCheckHandler.confirmMenuName(
+            event,
+            user_state,
+            user_state.lineUserId,
+          );
+          break;
+        case 'canEatCheck: waiting for decide confirm':
+          await this.canEatCheckHandler.confirmToRecordMenu(
+            event,
+            user_state,
+            user_state.lineUserId,
+          );
+          break;
+        case 'canEatCheck: waiting for meal type':
+          await this.canEatCheckHandler.confirmMealToRecord(
+            event,
+            user_state,
+            user_state.lineUserId,
+          );
+          break;
       }
     }
     return result;
@@ -468,6 +498,52 @@ export class WebhooksService {
     } catch (error) {
       this.logger.error('Error handling meal record poster:', error);
       throw error;
+    }
+  }
+
+  async handleCanEatCheck(
+    replyToken: string,
+    uid: string,
+    lineUserId: string,
+  ): Promise<string> {
+    this.logger.debug('Handling meal record for user:', uid);
+    this.logger.debug('Reply token:', replyToken);
+    try {
+      const response = await this.client.replyMessage({
+        replyToken,
+        messages: [AskForImageFlex],
+      });
+      this.logger.debug('AskForImageFlex sent successfully:', response);
+    } catch (error) {
+      this.logger.error(
+        `Error sending AskForImageFlex with reply ${replyToken}:`,
+        error,
+      );
+      throw new Error('Failed to send AskForImageFlex');
+    }
+
+    const iid = await getInternalId(undefined, uid).catch((error) => {
+      this.logger.error('Error getting internal ID:', error);
+      throw new Error('Failed to get internal ID');
+    });
+    this.logger.debug('Internal ID:', iid);
+
+    const user = await this.userService.findUserByInternalId(iid);
+    if (!user) {
+      this.logger.error('User not found in handleMealRecord');
+      throw new Error('User not found');
+    } else {
+      const createJob = await this.userStateQueue.add('create-user-state', {
+        user: user,
+        state: 'canEatCheck: waiting for image',
+        lineUserId: lineUserId,
+      });
+
+      await this.queueEventsRegistryService.waitForJobResult(
+        createJob,
+        this.userStateQueue,
+      );
+      return 'canEatCheck: waiting for image state is created';
     }
   }
 }

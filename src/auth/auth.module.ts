@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { WebhooksService } from 'src/webhooks/webhooks.service';
 import { UserStatesModule } from 'src/user-states/user-states.module';
 import { RecordCaseHandler } from 'src/webhooks/record-case';
+import { CanEatCheckHandler } from 'src/webhooks/canEatCheck';
 import { ImagesService } from 'src/images/images.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Image } from 'src/images/entities/image.entity';
@@ -32,6 +33,7 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
     JwtStrategy,
     WebhooksService,
     RecordCaseHandler,
+    CanEatCheckHandler,
     ImagesService,
     ExternalApiService,
     FoodGradesService,
@@ -62,6 +64,9 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
       { name: 'admin' },
       { name: 'user-choice-logs' },
       { name: 'user-state' },
+      {
+        name: 'canEatCheck-user-decide'
+      },
     ),
   ],
 })
