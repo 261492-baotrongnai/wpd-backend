@@ -12,9 +12,8 @@ import { FoodsModule } from './foods/foods.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AdminModule } from './admin/admin.module';
 import { ProgramsModule } from './programs/programs.module';
-
 import { ChoiceLogsModule } from './choice-logs/logs.module';
-
+import { userDecideQueueModule } from './canEatCheck-logs/logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FollowersModule } from './followers/followers.module';
 import { WebhookModule } from './webhooks/webhook.module';
@@ -38,6 +37,7 @@ import { TasksModule } from './tasks/tasks.module';
     FoodGradesModule,
     FoodsModule,
     ChoiceLogsModule,
+    userDecideQueueModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

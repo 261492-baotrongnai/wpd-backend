@@ -547,6 +547,17 @@ export class RecordCaseHandler {
       .map((food) => `${food.name}`);
   }
 
+  parseMessageText(text: string) {
+    const result = text
+      .split(/[, ]+/) // Split by comma or space (one or more)
+      .map((name) => name.trim()) // Remove extra whitespace
+      .filter((name) => name.length > 0); // Remove empty strings
+
+    this.logger.debug('Parsed menu names:', result);
+
+    return result;
+  }
+
   async MenuChoicesConfirm(
     event: line.MessageEvent,
     user_state: UserState,
@@ -571,11 +582,7 @@ export class RecordCaseHandler {
         }
 
         // Parse the messageText into a string array
-        const parsedMenuNames = messageText
-          .split(/[, ]+/) // Split by comma or space (one or more)
-          .map((name) => name.trim()) // Remove extra whitespace
-          .filter((name) => name.length > 0); // Remove empty strings
-        this.logger.debug('Parsed menu names:', parsedMenuNames);
+        const parsedMenuNames = this.parseMessageText(messageText);
 
         // get the lowest grade, max score, average grade and score from the foodGrade service
         const { lowestGrade, maxScore, avgGrade, avgScore, foods } =
@@ -625,7 +632,7 @@ export class RecordCaseHandler {
           user_state.user.id,
           fileName,
         );
-
+        
         // log user choice
         await this.logsQueue.add(
           'user-choice-logs',
@@ -737,3 +744,4 @@ export class RecordCaseHandler {
     }
   }
 }
+  
