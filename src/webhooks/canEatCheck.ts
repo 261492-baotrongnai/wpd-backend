@@ -158,7 +158,7 @@ export class CanEatCheckHandler {
         userId: userState.user.id,
         todayAvgScore: todaySummary.avgScore,
         askedMenu: userState.foodGradingInfo,
-        filePath: userState.pendingFile,
+        fileName: userState.pendingFile?.fileName,
         isRecord: isRecord,
       },
       {
@@ -697,6 +697,12 @@ export class CanEatCheckHandler {
               grading_by_ai: boolean;
             }>;
           } = JSON.parse(foodInfo);
+
+          const filePath =
+            await this.recordCaseHandler.moveImageFromWaitingToUser(
+              userState.user.id,
+              fileName,
+            );
 
           const mealType = mealResponses[response as keyof typeof mealResponses]
             .mealType as MealType;
