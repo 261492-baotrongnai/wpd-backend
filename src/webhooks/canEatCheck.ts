@@ -715,7 +715,7 @@ export class CanEatCheckHandler {
           });
 
           const meal = await this.mealsService.create({
-            user: userState.user,
+            userId: userState.user.id,
             mealType: mealType,
             imageName: fileName,
             avgGrade: jsonFoodInfo.avgGrade,
