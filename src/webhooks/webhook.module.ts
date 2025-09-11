@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { WebhooksController } from './webhooks.controller';
 import { WebhooksService } from './webhooks.service';
 import { RecordCaseHandler } from './record-case';
+import { CanEatCheckHandler } from './canEatCheck';
 import { ChoiceLogsProcessor } from './workers/userChoiceLog.worker';
 import { BullModule } from '@nestjs/bullmq';
 import { UsersModule } from 'src/users/users.module';
@@ -31,6 +32,8 @@ import { QueueEventsRegistryService } from '../queue-events/queue-events.service
     }),
     BullModule.registerQueue({
       name: 'user-state',
+    }),BullModule.registerQueue({
+      name: 'canEatCheck-user-decide',
     }),
     UsersModule,
     UserStatesModule,
@@ -43,6 +46,7 @@ import { QueueEventsRegistryService } from '../queue-events/queue-events.service
   providers: [
     WebhooksService,
     RecordCaseHandler,
+    CanEatCheckHandler,
     ChoiceLogsProcessor,
     ExternalApiService,
     WebhookProcessor,

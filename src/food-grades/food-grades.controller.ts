@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Put,
@@ -58,6 +59,26 @@ export class FoodGradesController {
     }
     // this.logger.log('Updating food grade with: ' + JSON.stringify(body));
     const job = await this.foodGradeQueue.add('update-food-grade', body);
+    const result = await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.foodGradeQueue,
+    );
+    return result;
+  }
+
+  @Delete()
+  @UseGuards(JwtAuthGuard)
+  async remove(
+    @Req() req: { user: { internalId: string; id: number; role: string } },
+    @Body() body: { ids: number[] },
+  ) {
+    if (req.user.role !== 'admin') {
+      this.logger.warn(
+        `User with ID ${req.user.id} and role ${req.user.role} attempted to remove food grades.`,
+      );
+      throw new UnauthorizedException('Access denied');
+    }
+    const job = await this.foodGradeQueue.add('remove-food-grade', body);
     const result = await this.queueEventsRegistryService.waitForJobResult(
       job,
       this.foodGradeQueue,

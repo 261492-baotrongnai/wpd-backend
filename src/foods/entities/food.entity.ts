@@ -1,6 +1,13 @@
 import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('foods')
 export class Food {
@@ -9,6 +16,9 @@ export class Food {
 
   @Column()
   name: string;
+
+  @Column({ type: 'longtext', nullable: true })
+  suggested_name: string;
 
   @Column({ type: 'longtext', nullable: true })
   description: string;
@@ -30,6 +40,12 @@ export class Food {
 
   @Column({ type: 'longtext', nullable: true })
   unconfirmed_description: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @ManyToOne(() => Meal, (meal) => meal.foods, { onDelete: 'CASCADE' })
   meal: Meal;

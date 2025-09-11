@@ -46,6 +46,9 @@ export class UserState {
   @Column({ type: 'text', nullable: true })
   geminiImageName: string;
 
+  @Column({ type: 'json', nullable: true})
+  foodGradingInfo: string;
+
   @UpdateDateColumn()
   updatedAt: Date;
 

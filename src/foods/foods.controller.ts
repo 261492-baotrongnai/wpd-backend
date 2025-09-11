@@ -84,7 +84,7 @@ export class FoodsController {
     }
     return result;
   }
-
+  
   // @Get('sim')
   async getSimilarFoods() {
     const foods = await this.foodsService.getListOfSimilarityFoodNames();
