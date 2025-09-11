@@ -94,4 +94,4 @@ USER node
 EXPOSE 8000
 
 # Run the application.
-CMD npm run start
+CMD npm run start:prod

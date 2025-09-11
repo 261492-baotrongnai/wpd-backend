@@ -698,6 +698,7 @@ export class CanEatCheckHandler {
             }>;
           } = JSON.parse(foodInfo);
 
+          // create meal and food here
           const filePath =
             await this.recordCaseHandler.moveImageFromWaitingToUser(
               userState.user.id,
