@@ -6,11 +6,13 @@ import {
   UpdateDateColumn,
   OneToMany,
   ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Image } from 'src/images/entities/image.entity';
 import { UserState } from 'src/user-states/entities/user-state.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
 import { Program } from 'src/programs/entities/programs.entity';
+import { Achievement } from 'src/achievements/entities/achievement.entity';
 
 @Entity('users')
 export class User {
@@ -25,6 +27,19 @@ export class User {
 
   @Column({ nullable: true })
   userId: string;
+
+  @Column({ type: 'int', default: 0 })
+  streaks: number;
+
+  @Column({ type: 'int', default: 0 })
+  points: number;
+
+  @Column({ type: 'int', default: 0 })
+  totalDays: number;
+
+  // Accumulated streak days from previous broken streak segments used to progress towards higher achievements
+  @Column({ type: 'int', default: 0 })
+  carryStreak: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -45,6 +60,20 @@ export class User {
     onDelete: 'CASCADE',
   })
   programs: Program[];
+
+  @ManyToMany(() => Achievement, (achievement) => achievement.users)
+  @JoinTable({
+    name: 'user_achievements',
+    joinColumn: {
+      name: 'userId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'achievementId',
+      referencedColumnName: 'id',
+    },
+  })
+  achievements: Achievement[];
 
   constructor(user: Partial<User>) {
     Object.assign(this, user);

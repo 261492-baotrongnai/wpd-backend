@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Body,
+  Get,
   // UseGuards,
   // Request,
 } from '@nestjs/common';
@@ -54,5 +55,10 @@ export class UsersController {
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.usersService.remove(+id);
+  // }
+
+  // @Get('empty')
+  // async getTodayEmptyMealUsers() {
+  //   return this.usersService.getTodayEmptyMealUsers();
   // }
 }

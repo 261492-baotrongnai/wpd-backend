@@ -20,13 +20,19 @@ export class MealsProcessor extends WorkerHost {
 
   async process(job: Job) {
     if (job.name === 'create-meal') {
-      const { mealData } = job.data as { mealData: CreateMealDto };
+      const mealData = job.data as CreateMealDto;
       return await this.mealsJobService.handleCreateMealJob(mealData);
     } else if (job.name === 'find-today-all-meals') {
       return await this.mealsJobService.handleFindTodayAllMealJob();
     } else if (job.name === 'find-latest-meal') {
       const { userId } = job.data as { userId: number };
       return await this.mealsService.FindLatestMeal(userId);
+    } else if (job.name === 'count-user-streaks') {
+      const { userId } = job.data as { userId: number };
+      return await this.mealsService.countUserStreaks(userId);
+    } else if (job.name === 'count-total-days') {
+      const { userId } = job.data as { userId: number };
+      return await this.mealsService.countTotalDays(userId);
     }
   }
 

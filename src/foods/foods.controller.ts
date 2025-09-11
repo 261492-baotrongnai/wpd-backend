@@ -84,4 +84,39 @@ export class FoodsController {
     }
     return result;
   }
+  
+  // @Get('sim')
+  async getSimilarFoods() {
+    const foods = await this.foodsService.getListOfSimilarityFoodNames();
+    foods.sort((a, b) => {
+      if (!b || !a) return 0;
+      return b.counts - a.counts;
+    });
+    // Generate HTML table
+    const columns = ['names', 'grades', 'counts'];
+    const rows = foods
+      .map(
+        (food) => `
+      <tr>
+        <td>${(food?.names ?? []).join(', ')}</td>
+        <td>${(food?.grades ?? []).join(', ')}</td>
+        <td>${food?.counts ?? 0}</td>
+      </tr>
+    `,
+      )
+      .join('');
+    const html = `
+      <table border="1">
+        <thead>
+          <tr>
+            ${columns.map((col) => `<th>${col}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    `;
+    return html;
+  }
 }
