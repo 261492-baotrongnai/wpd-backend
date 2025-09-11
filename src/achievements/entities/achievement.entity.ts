@@ -15,6 +15,9 @@ export class Achievement {
   @Column({ nullable: true })
   points: number;
 
+  @Column({ nullable: true })
+  streakThereshold: number;
+
   @ManyToMany(() => User, (user) => user.achievements)
   users: User[];
 }

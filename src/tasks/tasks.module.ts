@@ -3,6 +3,7 @@ import { TasksService } from './tasks.service';
 import { BullModule } from '@nestjs/bullmq';
 import { TasksProcessor } from './tasks.worker';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { TasksController } from './tasks.controller';
 
 @Module({
   imports: [
@@ -18,7 +19,11 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
     BullModule.registerQueue({
       name: 'user-state',
     }),
+    BullModule.registerQueue({
+      name: 'user',
+    }),
   ],
+  controllers: [TasksController],
   providers: [TasksService, TasksProcessor, QueueEventsRegistryService],
 })
 export class TasksModule {}

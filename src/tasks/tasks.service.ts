@@ -6,6 +6,7 @@ import { Queue } from 'bullmq';
 import { MealType } from 'src/meals/entities/meal.entity';
 import { getInternalId } from 'src/users/user-utility';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class TasksService {
@@ -17,6 +18,7 @@ export class TasksService {
     @InjectQueue('meal') private readonly mealQueue: Queue,
     @InjectQueue('task') private readonly taskQueue: Queue,
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
+    @InjectQueue('user') private readonly userQueue: Queue,
     private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
     const config = {
@@ -314,21 +316,181 @@ export class TasksService {
     }
   }
 
-  async handleStreaksAlertJob() {
-    this.logger.debug('Starting streaks alert job processing');
-    // Implement the logic for sending streak alerts to users
-    // This could involve querying users with low streaks and sending them motivational messages
-    // For now, we'll just log that the job was called
-    this.logger.log('Streaks alert job executed');
-    return 'Streaks alert job executed';
+  // แจ้งเตือนผู้ใช้ที่มี streaks
+  // ทุกวันตอนทุ่มนึง
+  // ถ้า user มี streaks > 0
+  // จะส่งข้อความไปแจ้งเตือน
+  @Cron('0 19 * * *')
+  async handleStreaksAlertCron() {
+    this.logger.log('Starting streaks alert cron job');
+    try {
+      const job = await this.userQueue.add('get-today-empty-meal-users', {});
+      const result = await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.userQueue,
+        60000, // 1 minute timeout
+      );
+      type StreaksAlertUser = {
+        id: number;
+        lineUserId: string;
+        streaks: number;
+      };
+      const users: StreaksAlertUser[] = Array.isArray(result)
+        ? (result as StreaksAlertUser[])
+        : [];
+
+      // Filter out users with 0 streaks
+      const users_to_alert = users.filter((r) => r.streaks > 0);
+
+      this.logger.log(`Users to alert: ${JSON.stringify(users_to_alert)}`);
+
+      for (const user of users_to_alert) {
+        try {
+          const alertJob = await this.taskQueue.add('streaks-alert-user', {
+            id: user.id,
+            lineUserId: user.lineUserId,
+            streaks: user.streaks,
+          });
+          const alertResult =
+            await this.queueEventsRegistryService.waitForJobResult(
+              alertJob,
+              this.taskQueue,
+              60000, // 1 minute timeout
+            );
+          this.logger.log(
+            `Streaks alert sent successfully to user ID ${user.id}: ${JSON.stringify(
+              alertResult,
+            )}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Failed to send streaks alert to user ID ${user.id}:`,
+            error,
+          );
+          // Continue sending alerts to other users
+          continue;
+        }
+      }
+
+      this.logger.log('Streaks alert cron job completed successfully');
+      return result;
+    } catch (error) {
+      this.logger.error('Streaks alert cron job failed:', error);
+      throw error;
+    }
+  }
+
+  async handleStreaksAlertJob(user: {
+    id: number;
+    lineUserId: string;
+    streaks: number;
+  }) {
+    const message = (streaks: number) =>
+      `มะลิขอชม! คุณบันทึกอาหารติดกัน ${streaks} วันแล้ว
+อย่าลืมส่งของวันนี้นะคะ 😊`;
+
+    try {
+      await this.client
+        .pushMessage({
+          to: user.lineUserId,
+          messages: [
+            {
+              type: 'text',
+              text: message(user.streaks),
+            },
+          ],
+        })
+        .then(() =>
+          this.logger.log(
+            `Streaks alert message sent successfully to ${user.lineUserId}: ${message(
+              user.streaks,
+            )}`,
+          ),
+        );
+      return {
+        message: `Streaks alert message sent to ${user.lineUserId} successfully`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send streaks alert message to ${user.lineUserId}:`,
+        error,
+      );
+    }
+  }
+
+  // รีเซ็ต streaks ของผู้ใช้ที่ไม่ได้บันทึกอาหาร
+  // ทุกวันตอนเที่ยงคืน
+  @Cron('0 0 * * *')
+  async handleStereaksResetCron() {
+    this.logger.log('Starting streaks reset cron job');
+    try {
+      const job = await this.taskQueue.add('task-streaks-reset', '', {
+        removeOnComplete: 10,
+        removeOnFail: 50,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      });
+
+      const result = await this.queueEventsRegistryService.waitForJobResult(
+        job,
+        this.taskQueue,
+        300000, // 5 minutes timeout
+      );
+
+      this.logger.log('Streaks reset cron job completed successfully');
+      return result;
+    } catch (error) {
+      this.logger.error('Streaks reset cron job failed:', error);
+      throw error;
+    }
   }
 
   async handleStreaksResetJob() {
-    this.logger.debug('Starting streaks reset job processing');
-    // Implement the logic for resetting streaks for users who have broken their streaks
-    // This could involve updating user records in the database
-    // For now, we'll just log that the job was called
-    this.logger.log('Streaks reset job executed');
-    return 'Streaks reset job executed';
+    const job = await this.userQueue.add('get-today-empty-meal-users', {});
+    const result = await this.queueEventsRegistryService.waitForJobResult(
+      job,
+      this.userQueue,
+      60000, // 1 minute timeout
+    );
+    type StreaksAlertUser = { id: number; lineUserId: string; streaks: number };
+    const users: StreaksAlertUser[] = Array.isArray(result)
+      ? (result as StreaksAlertUser[])
+      : [];
+
+    // Filter out users with 0 streaks
+    const users_to_reset = users.filter((r) => r.streaks > 0);
+
+    this.logger.log(
+      `Users to reset streaks: ${JSON.stringify(users_to_reset)}`,
+    );
+
+    for (const user of users_to_reset) {
+      try {
+        const resetJob = await this.userQueue.add('reset-streaks', {
+          id: user.id,
+        });
+        const resetResult =
+          await this.queueEventsRegistryService.waitForJobResult(
+            resetJob,
+            this.userQueue,
+            60000, // 1 minute timeout
+          );
+        this.logger.log(
+          `Streaks reset successfully for user ID ${user.id}: ${JSON.stringify(
+            resetResult,
+          )}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to reset streaks for user ID ${user.id}:`,
+          error,
+        );
+        // Continue resetting streaks for other users
+        continue;
+      }
+    }
   }
 }

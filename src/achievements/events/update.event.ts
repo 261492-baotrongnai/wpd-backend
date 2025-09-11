@@ -1,3 +1,3 @@
 export class UpdateAchievementEvent {
-  constructor(readonly userId: string) {}
+  constructor(readonly userId: number) {}
 }

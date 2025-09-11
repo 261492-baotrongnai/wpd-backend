@@ -35,14 +35,25 @@ export class TasksProcessor extends WorkerHost {
           this.logger.debug(`Processing dinner job id: ${job.id}`);
           result = await this.tasksService.handleDinnerJob();
           break;
-        case 'task-streaks-alert':
+        case 'streaks-alert-user': {
           this.logger.debug(`Processing streaks alert job id: ${job.id}`);
-          result = await this.tasksService.handleStreaksAlertJob();
-          break;
+          const data = job.data as {
+            id: number;
+            lineUserId: string;
+            streaks: number;
+          };
+          result = await this.tasksService.handleStreaksAlertJob({
+            id: data.id,
+            lineUserId: data.lineUserId,
+            streaks: data.streaks,
+          });
+
+          return result;
+        }
         case 'task-streaks-reset':
           this.logger.debug(`Processing streaks reset job id: ${job.id}`);
           result = await this.tasksService.handleStreaksResetJob();
-          break;
+          return result;
         default:
           throw new Error(`Unknown job type: ${job.name}`);
       }

@@ -85,7 +85,7 @@ export class FoodsController {
     return result;
   }
 
-  @Get('sim')
+  // @Get('sim')
   async getSimilarFoods() {
     const foods = await this.foodsService.getListOfSimilarityFoodNames();
     foods.sort((a, b) => {

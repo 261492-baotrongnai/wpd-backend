@@ -29,14 +29,6 @@ export class AchievementsService {
     private readonly queueEvents: QueueEventsRegistryService,
   ) {}
 
-  private achievementThresholds = [
-    { id: 1, streak: 1 }, // daily record
-    { id: 2, streak: 10 },
-    { id: 3, streak: 30 },
-    { id: 4, streak: 60 },
-    { id: 5, streak: 90 },
-  ];
-
   // Award points for first record of the day (re-usable daily, not a one-time achievement list addition)
   @OnEvent('user.daily.firstMeal')
   async handleDailyFirstMeal(event: { userId: number }) {
@@ -47,9 +39,15 @@ export class AchievementsService {
     const template = await this.achievementsRepository.findOne({
       where: { id: 1 },
     });
+    this.logger.debug(
+      `Daily first meal for user ${userId}, template: ${JSON.stringify(template)}`,
+    );
     if (!template) return;
     const points = template.points || 0;
     if (points > 0) {
+      this.logger.debug(
+        `Granting daily first meal points (+${points}) to user ${userId}`,
+      );
       await this.userQueue.add('add-points', {
         add_points: points,
         id: userId,
@@ -61,19 +59,27 @@ export class AchievementsService {
   }
 
   private async awardAchievementsForStreak(user: User, streaks: number) {
+    this.logger.debug(
+      `Checking achievements for user ${user.id} with streaks ${streaks}`,
+    );
+    if (streaks < 1) return;
     // Load existing achievements relation
     const freshUser = await this.usersRepository.findOne({
       where: { id: user.id },
       relations: ['achievements'],
     });
     if (!freshUser) return;
+
+    const allAchievements = await this.achievementsRepository.find();
+
     const ownedIds = new Set((freshUser.achievements || []).map((a) => a.id));
-    const toAwardIds = this.achievementThresholds
-      .filter((t) => streaks >= t.streak && !ownedIds.has(t.id))
+    const toAwardIds = allAchievements
+      .filter((t) => streaks >= t.streakThereshold && !ownedIds.has(t.id))
       .map((t) => t.id);
 
     if (toAwardIds.length === 0) return;
 
+    // Load achievements to award
     const achievements = toAwardIds.length
       ? await this.achievementsRepository.findBy({ id: In(toAwardIds) })
       : [];
@@ -90,6 +96,8 @@ export class AchievementsService {
         id: freshUser.id,
       });
     }
+
+    // Save user with new achievements
     await this.usersRepository.save(freshUser);
     this.logger.log(
       `Awarded achievements ${toAwardIds.join(',')} to user ${freshUser.id} (+${addPoints} pts)`,
@@ -106,29 +114,29 @@ export class AchievementsService {
   @OnEvent('user.streaks.updated')
   async updateStreaks(event: UpdateAchievementEvent) {
     const { userId } = event;
-    const numericUserId = Number(userId);
-    this.logger.log(`Updating achievement for user ${numericUserId}`);
+    this.logger.log(`Updating achievement for user ${userId}`);
     const streaksJob = await this.mealQueue.add('count-user-streaks', {
-      userId: numericUserId,
+      userId,
     });
-    const streakResult: number = (await this.queueEvents.waitForJobResult(
+    const streakResultRaw = await this.queueEvents.waitForJobResult(
       streaksJob,
       this.mealQueue,
-    )) as number;
-    this.logger.log(`Streaks for user ${numericUserId}: ${streakResult}`);
+    );
+    const streakResult: number = Number(streakResultRaw) || 0;
+    this.logger.log(`Streaks for user ${userId}: ${streakResult}`);
     const userJob = await this.userQueue.add('update-streaks', {
       streaks: streakResult,
-      id: numericUserId,
+      id: userId,
     });
     await this.queueEvents.waitForJobResult(userJob, this.userQueue);
 
     const user = await this.usersRepository.findOne({
-      where: { id: numericUserId },
+      where: { id: userId },
     });
     if (user) {
       const effectiveStreak = (user.carryStreak || 0) + streakResult;
       this.logger.log(
-        `Effective streak for achievements user=${numericUserId}: carry=${user.carryStreak} current=${streakResult} total=${effectiveStreak}`,
+        `Effective streak for achievements user=${userId}: carry=${user.carryStreak} current=${streakResult} total=${effectiveStreak}`,
       );
       await this.awardAchievementsForStreak(user, effectiveStreak);
     }
@@ -142,10 +150,11 @@ export class AchievementsService {
     const totalDaysJob = await this.mealQueue.add('count-total-days', {
       userId,
     });
-    const totalDaysResult: number = (await this.queueEvents.waitForJobResult(
+    const totalDaysResultRaw = await this.queueEvents.waitForJobResult(
       totalDaysJob,
       this.mealQueue,
-    )) as number;
+    );
+    const totalDaysResult: number = Number(totalDaysResultRaw) || 0;
 
     this.logger.log(`Total days for user ${userId}: ${totalDaysResult}`);
     const userJob = await this.userQueue.add('update-total-days', {
@@ -158,8 +167,29 @@ export class AchievementsService {
       userJob,
       this.userQueue,
     );
-    this.logger.log(`User update job ${userJob.id} completed`, userResult);
+    this.logger.log(`User update job ${userJob.id} completed`);
     this.logger.log(`User update result: ${String(userResult)}`);
     return totalDaysResult;
+  }
+
+  async getPageInfo(userId: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['achievements'],
+    });
+    if (!user) return;
+    // Achievement id 1 represents daily record points template
+    const result: {
+      totalPoints: number;
+      streakDays: number; // จำนวนวันที่บันทึกต่อเนื่องตรง Duostat ฝั่งขวา
+      maliProgress: number; // วันที่ทำแล้วตรงต้นมะลิ
+      streakMedalAchievement: Achievement[]; // สถิติสูงสุดของการบันทึกต่อเนื่อง
+    } = {
+      totalPoints: user.points || 0,
+      streakDays: user.streaks || 0,
+      maliProgress: user.totalDays || 0,
+      streakMedalAchievement: user.achievements || [],
+    };
+    return result;
   }
 }

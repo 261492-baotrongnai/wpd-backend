@@ -21,5 +21,6 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
   ],
   controllers: [AchievementsController],
   providers: [AchievementsService, QueueEventsRegistryService],
+  exports: [AchievementsService],
 })
 export class AchievementsModule {}

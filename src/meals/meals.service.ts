@@ -33,6 +33,7 @@ export class MealsService {
       user: user,
       maxScore: createMealDto.maxScore,
       lowestGrade: createMealDto.lowestGrade,
+      createdAt: createMealDto.createdAt || new Date(),
     });
 
     return this.entityManager.save(new_meal);

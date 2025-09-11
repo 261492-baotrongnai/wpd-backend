@@ -3,7 +3,9 @@ import { UsersService } from '../users.service';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 
-@Processor('user')
+@Processor('user', {
+  concurrency: 300,
+})
 export class UserProcessor extends WorkerHost {
   private logger = new Logger(UserProcessor.name);
   constructor(private readonly usersService: UsersService) {
@@ -18,7 +20,7 @@ export class UserProcessor extends WorkerHost {
           id: number;
         };
 
-        if (!streaks || !id) {
+        if (streaks === undefined || streaks === null || !id) {
           throw new Error(
             `Invalid data: missing fields, ${JSON.stringify({
               streaks,
@@ -33,7 +35,8 @@ export class UserProcessor extends WorkerHost {
           totalDays: number;
           id: number;
         };
-        if (!totalDays || !id) {
+
+        if (totalDays === undefined || totalDays === null || !id) {
           throw new Error(
             `Invalid data: missing fields, ${JSON.stringify({
               totalDays,
@@ -48,7 +51,8 @@ export class UserProcessor extends WorkerHost {
           add_points: number;
           id: number;
         };
-        if (!add_points || !id) {
+
+        if (add_points === undefined || add_points === null || !id) {
           throw new Error(
             `Invalid data: missing fields, ${JSON.stringify({
               add_points,
@@ -57,6 +61,18 @@ export class UserProcessor extends WorkerHost {
           );
         }
         return await this.usersService.addUserPoints(add_points, id);
+      }
+      case 'get-today-empty-meal-users': {
+        return await this.usersService.getTodayEmptyMealUsers();
+      }
+      case 'reset-streaks': {
+        const { id } = job.data as { id: number };
+        if (!id) {
+          throw new Error(
+            `Invalid data: missing fields, ${JSON.stringify({ id })}`,
+          );
+        }
+        return await this.usersService.updateUserStreaks(0, id);
       }
       default:
         throw new Error(`Unknown job name: ${job.name}`);

@@ -9,4 +9,5 @@ export class CreateMealDto {
   userId: number;
   maxScore: number;
   lowestGrade: FoodGradeType;
+  createdAt?: Date;
 }
