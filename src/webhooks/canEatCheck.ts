@@ -20,7 +20,7 @@ import { MealsService } from 'src/meals/meals.service';
 import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 import { canEatCheckSummary, RecordOrNot } from './flex/flex-decideToEat';
 import { WhatMealFlex } from './flex/flex-message';
-import { MealType } from 'src/meals/entities/meal.entity';
+import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { ImagesService } from 'src/images/images.service';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradeFlex } from './flex/flex-grade';
@@ -44,6 +44,8 @@ export class CanEatCheckHandler {
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
     @InjectQueue('canEatCheck-user-decide')
     private readonly userDecideQueue: Queue,
+
+    @InjectQueue('meal') private readonly mealQueue: Queue,
   ) {
     const config = {
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || '',
@@ -715,7 +717,7 @@ export class CanEatCheckHandler {
             user: userState.user,
           });
 
-          const meal = await this.mealsService.create({
+          const createMealJob = await this.mealQueue.add('create-meal', {
             userId: userState.user.id,
             mealType: mealType,
             imageName: fileName,
@@ -724,6 +726,11 @@ export class CanEatCheckHandler {
             maxScore: jsonFoodInfo.maxScore,
             lowestGrade: jsonFoodInfo.lowestGrade,
           });
+
+          const meal = (await this.queueEventsRegistryService.waitForJobResult(
+            createMealJob,
+            this.mealQueue,
+          )) as Meal;
 
           for (const food of jsonFoodInfo.foods) {
             await this.foodsService.create({

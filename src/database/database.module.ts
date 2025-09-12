@@ -20,8 +20,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         ],
         autoLoadEntities: true,
         // In local development we keep synchronize enabled for convenience
-        // synchronize: configService.get('NODE_ENV') === 'development',
-        synchronize: true,
+        synchronize: configService.get('NODE_ENV') === 'development',
+        // synchronize: true,
         // In non-development environments, automatically run pending migrations on app start
         migrationsRun: configService.get('NODE_ENV') !== 'development',
         timezone: '+07:00',
