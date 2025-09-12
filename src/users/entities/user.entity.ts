@@ -13,6 +13,7 @@ import { UserState } from 'src/user-states/entities/user-state.entity';
 import { Meal } from 'src/meals/entities/meal.entity';
 import { Program } from 'src/programs/entities/programs.entity';
 import { Achievement } from 'src/achievements/entities/achievement.entity';
+import { StoreItem } from 'src/store_items/entities/store_item.entity';
 
 @Entity('users')
 export class User {
@@ -74,6 +75,20 @@ export class User {
     },
   })
   achievements: Achievement[];
+
+  @ManyToMany(() => StoreItem, (storeItem) => storeItem.users)
+  @JoinTable({
+    name: 'user_store_items',
+    joinColumn: {
+      name: 'userId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'storeItemId',
+      referencedColumnName: 'id',
+    },
+  })
+  storeItems: StoreItem[];
 
   constructor(user: Partial<User>) {
     Object.assign(this, user);

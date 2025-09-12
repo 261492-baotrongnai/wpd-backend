@@ -21,6 +21,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { StoreItemsModule } from './store_items/store_items.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     OrganizationsModule,
     AchievementsModule,
     EventEmitterModule.forRoot(),
+    StoreItemsModule,
   ],
 })
 export class AppModule {}
