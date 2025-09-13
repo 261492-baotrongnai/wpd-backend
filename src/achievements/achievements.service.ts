@@ -9,6 +9,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { UpdateAchievementEvent } from './events/update.event';
 import { User } from 'src/users/entities/user.entity';
 import { In } from 'typeorm';
+import { StoreItem } from 'src/store_items/entities/store_item.entity';
 
 @Injectable()
 export class AchievementsService {
@@ -175,19 +176,23 @@ export class AchievementsService {
   async getPageInfo(userId: number) {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ['achievements'],
+      relations: ['achievements', 'currentFrame'],
     });
     if (!user) return;
     // Achievement id 1 represents daily record points template
     const result: {
+      currentFrame: StoreItem | null;
       totalPoints: number;
       streakDays: number; // จำนวนวันที่บันทึกต่อเนื่องตรง Duostat ฝั่งขวา
       maliProgress: number; // วันที่ทำแล้วตรงต้นมะลิ
+      coinProgress: number; // จำนวนวันที่บันทึกต่อเนื่องรวม carry
       streakMedalAchievement: Achievement[]; // สถิติสูงสุดของการบันทึกต่อเนื่อง
     } = {
+      currentFrame: user.currentFrame || null,
       totalPoints: user.points || 0,
       streakDays: user.streaks || 0,
       maliProgress: user.totalDays || 0,
+      coinProgress: user.streaks + user.carryStreak || 0,
       streakMedalAchievement: user.achievements || [],
     };
     return result;

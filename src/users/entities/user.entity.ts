@@ -6,7 +6,10 @@ import {
   UpdateDateColumn,
   OneToMany,
   ManyToMany,
+  ManyToOne,
   JoinTable,
+  JoinColumn,
+  RelationId,
 } from 'typeorm';
 import { Image } from 'src/images/entities/image.entity';
 import { UserState } from 'src/user-states/entities/user-state.entity';
@@ -37,6 +40,15 @@ export class User {
 
   @Column({ type: 'int', default: 0 })
   totalDays: number;
+
+  // Current selected frame: FK to StoreItem (many users can share same frame)
+  @ManyToOne(() => StoreItem, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'currentFrameId' })
+  currentFrame?: StoreItem | null;
+
+  // Convenience: expose raw FK id without loading relation
+  @RelationId((user: User) => user.currentFrame)
+  currentFrameId?: number | null;
 
   // Accumulated streak days from previous broken streak segments used to progress towards higher achievements
   @Column({ type: 'int', default: 0 })

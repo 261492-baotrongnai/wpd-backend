@@ -15,22 +15,51 @@ export class StoreItemsService {
 
   async findAll(userId: number) {
     this.logger.log(`Finding all store items for user ID: ${userId}`);
-    const storeItems = await this.storeItemsRepository.find();
+    // Fetch only the columns we want to expose; do not load relations
+    const storeItems = await this.storeItemsRepository.find({
+      select: [
+        'id',
+        'name',
+        'description',
+        'pointsRequired',
+        'imageName',
+        'category',
+      ],
+    });
 
     const user = await this.entityManager.findOne(User, {
       where: { id: userId },
       relations: ['storeItems'],
     });
     if (!user) {
-      return storeItems.map((item) => ({ ...item, owned: false }));
-    } else {
-      const ownedItemIds = new Set(user.storeItems.map((item) => item.id));
-      const result = storeItems.map((item) => ({
-        ...item,
-        owned: ownedItemIds.has(item.id),
-      }));
-      return result;
+      // Return a DTO that excludes the `users` relation
+      return {
+        userPoints: null,
+        storeItems: storeItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          pointsRequired: item.pointsRequired,
+          imageName: item.imageName,
+          category: item.category,
+          owned: false,
+        })),
+      };
     }
+
+    const ownedItemIds = new Set(user.storeItems.map((item) => item.id));
+    return {
+      userPoints: user.points,
+      storeItems: storeItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        pointsRequired: item.pointsRequired,
+        imageName: item.imageName,
+        category: item.category,
+        owned: ownedItemIds.has(item.id),
+      })),
+    };
   }
 
   async findOne(id: number) {
@@ -38,6 +67,7 @@ export class StoreItemsService {
   }
 
   async buyItem(userId: number, itemId: number) {
+    this.logger.log(`User ${userId} is attempting to buy item ${itemId}`);
     const user = await this.entityManager.findOne(User, {
       where: { id: userId },
       relations: ['storeItems'],
@@ -64,5 +94,26 @@ export class StoreItemsService {
 
     const result = await this.entityManager.save(user);
     return result;
+  }
+
+  async getUserFrames(userId: number) {
+    this.logger.log(`Fetching frames for user ID: ${userId}`);
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+      relations: ['storeItems', 'currentFrame'],
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    const frames = user.storeItems.filter((item) => item.category === 'frame');
+    return {
+      currentFrame: user.currentFrame,
+      frames: frames.map((item) => ({
+        id: item.id,
+        name: item.name,
+        imageName: item.imageName,
+        isSelected: user.currentFrameId === item.id,
+      })),
+    };
   }
 }

@@ -2,18 +2,24 @@ import {
   Controller,
   Post,
   Body,
-  Get,
+  Put,
+  UseGuards,
   // UseGuards,
-  // Request,
+  Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { StoreItemsService } from 'src/store_items/store_items.service';
 // import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 // import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly storeItemsService: StoreItemsService,
+  ) {}
 
   @Post('verify')
   async verifyLineIDToken(@Body('idToken') idToken: string) {
@@ -23,6 +29,16 @@ export class UsersController {
   @Post('register')
   async create(@Body() registerDto: RegisterDto) {
     return this.usersService.create(registerDto);
+  }
+
+  @Put('update-current-frame')
+  @UseGuards(JwtAuthGuard)
+  async updateCurrentFrame(
+    @Request() req: { user: { id: number } },
+    @Body() body: { frameId: number },
+  ) {
+    await this.usersService.updateCurrentFrame(req.user.id, body.frameId);
+    return this.storeItemsService.getUserFrames(req.user.id);
   }
 
   // @UseGuards(JwtAuthGuard)

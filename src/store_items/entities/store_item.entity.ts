@@ -9,8 +9,14 @@ export class StoreItem {
   @Column({ unique: true })
   name: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  imageName: string;
+
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ type: 'enum', enum: ['frame', 'others'], default: 'others' })
+  category: StoreItemCategory;
 
   @Column({ type: 'int', nullable: true })
   pointsRequired: number;
@@ -18,3 +24,5 @@ export class StoreItem {
   @ManyToMany(() => User, (user) => user.storeItems)
   users: User[];
 }
+
+export type StoreItemCategory = 'frame' | 'others';

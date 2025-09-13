@@ -9,6 +9,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { FollowersModule } from 'src/followers/followers.module';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 import { UserProcessor } from './workers/users.worker';
+import { StoreItemsModule } from 'src/store_items/store_items.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UserProcessor } from './workers/users.worker';
     BullModule.registerQueue({ name: 'program' }),
     BullModule.registerQueue({ name: 'follower' }),
     BullModule.registerQueue({ name: 'user' }),
+    StoreItemsModule,
   ],
   controllers: [UsersController],
   providers: [

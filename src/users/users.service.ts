@@ -288,4 +288,35 @@ export class UsersService {
     );
     return results;
   }
+
+  async updateCurrentFrame(userId: number, frameId: number) {
+    this.logger.log(
+      `Updating current frame to ${frameId} for user ID: ${userId}`,
+    );
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+      relations: ['storeItems', 'currentFrame'],
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (frameId === 0) {
+      // Clear current frame
+      user.currentFrame = null;
+      await this.entityManager.save(user);
+      return { message: 'Current frame cleared' };
+    }
+
+    const frame = user.storeItems.find(
+      (item) => item.id === frameId && item.category === 'frame',
+    );
+    if (!frame) {
+      throw new Error('Frame not owned or does not exist');
+    }
+
+    user.currentFrame = frame;
+    await this.entityManager.save(user);
+    return { message: 'Current frame updated', currentFrame: frame };
+  }
 }
