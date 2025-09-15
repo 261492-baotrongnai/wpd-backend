@@ -14,20 +14,12 @@ export const RecordOrNot = (): line.messagingApi.FlexMessage => {
         contents: [
           {
             type: 'text',
-            text: 'ต้องการบันทึกเมนูนี้',
+            text: 'ต้องการบันทึกเมนูนี้เลยไหมคะ?',
             weight: 'bold',
-            size: 'xl',
+            size: '18px',
             wrap: true,
             align: 'center',
             contents: [],
-          },
-          {
-            type: 'text',
-            text: 'ไว้เลยไหมคะ?',
-            size: 'xl',
-            weight: 'bold',
-            margin: 'sm',
-            align: 'center',
           },
           {
             type: 'separator',
@@ -37,7 +29,7 @@ export const RecordOrNot = (): line.messagingApi.FlexMessage => {
       },
       footer: {
         type: 'box',
-        layout: 'vertical',
+        layout: 'horizontal',
         spacing: 'sm',
         contents: [
           {
@@ -52,14 +44,15 @@ export const RecordOrNot = (): line.messagingApi.FlexMessage => {
                   label: 'บันทึกเมนูนี้',
                   text: 'บันทึกเมนูนี้',
                 },
-                size: 'lg',
+                size: '16px',
                 align: 'center',
-                color: '#FFFFFF',
+                gravity: 'center',
               },
             ],
-            backgroundColor: '#099C1A',
+            backgroundColor: '#E0FFB2',
             paddingAll: 'lg',
             cornerRadius: 'md',
+            justifyContent: 'center',
           },
           {
             type: 'box',
@@ -73,14 +66,14 @@ export const RecordOrNot = (): line.messagingApi.FlexMessage => {
                   label: 'ไม่บันทึกเมนูนี้',
                   text: 'ไม่บันทึกเมนูนี้',
                 },
-                size: 'lg',
+                size: '16px',
                 align: 'center',
+                wrap: true,
               },
             ],
-            backgroundColor: '#DEDEDE',
+            backgroundColor: '#EBEBEB',
             paddingAll: 'lg',
             cornerRadius: 'md',
-            offsetTop: 'sm',
           },
         ],
         paddingBottom: 'xl',
@@ -138,6 +131,8 @@ export const canEatCheckSummary = (
   };
 };
 
+const greenBarCode = '#008B4C';
+
 const colorOfGrade = (grade: string): string => {
   switch (grade) {
     case 'A':
@@ -157,7 +152,7 @@ const ceilIfHalf = (number: number) => {
 
 const scoreToBarProgress = (score: number): string => {
   if (score <= 1.5) return '100%';
-  else if (score >= 2.5) return '0%';
+  else if (score >= 2.5) return '1%';
   else {
     const percentage = (2.5 - score) * 100;
     const intPercentage = ceilIfHalf(percentage);
@@ -174,7 +169,7 @@ const summaryBarLabel: line.messagingApi.FlexComponent = {
       type: 'text',
       text: 'C',
       size: 'md',
-      color: '#C2410C',
+      color: colorOfGrade('C'),
       align: 'start',
     },
     {
@@ -184,7 +179,7 @@ const summaryBarLabel: line.messagingApi.FlexComponent = {
       type: 'text',
       text: 'B',
       size: 'md',
-      color: '#BC971E',
+      color: colorOfGrade('B'),
       align: 'center',
     },
     {
@@ -194,13 +189,12 @@ const summaryBarLabel: line.messagingApi.FlexComponent = {
       type: 'text',
       text: 'A',
       size: 'md',
-      color: '#065F46',
+      color: colorOfGrade('A'),
       align: 'end',
     },
   ],
 };
 
-const greenBarCode = '#008B4C';
 
 const summaryGradePart = (
   oldAvgGrade: string,
@@ -370,7 +364,6 @@ const shortSuggestion = (foodAvgGrade: string): string => {
       return '';
   }
 };
-
 
 const foodAvgGradePart = (
   foodAvgGrade: string,

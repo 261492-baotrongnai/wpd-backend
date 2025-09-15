@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  AskForImageFlex,
+  RecordAskForImageFlex,
+  canEatCheckAskForImageFlex,
   ClassifyFlex,
   GreetingFlex1,
   GreetingFlex2,
@@ -86,7 +87,7 @@ export class WebhooksService {
                     );
                     break;
                   case 'กินได้ก่อ':
-                    this.logger.debug('User requested to see ask food grade');
+                    this.logger.debug('User requested to see ask grade');
                     result = await this.handleCanEatCheck(
                       event.replyToken,
                       uid,
@@ -297,15 +298,15 @@ export class WebhooksService {
     try {
       const response = await this.client.replyMessage({
         replyToken,
-        messages: [AskForImageFlex],
+        messages: [RecordAskForImageFlex],
       });
-      this.logger.debug('AskForImageFlex sent successfully:', response);
+      this.logger.debug('RecordAskForImageFlex sent successfully:', response);
     } catch (error) {
       this.logger.error(
-        `Error sending AskForImageFlex with reply ${replyToken}:`,
+        `Error sending RecordAskForImageFlex with reply ${replyToken}:`,
         error,
       );
-      throw new Error('Failed to send AskForImageFlex');
+      throw new Error('Failed to send RecordAskForImageFlex');
     }
     const iid = await getInternalId(undefined, uid).catch((error) => {
       this.logger.error('Error getting internal ID:', error);
@@ -511,15 +512,15 @@ export class WebhooksService {
     try {
       const response = await this.client.replyMessage({
         replyToken,
-        messages: [AskForImageFlex],
+        messages: [canEatCheckAskForImageFlex],
       });
-      this.logger.debug('AskForImageFlex sent successfully:', response);
+      this.logger.debug('canEatCheckAskForImageFlex sent successfully:', response);
     } catch (error) {
       this.logger.error(
-        `Error sending AskForImageFlex with reply ${replyToken}:`,
+        `Error sending canEatCheckAskForImageFlex with reply ${replyToken}:`,
         error,
       );
-      throw new Error('Failed to send AskForImageFlex');
+      throw new Error('Failed to send canEatCheckAskForImageFlex');
     }
 
     const iid = await getInternalId(undefined, uid).catch((error) => {
