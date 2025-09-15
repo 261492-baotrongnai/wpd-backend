@@ -6,6 +6,7 @@ import {
   UseGuards,
   // UseGuards,
   Request,
+  Get,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -41,6 +42,14 @@ export class UsersController {
     return this.storeItemsService.getUserFrames(req.user.id);
   }
 
+  @Get('current-frame')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentFrame(@Request() req: { user: { id: number } }) {
+    const imageName = await this.usersService.getCurrentFrameImageName(
+      req.user.id,
+    );
+    return imageName;
+  }
   // @UseGuards(JwtAuthGuard)
   // @Get('profile')
   // getProfile(@Request() req: { user: { internalId: string } }) {

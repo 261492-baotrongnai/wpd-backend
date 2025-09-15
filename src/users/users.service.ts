@@ -319,4 +319,16 @@ export class UsersService {
     await this.entityManager.save(user);
     return { message: 'Current frame updated', currentFrame: frame };
   }
+
+  async getCurrentFrameImageName(userId: number) {
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+      relations: ['currentFrame'],
+    });
+    const imageName = user?.currentFrame?.imageName || null;
+    this.logger.log(
+      `Current frame image for user ID ${userId}: ${imageName || 'None'}`,
+    );
+    return imageName;
+  }
 }
