@@ -88,11 +88,11 @@ export class UsersService {
       const job = await this.programQueue.add('find-program-by-code', {
         code: registerDto.program_code,
       });
-      const program: unknown =
-        await this.queueEventsRegistryService.waitForJobResult(
+      const program: Program | null =
+        (await this.queueEventsRegistryService.waitForJobResult(
           job,
           this.programQueue,
-        );
+        )) as Program | null;
       this.logger.debug(`Program found: ${JSON.stringify(program)}`);
 
       if (user) {
@@ -112,7 +112,7 @@ export class UsersService {
       if (program) {
         newUser = new User({
           internalId: iid,
-          programs: [program as Program],
+          programs: [program],
           userId: uid?.sub, // Set userId from decoded token
         });
       } else {

@@ -27,6 +27,10 @@ export class ProgramsJobService {
 
   async handleFindProgramByCodeJob(code: string) {
     this.logger.debug(`Finding program by code: ${code}`);
+    if (!code || code.trim() === '') {
+      this.logger.warn('Program code is empty');
+      return null;
+    }
     const program = await this.programsService.findProgramByCode(code);
     return program;
   }

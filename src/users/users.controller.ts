@@ -29,6 +29,7 @@ export class UsersController {
 
   @Post('register')
   async create(@Body() registerDto: RegisterDto) {
+    console.log('Registering user with data:', registerDto);
     return this.usersService.create(registerDto);
   }
 
