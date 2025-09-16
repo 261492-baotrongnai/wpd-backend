@@ -68,12 +68,12 @@ export class WebhooksService {
               if (uid && (await this.isUserExist(uid)) === true) {
                 result = 'Out of case';
                 switch (event.message.text) {
-                  case 'ยันยันการบันทึกผู้ใช้':
+                  case 'ยืนยันการบันทึกผู้ใช้':
                     this.logger.debug('User requested to confirm registration');
                     await this.handleConfirmRegistration(event.replyToken, uid);
                     result = 'Registration confirmed';
                     break;
-                  case 'ยันยันการแก้ไขโค้ด':
+                  case 'ยืนยันการแก้ไขโค้ด':
                     this.logger.debug('User requested to confirm code change');
                     await this.handleConfirmCodeChange(event.replyToken, uid);
                     result = 'Code change confirmed';
@@ -254,12 +254,12 @@ export class WebhooksService {
       if (!latest_program) {
         await this.client.replyMessage({
           replyToken,
-          messages: [RegistConfirmFlex, CommonUserFlex],
+          messages: [CommonUserFlex, RegistConfirmFlex],
         });
       } else {
         await this.client.replyMessage({
           replyToken,
-          messages: [RegistConfirmFlex, ProgramUserFlex(latest_program)],
+          messages: [ProgramUserFlex(latest_program), RegistConfirmFlex],
         });
       }
       console.log('Registration confirmation message sent successfully');

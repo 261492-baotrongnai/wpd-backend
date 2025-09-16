@@ -17,6 +17,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Program } from 'src/programs/entities/programs.entity';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { Follower } from 'src/followers/entities/followers.entity';
 
 @Injectable()
 export class UsersService {
@@ -87,11 +88,11 @@ export class UsersService {
       const job = await this.programQueue.add('find-program-by-code', {
         code: registerDto.program_code,
       });
-      const program: unknown =
-        await this.queueEventsRegistryService.waitForJobResult(
+      const program: Program | null =
+        (await this.queueEventsRegistryService.waitForJobResult(
           job,
           this.programQueue,
-        );
+        )) as Program | null;
       this.logger.debug(`Program found: ${JSON.stringify(program)}`);
 
       if (user) {
@@ -111,7 +112,7 @@ export class UsersService {
       if (program) {
         newUser = new User({
           internalId: iid,
-          programs: [program as Program],
+          programs: [program],
           userId: uid?.sub, // Set userId from decoded token
         });
       } else {
@@ -170,8 +171,12 @@ export class UsersService {
     return user;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findUserById(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+    });
+
+    return user;
   }
 
   // update(id: number, updateUserDto: UpdateUserDto) {
@@ -193,5 +198,137 @@ export class UsersService {
       this.logger.error('Error handling registration success:', error);
       throw error;
     }
+  }
+
+  async updateUserStreaks(streaks: number, id: number) {
+    // If streak resets to 0 we keep previous streak value in carryStreak
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['achievements'],
+    });
+    if (!user) return;
+    // If streak resets to 0
+    // get biggest achievement threshold of user's achievements
+    // and set carryStreak to that if it's bigger than current carryStreak
+    if (streaks === 0 && user.achievements.length > 0) {
+      const maxStreak = Math.max(
+        ...user.achievements.map((a) => a.streakThereshold || 0),
+      );
+      this.logger.debug(`Max streak from achievements: ${maxStreak}`);
+      const carryStreak = user.carryStreak || 0;
+      if (maxStreak > carryStreak) {
+        await this.usersRepository.update(id, {
+          streaks,
+          carryStreak: maxStreak,
+        });
+        this.logger.log(
+          `User ${id} streaks reset to 0, carryStreak updated to ${maxStreak}`,
+        );
+        return;
+      }
+    } else {
+      await this.usersRepository.update(id, { streaks });
+    }
+    this.logger.log(`User ${id} streaks updated to ${streaks}`);
+  }
+
+  async updateUserTotalDays(totalDays: number, id: number) {
+    await this.usersRepository.update(id, { totalDays });
+  }
+
+  async addUserPoints(add_points: number, id: number) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new Error(`User not found: ${id}`);
+    }
+    const newPoints = (user.points || 0) + add_points;
+    await this.usersRepository.update(id, { points: newPoints });
+  }
+
+  async getTodayEmptyMealUsers(): Promise<
+    { id: number; lineUserId: string; streaks: number }[]
+  > {
+    const followers = await this.entityManager.getRepository(Follower).find();
+    const today = new Date();
+    const results: { id: number; lineUserId: string; streaks: number }[] = [];
+    this.logger.log(`Checking results ${JSON.stringify(results)}`);
+
+    for (const follower of followers) {
+      const internalId = await getInternalId(undefined, follower.userId);
+      const user = await this.usersRepository.findOne({
+        where: { internalId },
+        relations: ['meals'],
+      });
+      if (!user) continue;
+
+      const hasMealToday = user.meals.some((meal) => {
+        const mealDate = new Date(meal.createdAt);
+        return (
+          mealDate.getFullYear() === today.getFullYear() &&
+          mealDate.getMonth() === today.getMonth() &&
+          mealDate.getDate() === today.getDate()
+        );
+      });
+
+      if (hasMealToday) {
+        this.logger.log(`User ${user.id} has meal today: ${hasMealToday}`);
+        continue;
+      }
+
+      this.logger.log(`User ${user.id} has no meals today`);
+      results.push({
+        id: user.id,
+        lineUserId: follower.userId,
+        streaks: user.streaks,
+      });
+    }
+
+    this.logger.log(
+      `Found ${results.length} followers whose linked users have no meals today`,
+    );
+    return results;
+  }
+
+  async updateCurrentFrame(userId: number, frameId: number) {
+    this.logger.log(
+      `Updating current frame to ${frameId} for user ID: ${userId}`,
+    );
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+      relations: ['storeItems', 'currentFrame'],
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (frameId === 0) {
+      // Clear current frame
+      user.currentFrame = null;
+      await this.entityManager.save(user);
+      return { message: 'Current frame cleared' };
+    }
+
+    const frame = user.storeItems.find(
+      (item) => item.id === frameId && item.category === 'frame',
+    );
+    if (!frame) {
+      throw new Error('Frame not owned or does not exist');
+    }
+
+    user.currentFrame = frame;
+    await this.entityManager.save(user);
+    return { message: 'Current frame updated', currentFrame: frame };
+  }
+
+  async getCurrentFrameImageName(userId: number) {
+    const user = await this.entityManager.findOne(User, {
+      where: { id: userId },
+      relations: ['currentFrame'],
+    });
+    const imageName = user?.currentFrame?.imageName || null;
+    this.logger.log(
+      `Current frame image for user ID ${userId}: ${imageName || 'None'}`,
+    );
+    return imageName;
   }
 }

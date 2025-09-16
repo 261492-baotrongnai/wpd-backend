@@ -15,7 +15,7 @@ import { CancleQuickReply, ImageQuickReply } from './quick-reply';
 import { ConfigService } from '@nestjs/config';
 import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { MealsService } from 'src/meals/meals.service';
-import { MealType } from 'src/meals/entities/meal.entity';
+import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradingFlex } from './flex/flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -44,6 +44,7 @@ export class RecordCaseHandler {
     private readonly foodService: FoodsService,
     @InjectQueue('user-choice-logs') private readonly logsQueue: Queue,
     @InjectQueue('user-state') private readonly userStateQueue: Queue,
+    @InjectQueue('meal') private readonly mealQueue: Queue,
     private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {
     const config = {
@@ -652,8 +653,8 @@ export class RecordCaseHandler {
           user: user_state.user,
         });
         this.logger.debug('mealType:', user_state.mealType);
-        const meal = await this.mealService.create({
-          user: user_state.user,
+        const mealJob = await this.mealQueue.add('create-meal', {
+          userId: user_state.user.id,
           mealType: user_state.mealType,
           imageName: fileName,
           avgGrade,
@@ -661,6 +662,12 @@ export class RecordCaseHandler {
           maxScore,
           lowestGrade,
         });
+        const meal = (await this.queueEventsRegistryService.waitForJobResult(
+          mealJob,
+          this.mealQueue,
+        )) as Meal;
+        this.logger.debug('Created meal:', meal);
+
         for (const food of foods) {
           await this.foodService.create({
             name: food.name,
