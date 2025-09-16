@@ -14,15 +14,12 @@ export const OutOfCaseFlex: line.messagingApi.FlexMessage = {
           type: 'text',
           text: 'เรื่องนี้เกินขอบเขตที่มะลิดูแลอยู่ค่ะ มะลิเลยตอบไม่ได้ ต้องขออภัยด้วยนะคะ🙇🏻‍♀️',
           margin: 'sm',
-          size: 'md',
-          scaling: true,
+          size: '20px',
           wrap: true,
-          offsetBottom: 'none',
-          offsetTop: 'none',
         },
       ],
-      paddingBottom: 'xl',
-      paddingTop: 'xl',
+      paddingBottom: 'md',
+      paddingTop: 'md',
     },
     footer: {
       type: 'box',
@@ -30,7 +27,7 @@ export const OutOfCaseFlex: line.messagingApi.FlexMessage = {
       contents: [
         {
           type: 'image',
-          url: 'https://i.postimg.cc/CdT77Jqz/temp-Image-Zf-SIKl.avif',
+          url: 'https://i.postimg.cc/mgTQRnkW/image.png',
           size: 'full',
           aspectRatio: '2:1',
           aspectMode: 'cover',

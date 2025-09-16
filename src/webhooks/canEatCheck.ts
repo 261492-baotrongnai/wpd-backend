@@ -23,7 +23,7 @@ import { WhatMealFlex } from './flex/flex-message';
 import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { ImagesService } from 'src/images/images.service';
 import { FoodsService } from 'src/foods/foods.service';
-import { GradeFlex } from './flex/flex-grade';
+import { GradingFlex } from './flex/flex-grade';
 
 @Injectable()
 export class CanEatCheckHandler {
@@ -412,6 +412,7 @@ export class CanEatCheckHandler {
           const todaySummary = await this.mealsService.getTodaySummary(
             userState.user.id,
           );
+
           this.logger.log('todaySummary: ', todaySummary);
 
           const { newScore, newGrade } = this.calculateStatIfDecidedToEat(
@@ -762,20 +763,6 @@ export class CanEatCheckHandler {
             .map((food) => food.name)
             .join(', ');
 
-          switch (jsonFoodInfo.avgGrade) {
-            case 'A':
-              GradeResult = GradeFlex('A', foodNames, isAiGrading);
-
-              break;
-            case 'B':
-              GradeResult = GradeFlex('B', foodNames, isAiGrading);
-
-              break;
-            case 'C':
-              GradeResult = GradeFlex('C', foodNames, isAiGrading);
-              break;
-          }
-
           try {
             await this.client.replyMessage({
               replyToken: event.replyToken,
@@ -784,7 +771,7 @@ export class CanEatCheckHandler {
                   type: 'text',
                   text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า`,
                 },
-                GradeResult,
+                GradingFlex(jsonFoodInfo.avgGrade, foodNames),
               ],
             });
           } catch (error) {
@@ -799,7 +786,7 @@ export class CanEatCheckHandler {
                   type: 'text',
                   text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า`,
                 },
-                GradeResult,
+                GradingFlex(jsonFoodInfo.avgGrade, foodNames),
               ],
             });
           }

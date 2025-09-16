@@ -206,7 +206,7 @@ export const GreetingFlex2: messagingApi.FlexMessage = {
   },
 };
 
-export const AskForImageFlex: messagingApi.FlexMessage = {
+export const RecordAskForImageFlex: messagingApi.FlexMessage = {
   type: 'flex',
   altText: 'ถ่ายรูปอาหาร หรือ เลือกรูปอาหารจากมือถือส่งมาให้มะลิหน่อยนะคะ~',
   contents: {
@@ -218,15 +218,66 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       contents: [
         {
           type: 'text',
-          text: 'ถ่ายรูปอาหาร📸 หรือ เลือกรูปอาหารจากมือถือ📱 ส่งมาให้มะลิหน่อยนะคะ',
-          margin: 'sm',
-          size: 'md',
-          scaling: true,
+          text: 'บันทึกอาหารวันนี้ 📘',
+          weight: 'bold',
+          size: '22px',
+          color: '#0B74E5',
+          align: 'center',
+        },
+        {
+          type: 'separator',
+          margin: 'md',
+        },
+        {
+          type: 'text',
+          margin: 'lg',
+          size: '18px',
           wrap: true,
+          align: 'center',
+          color: '#12344D',
+          contents: [
+            {
+              type: 'span',
+              text: 'ถ่ายรูปอาหาร📸 ',
+              weight: 'bold',
+            },
+            {
+              type: 'span',
+              text: 'หรือ ',
+            },
+            {
+              type: 'span',
+              text: 'เลือกรูป📱',
+              weight: 'bold',
+            },
+          ],
+        },
+        {
+          type: 'text',
+          color: '#555555',
+          align: 'center',
+          size: '18px',
+          margin: 'sm',
+          contents: [
+            {
+              type: 'span',
+              text: 'แล้วมะลิจะช่วย',
+            },
+            {
+              type: 'span',
+              text: 'บันทึก',
+              weight: 'bold',
+              color: '#333333',
+            },
+            {
+              type: 'span',
+              text: 'ให้นะคะ',
+            },
+          ],
         },
       ],
-      paddingBottom: 'xl',
       paddingTop: 'xl',
+      paddingBottom: 'lg',
     },
     footer: {
       type: 'box',
@@ -234,14 +285,103 @@ export const AskForImageFlex: messagingApi.FlexMessage = {
       contents: [
         {
           type: 'image',
-          url: 'https://images-ext-1.discordapp.net/external/f1K_QDMdDv6MBFUA19EdqD4erT_FvXQEac9feI8XjVc/https/i.postimg.cc/PNs2T9QZ/how-to-take-pic-or-send-pic.png',
+          url: 'https://i.postimg.cc/PNs2T9QZ/how-to-take-pic-or-send-pic.png',
           size: 'full',
           aspectRatio: '2:1',
           aspectMode: 'cover',
-          offsetTop: 'none',
         },
       ],
-      offsetTop: 'none',
+      paddingAll: 'none',
+    },
+  },
+  quickReply: ImageQuickReply,
+};
+
+export const canEatCheckAskForImageFlex: messagingApi.FlexMessage = {
+  type: 'flex',
+  altText: 'ถ่ายรูปอาหาร หรือ เลือกรูปอาหารจากมือถือส่งมาให้มะลิหน่อยนะคะ~',
+  contents: {
+    type: 'bubble',
+    size: 'giga',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: 'กินได้ก่อ 🤨',
+          weight: 'bold',
+          size: '22px',
+          color: '#6B2FE5',
+          align: 'center',
+        },
+        {
+          type: 'separator',
+          margin: 'md',
+        },
+        {
+          type: 'text',
+          margin: 'lg',
+          size: '18px',
+          wrap: true,
+          align: 'center',
+          color: '#12344D',
+          contents: [
+            {
+              type: 'span',
+              text: 'ถ่ายรูปอาหาร📸 ',
+              weight: 'bold',
+            },
+            {
+              type: 'span',
+              text: 'หรือ ',
+            },
+            {
+              type: 'span',
+              text: 'เลือกรูป📱',
+              weight: 'bold',
+            },
+          ],
+        },
+        {
+          type: 'text',
+          color: '#555555',
+          align: 'center',
+          size: '18px',
+          margin: 'sm',
+          contents: [
+            {
+              type: 'span',
+              text: 'แล้วมะลิจะช่วย',
+            },
+            {
+              type: 'span',
+              text: 'ประเมิน',
+              weight: 'bold',
+              color: '#333333',
+            },
+            {
+              type: 'span',
+              text: 'ให้นะคะ',
+            },
+          ],
+        },
+      ],
+      paddingTop: 'xl',
+      paddingBottom: 'lg',
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'image',
+          url: 'https://i.postimg.cc/PNs2T9QZ/how-to-take-pic-or-send-pic.png',
+          size: 'full',
+          aspectRatio: '2:1',
+          aspectMode: 'cover',
+        },
+      ],
       paddingAll: 'none',
     },
   },

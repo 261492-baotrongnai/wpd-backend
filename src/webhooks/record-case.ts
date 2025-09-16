@@ -17,7 +17,7 @@ import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { MealsService } from 'src/meals/meals.service';
 import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
-import { GradeFlex } from './flex/flex-grade';
+import { GradingFlex } from './flex/flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
@@ -608,19 +608,19 @@ export class RecordCaseHandler {
         }
         let GradeResult: line.messagingApi.FlexMessage;
         // switch (lowestGrade) {
-        switch (avgGrade) {
-          case 'A':
-            GradeResult = GradeFlex('A', messageText, ai_grading_menus);
+        // switch (avgGrade) {
+        //   case 'A':
+        //     GradeResult = GradeFlex('A', messageText, ai_grading_menus);
 
-            break;
-          case 'B':
-            GradeResult = GradeFlex('B', messageText, ai_grading_menus);
+        //     break;
+        //   case 'B':
+        //     GradeResult = GradeFlex('B', messageText, ai_grading_menus);
 
-            break;
-          case 'C':
-            GradeResult = GradeFlex('C', messageText, ai_grading_menus);
-            break;
-        }
+        //     break;
+        //   case 'C':
+        //     GradeResult = GradeFlex('C', messageText, ai_grading_menus);
+        //     break;
+        // }
 
         const fileName = user_state.pendingFile?.fileName;
         if (!fileName) {
@@ -633,8 +633,7 @@ export class RecordCaseHandler {
           user_state.user.id,
           fileName,
         );
-        
-        this.logger.debug('Moved image to user folder:', filePath);
+
         // log user choice
         await this.logsQueue.add(
           'user-choice-logs',
@@ -699,7 +698,7 @@ export class RecordCaseHandler {
                 type: 'text',
                 text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
               },
-              GradeResult,
+              GradingFlex(avgGrade, messageText),
             ],
           });
         } catch (error) {
@@ -714,7 +713,7 @@ export class RecordCaseHandler {
                 type: 'text',
                 text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
               },
-              GradeResult,
+              GradingFlex(avgGrade, messageText),
             ],
           });
         }
@@ -752,4 +751,3 @@ export class RecordCaseHandler {
     }
   }
 }
-  
