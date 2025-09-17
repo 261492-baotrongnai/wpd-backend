@@ -388,374 +388,374 @@ export const canEatCheckAskForImageFlex: messagingApi.FlexMessage = {
   quickReply: ImageQuickReply,
 };
 
-export const WhatMealFlex: messagingApi.FlexMessage = {
-  type: 'flex',
-  altText: 'อาหารในรูปคือมื้ออะไรคะ?',
-  contents: {
-    type: 'bubble',
-    size: 'kilo',
-    body: {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: 'อาหารในรูปนี้เป็นมื้อไหนคะ',
-          align: 'center',
-          offsetBottom: 'none',
-          offsetTop: 'xs',
-          weight: 'bold',
-          size: 'lg',
-        },
-        {
-          type: 'separator',
-          margin: 'lg',
-        },
-        {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'button',
-              action: {
-                type: 'message',
-                label: 'มื้อเช้า🍳',
-                text: 'มื้อเช้า🍳',
-              },
-              color: '#333333',
-            },
-          ],
-          backgroundColor: '#FFF8CC',
-          margin: 'lg',
-          cornerRadius: 'md',
-        },
-        {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'button',
-              action: {
-                type: 'message',
-                label: 'มื้อกลางวัน🍛',
-                text: 'มื้อกลางวัน🍛',
-              },
-              color: '#333333',
-            },
-          ],
-          margin: 'lg',
-          backgroundColor: '#D5F5D0',
-          cornerRadius: 'md',
-        },
-        {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'button',
-              action: {
-                type: 'message',
-                label: 'มื้อเย็น🍚',
-                text: 'มื้อเย็น🍚',
-              },
-              color: '#333333',
-            },
-          ],
-          backgroundColor: '#D7EDFB',
-          margin: 'lg',
-          cornerRadius: 'md',
-        },
-        {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'button',
-              action: {
-                type: 'message',
-                label: 'ของว่าง🧋',
-                text: 'ของว่าง🧋',
-              },
-              color: '#333333',
-            },
-          ],
-          margin: 'lg',
-          cornerRadius: 'md',
-          backgroundColor: '#EADCF3',
-        },
-      ],
-    },
-  },
-  quickReply: CancleQuickReply,
-};
-
 // ไม่ใช้แล้ว
-export const TrueFalseMenuConfirmFlex = (
-  menu_name: string,
-): Promise<messagingApi.FlexMessage> => {
-  return Promise.resolve({
-    type: 'flex',
-    altText: 'ยืนยันชื่อเมนูอาหาร',
-    contents: {
-      type: 'bubble',
-      size: 'mega',
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'text',
-            text: 'มะลิขอเดาว่าเมนูที่ทานคือ',
-            wrap: true,
-            weight: 'bold',
-            size: 'md',
-            align: 'center',
-            contents: [],
-          },
-          {
-            type: 'text',
-            text: `"${menu_name}" ใช่มั้ยคะ?`,
-            margin: 'sm',
-            size: 'md',
-            align: 'center',
-            weight: 'bold',
-          },
-        ],
-        paddingTop: 'xl',
-      },
-      footer: {
-        type: 'box',
-        layout: 'horizontal',
-        spacing: 'md',
-        contents: [
-          {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              {
-                type: 'button',
-                action: {
-                  type: 'message',
-                  label: 'ใช่ ✅',
-                  text: 'ใช่แล้ว👍🏻',
-                },
-                color: '#333333',
-              },
-            ],
-            backgroundColor: '#D2ECC0',
-            cornerRadius: 'md',
-            paddingStart: 'none',
-          },
-          {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              {
-                type: 'button',
-                action: {
-                  type: 'message',
-                  label: 'ไม่ใช่ ❌',
-                  text: 'ไม่ใช่นะ👎🏻',
-                },
-                color: '#333333',
-              },
-            ],
-            backgroundColor: '#FFD3D3',
-            cornerRadius: 'md',
-          },
-        ],
-        paddingBottom: 'xl',
-        paddingTop: 'sm',
-        paddingStart: 'lg',
-        paddingEnd: 'lg',
-      },
-    },
-    quickReply: CancleQuickReply,
-  });
-};
+// export const TrueFalseMenuConfirmFlex = (
+//   menu_name: string,
+// ): Promise<messagingApi.FlexMessage> => {
+//   return Promise.resolve({
+//     type: 'flex',
+//     altText: 'ยืนยันชื่อเมนูอาหาร',
+//     contents: {
+//       type: 'bubble',
+//       size: 'mega',
+//       body: {
+//         type: 'box',
+//         layout: 'vertical',
+//         contents: [
+//           {
+//             type: 'text',
+//             text: 'มะลิขอเดาว่าเมนูที่ทานคือ',
+//             wrap: true,
+//             weight: 'bold',
+//             size: 'md',
+//             align: 'center',
+//             contents: [],
+//           },
+//           {
+//             type: 'text',
+//             text: `"${menu_name}" ใช่มั้ยคะ?`,
+//             margin: 'sm',
+//             size: 'md',
+//             align: 'center',
+//             weight: 'bold',
+//           },
+//         ],
+//         paddingTop: 'xl',
+//       },
+//       footer: {
+//         type: 'box',
+//         layout: 'horizontal',
+//         spacing: 'md',
+//         contents: [
+//           {
+//             type: 'box',
+//             layout: 'vertical',
+//             contents: [
+//               {
+//                 type: 'button',
+//                 action: {
+//                   type: 'message',
+//                   label: 'ใช่ ✅',
+//                   text: 'ใช่แล้ว👍🏻',
+//                 },
+//                 color: '#333333',
+//               },
+//             ],
+//             backgroundColor: '#D2ECC0',
+//             cornerRadius: 'md',
+//             paddingStart: 'none',
+//           },
+//           {
+//             type: 'box',
+//             layout: 'vertical',
+//             contents: [
+//               {
+//                 type: 'button',
+//                 action: {
+//                   type: 'message',
+//                   label: 'ไม่ใช่ ❌',
+//                   text: 'ไม่ใช่นะ👎🏻',
+//                 },
+//                 color: '#333333',
+//               },
+//             ],
+//             backgroundColor: '#FFD3D3',
+//             cornerRadius: 'md',
+//           },
+//         ],
+//         paddingBottom: 'xl',
+//         paddingTop: 'sm',
+//         paddingStart: 'lg',
+//         paddingEnd: 'lg',
+//       },
+//     },
+//     quickReply: CancleQuickReply,
+//   });
+// };
 
-export const MenuChoiceConfirmFlex = (
-  candidates: { name: string }[],
-): messagingApi.FlexMessage => {
-  const config = new ConfigService();
-  const liff_menu_input = `${config.get<string>('MENU_INPUT')}`;
-  Logger.debug(liff_menu_input, 'LIFF URL');
-  try {
-    return {
-      type: 'flex',
-      altText: 'ยืนยันชื่อเมนูอาหาร',
-      contents: {
-        type: 'bubble',
-        size: 'giga',
-        body: {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'text',
-              text: 'เลือกเมนูอาหารที่',
-              align: 'center',
-              offsetBottom: 'none',
-              offsetTop: 'xs',
-              weight: 'bold',
-              size: 'lg',
-            },
-            {
-              type: 'text',
-              text: 'มะลิคิดว่าใกล้เคียงกับ',
-              weight: 'bold',
-              align: 'center',
-              size: 'lg',
-            },
-            {
-              type: 'text',
-              text: 'อาหารในรูปดูนะคะ',
-              weight: 'bold',
-              align: 'center',
-              size: 'lg',
-            },
-            {
-              type: 'separator',
-              margin: 'xl',
-            },
-            {
-              type: 'box',
-              layout: 'vertical',
-              backgroundColor: '#FFF8CC',
-              margin: 'lg',
-              cornerRadius: 'md',
-              paddingAll: 'lg',
-              action: {
-                type: 'message',
-                label: candidates[0].name,
-                text: candidates[0].name,
-              },
-              contents: [
-                {
-                  type: 'text',
-                  text: candidates[0].name,
-                  wrap: true,
-                  size: 'lg',
-                  align: 'center',
-                  color: '#333333',
-                  weight: 'regular',
-                },
-              ],
-              offsetTop: 'none',
-            },
-            {
-              type: 'box',
-              layout: 'vertical',
-              backgroundColor: '#D5F5D0',
-              margin: 'lg',
-              cornerRadius: 'md',
-              paddingAll: 'lg',
-              action: {
-                type: 'message',
-                label: candidates[1].name,
-                text: candidates[1].name,
-              },
-              contents: [
-                {
-                  type: 'text',
-                  text: candidates[1].name,
-                  wrap: true,
-                  size: 'lg',
-                  align: 'center',
-                  color: '#333333',
-                  weight: 'regular',
-                },
-              ],
-            },
-            {
-              type: 'box',
-              layout: 'vertical',
-              backgroundColor: '#D7EDFB',
-              margin: 'lg',
-              cornerRadius: 'md',
-              paddingAll: 'lg',
-              action: {
-                type: 'message',
-                label: candidates[2].name,
-                text: candidates[2].name,
-              },
-              contents: [
-                {
-                  type: 'text',
-                  text: candidates[2].name,
-                  wrap: true,
-                  size: 'lg',
-                  align: 'center',
-                  color: '#333333',
-                  weight: 'regular',
-                },
-              ],
-            },
-            {
-              type: 'box',
-              layout: 'vertical',
-              backgroundColor: '#EADCF3',
-              margin: 'lg',
-              cornerRadius: 'md',
-              paddingAll: 'lg',
-              action: {
-                type: 'message',
-                label: candidates[3].name,
-                text: candidates[3].name,
-              },
-              contents: [
-                {
-                  type: 'text',
-                  text: candidates[3].name,
-                  wrap: true,
-                  size: 'lg',
-                  align: 'center',
-                  color: '#333333',
-                  weight: 'regular',
-                },
-              ],
-            },
-            {
-              type: 'box',
-              layout: 'vertical',
-              backgroundColor: '#FFDBE8',
-              cornerRadius: 'md',
-              margin: 'lg',
-              paddingAll: 'lg',
-              action: {
-                type: 'uri',
-                label: 'ไม่มีเมนูที่ถูกต้อง พิมพ์ชื่ออาหารเอง',
-                uri: liff_menu_input,
-              },
-              contents: [
-                {
-                  type: 'text',
-                  text: 'ไม่มีเมนูที่ถูกต้อง',
-                  wrap: true,
-                  size: 'lg',
-                  align: 'center',
-                  color: '#333333',
-                  weight: 'regular',
-                },
-                {
-                  type: 'text',
-                  text: 'พิมพ์ชื่ออาหารเอง',
-                  wrap: true,
-                  size: 'lg',
-                  align: 'center',
-                  color: '#333333',
-                  margin: 'sm',
-                  weight: 'regular',
-                },
-              ],
-            },
-          ],
-        },
-      },
-      quickReply: CancleQuickReply,
-    };
-  } catch (error) {
-    console.error('Error creating MenuChoiceConfirmFlex:', error);
-    throw error;
-  }
-};
+// export const MenuChoiceConfirmFlex = (
+//   candidates: { name: string }[],
+// ): messagingApi.FlexMessage => {
+//   const config = new ConfigService();
+//   const liff_menu_input = `${config.get<string>('MENU_INPUT')}`;
+//   Logger.debug(liff_menu_input, 'LIFF URL');
+//   try {
+//     return {
+//       type: 'flex',
+//       altText: 'ยืนยันชื่อเมนูอาหาร',
+//       contents: {
+//         type: 'bubble',
+//         size: 'giga',
+//         body: {
+//           type: 'box',
+//           layout: 'vertical',
+//           contents: [
+//             {
+//               type: 'text',
+//               text: 'เลือกเมนูอาหารที่',
+//               align: 'center',
+//               offsetBottom: 'none',
+//               offsetTop: 'xs',
+//               weight: 'bold',
+//               size: 'lg',
+//             },
+//             {
+//               type: 'text',
+//               text: 'มะลิคิดว่าใกล้เคียงกับ',
+//               weight: 'bold',
+//               align: 'center',
+//               size: 'lg',
+//             },
+//             {
+//               type: 'text',
+//               text: 'อาหารในรูปดูนะคะ',
+//               weight: 'bold',
+//               align: 'center',
+//               size: 'lg',
+//             },
+//             {
+//               type: 'separator',
+//               margin: 'xl',
+//             },
+//             {
+//               type: 'box',
+//               layout: 'vertical',
+//               backgroundColor: '#FFF8CC',
+//               margin: 'lg',
+//               cornerRadius: 'md',
+//               paddingAll: 'lg',
+//               action: {
+//                 type: 'message',
+//                 label: candidates[0].name,
+//                 text: candidates[0].name,
+//               },
+//               contents: [
+//                 {
+//                   type: 'text',
+//                   text: candidates[0].name,
+//                   wrap: true,
+//                   size: 'lg',
+//                   align: 'center',
+//                   color: '#333333',
+//                   weight: 'regular',
+//                 },
+//               ],
+//               offsetTop: 'none',
+//             },
+//             {
+//               type: 'box',
+//               layout: 'vertical',
+//               backgroundColor: '#D5F5D0',
+//               margin: 'lg',
+//               cornerRadius: 'md',
+//               paddingAll: 'lg',
+//               action: {
+//                 type: 'message',
+//                 label: candidates[1].name,
+//                 text: candidates[1].name,
+//               },
+//               contents: [
+//                 {
+//                   type: 'text',
+//                   text: candidates[1].name,
+//                   wrap: true,
+//                   size: 'lg',
+//                   align: 'center',
+//                   color: '#333333',
+//                   weight: 'regular',
+//                 },
+//               ],
+//             },
+//             {
+//               type: 'box',
+//               layout: 'vertical',
+//               backgroundColor: '#D7EDFB',
+//               margin: 'lg',
+//               cornerRadius: 'md',
+//               paddingAll: 'lg',
+//               action: {
+//                 type: 'message',
+//                 label: candidates[2].name,
+//                 text: candidates[2].name,
+//               },
+//               contents: [
+//                 {
+//                   type: 'text',
+//                   text: candidates[2].name,
+//                   wrap: true,
+//                   size: 'lg',
+//                   align: 'center',
+//                   color: '#333333',
+//                   weight: 'regular',
+//                 },
+//               ],
+//             },
+//             {
+//               type: 'box',
+//               layout: 'vertical',
+//               backgroundColor: '#EADCF3',
+//               margin: 'lg',
+//               cornerRadius: 'md',
+//               paddingAll: 'lg',
+//               action: {
+//                 type: 'message',
+//                 label: candidates[3].name,
+//                 text: candidates[3].name,
+//               },
+//               contents: [
+//                 {
+//                   type: 'text',
+//                   text: candidates[3].name,
+//                   wrap: true,
+//                   size: 'lg',
+//                   align: 'center',
+//                   color: '#333333',
+//                   weight: 'regular',
+//                 },
+//               ],
+//             },
+//             {
+//               type: 'box',
+//               layout: 'vertical',
+//               backgroundColor: '#FFDBE8',
+//               cornerRadius: 'md',
+//               margin: 'lg',
+//               paddingAll: 'lg',
+//               action: {
+//                 type: 'uri',
+//                 label: 'ไม่มีเมนูที่ถูกต้อง พิมพ์ชื่ออาหารเอง',
+//                 uri: liff_menu_input,
+//               },
+//               contents: [
+//                 {
+//                   type: 'text',
+//                   text: 'ไม่มีเมนูที่ถูกต้อง',
+//                   wrap: true,
+//                   size: 'lg',
+//                   align: 'center',
+//                   color: '#333333',
+//                   weight: 'regular',
+//                 },
+//                 {
+//                   type: 'text',
+//                   text: 'พิมพ์ชื่ออาหารเอง',
+//                   wrap: true,
+//                   size: 'lg',
+//                   align: 'center',
+//                   color: '#333333',
+//                   margin: 'sm',
+//                   weight: 'regular',
+//                 },
+//               ],
+//             },
+//           ],
+//         },
+//       },
+//       quickReply: CancleQuickReply,
+//     };
+//   } catch (error) {
+//     console.error('Error creating MenuChoiceConfirmFlex:', error);
+//     throw error;
+//   }
+// };
+
+// export const WhatMealFlex: messagingApi.FlexMessage = {
+//   type: 'flex',
+//   altText: 'อาหารในรูปคือมื้ออะไรคะ?',
+//   contents: {
+//     type: 'bubble',
+//     size: 'kilo',
+//     body: {
+//       type: 'box',
+//       layout: 'vertical',
+//       contents: [
+//         {
+//           type: 'text',
+//           text: 'อาหารในรูปนี้เป็นมื้อไหนคะ',
+//           align: 'center',
+//           offsetBottom: 'none',
+//           offsetTop: 'xs',
+//           weight: 'bold',
+//           size: 'lg',
+//         },
+//         {
+//           type: 'separator',
+//           margin: 'lg',
+//         },
+//         {
+//           type: 'box',
+//           layout: 'vertical',
+//           contents: [
+//             {
+//               type: 'button',
+//               action: {
+//                 type: 'message',
+//                 label: 'มื้อเช้า🍳',
+//                 text: 'มื้อเช้า🍳',
+//               },
+//               color: '#333333',
+//             },
+//           ],
+//           backgroundColor: '#FFF8CC',
+//           margin: 'lg',
+//           cornerRadius: 'md',
+//         },
+//         {
+//           type: 'box',
+//           layout: 'vertical',
+//           contents: [
+//             {
+//               type: 'button',
+//               action: {
+//                 type: 'message',
+//                 label: 'มื้อกลางวัน🍛',
+//                 text: 'มื้อกลางวัน🍛',
+//               },
+//               color: '#333333',
+//             },
+//           ],
+//           margin: 'lg',
+//           backgroundColor: '#D5F5D0',
+//           cornerRadius: 'md',
+//         },
+//         {
+//           type: 'box',
+//           layout: 'vertical',
+//           contents: [
+//             {
+//               type: 'button',
+//               action: {
+//                 type: 'message',
+//                 label: 'มื้อเย็น🍚',
+//                 text: 'มื้อเย็น🍚',
+//               },
+//               color: '#333333',
+//             },
+//           ],
+//           backgroundColor: '#D7EDFB',
+//           margin: 'lg',
+//           cornerRadius: 'md',
+//         },
+//         {
+//           type: 'box',
+//           layout: 'vertical',
+//           contents: [
+//             {
+//               type: 'button',
+//               action: {
+//                 type: 'message',
+//                 label: 'ของว่าง🧋',
+//                 text: 'ของว่าง🧋',
+//               },
+//               color: '#333333',
+//             },
+//           ],
+//           margin: 'lg',
+//           cornerRadius: 'md',
+//           backgroundColor: '#EADCF3',
+//         },
+//       ],
+//     },
+//   },
+//   quickReply: CancleQuickReply,
+// };

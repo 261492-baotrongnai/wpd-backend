@@ -19,11 +19,11 @@ import {
 import { MealsService } from 'src/meals/meals.service';
 import { FoodGradeType } from 'src/food-grades/entities/food-grade.entity';
 import { canEatCheckSummary, RecordOrNot } from './flex/flex-decideToEat';
-import { WhatMealFlex } from './flex/flex-message';
+import { WhatMealFlex } from './flex/flex-what-meal';
 import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { ImagesService } from 'src/images/images.service';
 import { FoodsService } from 'src/foods/foods.service';
-import { GradingFlex } from './flex/flex-grade';
+import { GradeFlex } from './flex/flex-grade';
 
 @Injectable()
 export class CanEatCheckHandler {
@@ -771,7 +771,7 @@ export class CanEatCheckHandler {
                   type: 'text',
                   text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า`,
                 },
-                GradingFlex(jsonFoodInfo.avgGrade, foodNames),
+                GradeFlex(jsonFoodInfo.avgGrade, foodNames),
               ],
             });
           } catch (error) {
@@ -786,7 +786,7 @@ export class CanEatCheckHandler {
                   type: 'text',
                   text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า`,
                 },
-                GradingFlex(jsonFoodInfo.avgGrade, foodNames),
+                GradeFlex(jsonFoodInfo.avgGrade, foodNames),
               ],
             });
           }

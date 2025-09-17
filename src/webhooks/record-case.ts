@@ -17,7 +17,7 @@ import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { MealsService } from 'src/meals/meals.service';
 import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { FoodsService } from 'src/foods/foods.service';
-import { GradingFlex } from './flex/flex-grade';
+import { GradeFlex } from './flex/flex-grade';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from '../queue-events/queue-events.service';
@@ -572,7 +572,7 @@ export class RecordCaseHandler {
         event.message.text !== 'บันทึกอาหารที่ทาน' &&
         event.message.text !== 'กินได้ก่อ' &&
         event.message.text !== 'วิธีใช้' &&
-        !['มื้อเย็น☁️', 'มื้อเที่ยง☀️', 'มื้อเช้า⛅️', 'ของว่าง🍉🧃'].includes(
+        !['มื้อเย็น ☁️', 'มื้อกลางวัน ☀️', 'มื้อเช้า ⛅️', 'ของว่าง 🍉'].includes(
           event.message.text,
         )
       ) {
@@ -698,7 +698,7 @@ export class RecordCaseHandler {
                 type: 'text',
                 text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
               },
-              GradingFlex(avgGrade, messageText),
+              GradeFlex(avgGrade, messageText),
             ],
           });
         } catch (error) {
@@ -713,7 +713,7 @@ export class RecordCaseHandler {
                 type: 'text',
                 text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
               },
-              GradingFlex(avgGrade, messageText),
+              GradeFlex(avgGrade, messageText),
             ],
           });
         }
