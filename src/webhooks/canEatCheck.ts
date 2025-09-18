@@ -23,7 +23,7 @@ import { WhatMealFlex } from './flex/flex-what-meal';
 import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { ImagesService } from 'src/images/images.service';
 import { FoodsService } from 'src/foods/foods.service';
-import { GradingFlex } from './flex/flex-grade';
+import { GradeFlex } from './flex/flex-grade';
 import { ScoringLog } from 'src/foods/entities/food.entity';
 
 
