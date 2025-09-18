@@ -581,20 +581,39 @@ export class RecordCaseHandler {
           await this.handleCancel(event, user_state.id);
           return 'MenuChoicesConfirm Cancelled';
         }
+        /*
+        grading อันเดิม
 
         // Parse the messageText into a string array
-        const parsedMenuNames = this.parseMessageText(messageText);
+        // const parsedMenuNames = this.parseMessageText(messageText);
 
-        // get the lowest grade, max score, average grade and score from the foodGrade service
-        const { lowestGrade, maxScore, avgGrade, avgScore, foods } =
-          await this.foodGrade.getMenuGrade(
-            parsedMenuNames,
+        // // get the lowest grade, max score, average grade and score from the foodGrade service
+        // const { lowestGrade, maxScore, avgGrade, avgScore, foods } =
+        //   await this.foodGrade.getMenuGrade(
+        //     parsedMenuNames,
+        //     user_state.geminiImageName,
+        //   );
+
+        // const ai_grading_menus = this.gradingByAIMenu(foods);
+
+        // if (!avgGrade || !avgScore) { */
+
+        /*
+
+        rulebased grading
+
+        
+        
+        */
+
+        const { grade, score, menu_name, scoring_log, reason_description } =
+          await this.foodGrade.getGradeFromRuleBased(
+            messageText,
             user_state.geminiImageName,
           );
 
-        const ai_grading_menus = this.gradingByAIMenu(foods);
-
-        if (!avgGrade || !avgScore) {
+        // non-food case
+        if (!grade) {
           await this.client.replyMessage({
             replyToken: event.replyToken,
             messages: [
@@ -607,20 +626,6 @@ export class RecordCaseHandler {
           return 'MenuChoicesConfirm Not Food';
         }
         let GradeResult: line.messagingApi.FlexMessage;
-        // switch (lowestGrade) {
-        // switch (avgGrade) {
-        //   case 'A':
-        //     GradeResult = GradeFlex('A', messageText, ai_grading_menus);
-
-        //     break;
-        //   case 'B':
-        //     GradeResult = GradeFlex('B', messageText, ai_grading_menus);
-
-        //     break;
-        //   case 'C':
-        //     GradeResult = GradeFlex('C', messageText, ai_grading_menus);
-        //     break;
-        // }
 
         const fileName = user_state.pendingFile?.fileName;
         if (!fileName) {
@@ -640,7 +645,7 @@ export class RecordCaseHandler {
           {
             userId: user_state.user.id,
             candidates: user_state.menuName,
-            selected: parsedMenuNames,
+            selected: messageText,
             filePath: filePath,
           },
           {
@@ -657,10 +662,10 @@ export class RecordCaseHandler {
           userId: user_state.user.id,
           mealType: user_state.mealType,
           imageName: fileName,
-          avgGrade,
-          avgScore,
-          maxScore,
-          lowestGrade,
+          avgGrade: grade,
+          avgScore: score,
+          maxScore: score, // in rule-based grading, score is always maxScore
+          lowestGrade: grade, // in rule-based grading, grade is always lowestGrade
         });
         const meal = (await this.queueEventsRegistryService.waitForJobResult(
           mealJob,
@@ -668,15 +673,16 @@ export class RecordCaseHandler {
         )) as Meal;
         this.logger.debug('Created meal:', meal);
 
-        for (const food of foods) {
-          await this.foodService.create({
-            name: food.name,
-            grade: food.grade,
-            description: food.description,
-            meal,
-            grading_by_ai: food.grading_by_ai,
-          });
-        }
+        // for (const food of foods) {
+        await this.foodService.create({
+          name: menu_name,
+          grade: grade,
+          scoring_log: scoring_log,
+          description: reason_description,
+          meal,
+          grading_by_rule: true,
+        });
+        // }
 
         const removeJob = await this.userStateQueue.add(
           'remove-user-state',
@@ -698,7 +704,8 @@ export class RecordCaseHandler {
                 type: 'text',
                 text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
               },
-              GradeFlex(avgGrade, messageText),
+
+              GradingFlex(grade, messageText),
             ],
           });
         } catch (error) {
@@ -713,7 +720,7 @@ export class RecordCaseHandler {
                 type: 'text',
                 text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
               },
-              GradeFlex(avgGrade, messageText),
+              GradingFlex(grade, messageText),
             ],
           });
         }
