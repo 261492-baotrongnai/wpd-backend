@@ -6,57 +6,54 @@ const MealInfo: {
   bgColor: string;
 }[] = [
   {
-    text: 'มื้อเช้า⛅️',
+    text: 'มื้อเช้า ⛅️',
     bgColor: '#FFF8CC',
   },
   {
-    text: 'มื้อเที่ยง☀️',
+    text: 'มื้อกลางวัน ☀️',
     bgColor: '#D5F5D0',
   },
   {
-    text: 'มื้อเย็น☁️',
+    text: 'มื้อเย็น ☁️',
     bgColor: '#D7EDFB',
   },
   {
-    text: 'ของว่าง🍉🧃',
+    text: 'ของว่าง 🍉',
     bgColor: '#EADCF3',
   },
 ];
 
-export const WhatMealChoice = (
-  meal_info = MealInfo,
-): line.messagingApi.FlexComponent[] => {
-  const choices: line.messagingApi.FlexComponent[] = meal_info.map(
-    ({ text, bgColor }) => {
-      return {
-        type: 'box',
-        layout: 'vertical',
-        contents: [
-          {
-            type: 'text',
-            text: text,
-            align: 'center',
-            size: 'lg',
-            color: '#333333',
-            action: {
-              type: 'message',
-              label: text,
-              text: text,
-            },
-            weight: 'regular',
-            margin: 'none',
-            offsetTop: 'none',
-          },
-        ],
-        backgroundColor: bgColor,
-        margin: 'lg',
-        cornerRadius: 'md',
-        paddingAll: 'lg',
-      };
-    },
-  );
-  return choices;
+const constructChoice = (text, bgColor): line.messagingApi.FlexComponent => {
+  return {
+    type: 'box',
+    layout: 'vertical',
+    contents: [
+      {
+        type: 'text',
+        text: text,
+        align: 'center',
+        size: '20px',
+        color: '#333333',
+        action: {
+          type: 'message',
+          label: text,
+          text: text,
+        },
+        weight: 'regular',
+        margin: 'none',
+        offsetTop: 'none',
+      },
+    ],
+    backgroundColor: bgColor,
+    margin: 'lg',
+    cornerRadius: 'md',
+    paddingAll: 'lg',
+  };
 };
+
+const mealChoicePart: line.messagingApi.FlexComponent[] = MealInfo.map(
+  ({ text, bgColor }) => constructChoice(text, bgColor),
+);
 
 export const WhatMealFlex: line.messagingApi.FlexMessage = {
   type: 'flex',
@@ -70,20 +67,19 @@ export const WhatMealFlex: line.messagingApi.FlexMessage = {
       contents: [
         {
           type: 'text',
-          text: 'อาหารในรูปนี้เป็นมื้อไหนคะ',
+          text: 'อาหารในรูปนี้เป็นมื้อไหนคะ?',
           align: 'center',
           offsetBottom: 'none',
           offsetTop: 'xs',
           weight: 'bold',
           size: 'lg',
-          scaling: true,
           wrap: true,
         },
         {
           type: 'separator',
           margin: 'lg',
         },
-        ...WhatMealChoice(),
+        ...mealChoicePart,
       ],
     },
   },
