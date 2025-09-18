@@ -6,7 +6,22 @@ import { CreateFoodGradeDto } from './dto/create-food-grade.dto';
 import * as fuzzball from 'fuzzball';
 import { ExternalApiService } from 'src/external-api/external-api.service';
 import { UpdateFoodGradeDto } from './dto/update-food-grade.dto';
+import { FoodDataDto } from './dto/food-data.dto';
 // import { UpdateFoodGradeDto } from './dto/update-food-grade.dto';
+
+type ScoringLog = {
+  cooking_method: { method: string; deduction: number }[];
+  meat: number | null;
+  vegetable: number | null;
+  rice: { rice: string; deduction: number }[];
+  noodle: { noodle: string; deduction: number }[];
+  fruit: number | null;
+  sweet: number | null;
+  drink: { drink: string; deduction: number }[];
+  snack: number | null;
+  sauce: number | null;
+  grain: number | null;
+};
 
 @Injectable()
 export class FoodGradesService {
@@ -104,23 +119,6 @@ export class FoodGradesService {
           { scorer: fuzzball.ratio },
         );
 
-        if (bestMatch[0][1] > 90) {
-          const matchedFood = allFood.find((f) => f.name === bestMatch[0][0]);
-          if (matchedFood) {
-            this.logger.debug(
-              `Partial match found for menu: ${menu} with ${matchedFood.name}, grade: ${matchedFood.grade}`,
-            );
-            const { grade } = matchedFood;
-            totalGrade += this.gradeToScore(grade);
-            foods.push({
-              name: menu,
-              grade: this.validateGrade(matchedFood.grade),
-              description: `partially match(over 80%) with {id: ${matchedFood.id}, food: ${matchedFood.name}, grade: ${matchedFood.grade} } in database`,
-              grading_by_ai: false,
-            });
-            continue;
-          }
-        }
         // step 3: no match, send to Gemini
         const top5BestMatch = this.getTop5BestMatch(bestMatch, allFood);
         await this.api
@@ -247,6 +245,184 @@ export class FoodGradesService {
       affected: deleteResult.affected ?? 0,
       deletedIds: existingIds,
       missing,
+    };
+  }
+
+  async getGradeFromRuleBased(menu: string, geminiImageName: string) {
+    try {
+      const foodData = await this.api.geminiExtractFoodData(
+        menu,
+        undefined,
+        geminiImageName,
+      );
+      if (!foodData) {
+        throw new Error('Failed to extract food data from Gemini');
+      }
+      const result = this.ruleBasedGrading(foodData);
+      return result;
+    } catch (error) {
+      this.logger.error('Error at [getGradeFromRuleBased]:', error);
+      throw error;
+    }
+  }
+
+  ruleBasedGrading(menu: FoodDataDto) {
+    let score = 10;
+    const scoring_log: ScoringLog = {} as ScoringLog;
+
+    scoring_log['cooking_method'] = [];
+    for (const cooking_method of menu.cooking_method) {
+      let deduction = 0;
+      switch (cooking_method) {
+        case 'ทอด':
+          deduction = 0;
+          break;
+        case 'ผัด':
+          deduction = 1;
+          break;
+        case 'ย่าง':
+          deduction = 1;
+          break;
+        case 'อบ':
+          deduction = 1;
+          break;
+        case 'ต้ม':
+          deduction = 0;
+          break;
+        case 'นึ่ง':
+          deduction = 0;
+          break;
+        case 'ลวก':
+          deduction = 0;
+          break;
+        case 'ดิบ':
+          deduction = 0;
+          break;
+        case 'ยำ':
+          deduction = 2;
+          break;
+        case 'ชุปแป้งทอด':
+          deduction = 3;
+          break;
+        case 'ตุ๋น':
+          deduction = 0;
+          break;
+        case 'หมัก':
+          deduction = 0;
+          break;
+        case 'ปิ้ง':
+          deduction = 1;
+          break;
+      }
+      score -= deduction;
+      scoring_log['cooking_method'].push({ method: cooking_method, deduction });
+    }
+
+    scoring_log['meat'] = menu.there_is_meat ? 0 : null;
+    score -= menu.there_is_meat ? 0 : 0;
+
+    scoring_log['vegetable'] = menu.there_is_vegetable ? 0 : null;
+    score -= menu.there_is_vegetable ? 0 : 0;
+
+    scoring_log['rice'] = [];
+    if (menu.there_is_rice) {
+      for (const rice of menu.rices) {
+        let deduction = 0;
+        switch (rice) {
+          case 'ข้าวหอมมะลิ':
+            deduction = 3;
+            break;
+          case 'ข้าวขาว':
+            deduction = 4;
+            break;
+          case 'ข้าวเหนียว':
+            deduction = 4;
+            break;
+          default:
+            deduction = 1;
+        }
+        score -= deduction;
+        scoring_log['rice'].push({ rice, deduction });
+      }
+    }
+
+    scoring_log['noodle'] = [];
+    if (menu.there_is_noodle) {
+      for (const noodle of menu.noodles) {
+        let deduction = 0;
+        switch (noodle) {
+          case 'วุ้นเส้น':
+            deduction = 1;
+            break;
+          case 'เส้นบุก':
+            deduction = 0;
+            break;
+          default:
+            deduction = 3;
+        }
+        score -= deduction;
+        scoring_log['noodle'].push({ noodle, deduction });
+      }
+    }
+
+    scoring_log['fruit'] = menu.there_is_fruit ? 4 : null;
+    if (menu.there_is_fruit) score -= 4;
+
+    scoring_log['sweet'] = menu.there_is_sweet ? 9 : null;
+    if (menu.there_is_sweet) score -= 9;
+
+    scoring_log['drink'] = [];
+    if (menu.there_is_drink) {
+      for (const drink of menu.drinks) {
+        let deduction = 0;
+        switch (drink) {
+          case 'น้ำเปล่า':
+            deduction = 0;
+            break;
+          case 'น้ำอัดลม':
+            deduction = 5;
+            break;
+          case 'น้ำผลไม้':
+            deduction = 3;
+            break;
+          case 'ชา':
+            deduction = 3;
+            break;
+          case 'กาแฟ':
+            deduction = 3;
+            break;
+          case 'นม':
+            deduction = 3;
+            break;
+          default:
+            deduction = 1;
+        }
+        score -= deduction;
+        scoring_log['drink'].push({ drink, deduction });
+      }
+    }
+
+    scoring_log['snack'] = menu.there_is_snack ? 2 : null;
+    if (menu.there_is_snack) score -= 2;
+
+    scoring_log['sauce'] = menu.there_is_sauce ? 0.5 : null;
+    if (menu.there_is_sauce) score -= 0.5;
+
+    scoring_log['grain'] =
+      menu.there_is_grain && menu.grains.length > 0 ? 1 : null;
+    if (menu.there_is_grain && menu.grains.length > 0) score -= 1;
+
+    let grade: FoodGradeType;
+    if (score >= 6) grade = 'A';
+    else if (score >= 2) grade = 'B';
+    else grade = 'C';
+    return {
+      grade,
+      score: score >= 0 ? score : 0,
+      menu_name: menu.name,
+      ingredient: menu.ingredients,
+      scoring_log,
+      reason_description: menu.reason_description,
     };
   }
 }

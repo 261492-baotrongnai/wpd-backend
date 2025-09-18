@@ -24,6 +24,7 @@ import { Meal, MealType } from 'src/meals/entities/meal.entity';
 import { ImagesService } from 'src/images/images.service';
 import { FoodsService } from 'src/foods/foods.service';
 import { GradingFlex } from './flex/flex-grade';
+import { ScoringLog } from 'src/foods/entities/food.entity';
 
 @Injectable()
 export class CanEatCheckHandler {
@@ -389,10 +390,31 @@ export class CanEatCheckHandler {
           const parsedMenuNames =
             this.recordCaseHandler.parseMessageText(lineMessage);
 
-          const foodGradingInfo = await this.foodGrade.getMenuGrade(
-            parsedMenuNames,
-            userState.geminiImageName,
-          );
+          const { grade, score, menu_name, scoring_log, reason_description } =
+            await this.foodGrade.getGradeFromRuleBased(
+              lineMessage,
+              userState.geminiImageName,
+            );
+          // const _foodGradingInfo = await this.foodGrade.getMenuGrade(
+          //   parsedMenuNames,
+          //   userState.geminiImageName,
+          // );
+
+          const foodGradingInfo = {
+            lowestGrade: grade,
+            avgGrade: grade,
+            avgScore: score,
+            maxScore: score,
+            foods: [
+              {
+                name: menu_name,
+                grade: grade,
+                description: reason_description,
+                grading_by_ai: false,
+                scoring_log: scoring_log,
+              },
+            ],
+          };
 
           console.log('grading info', foodGradingInfo);
 
@@ -698,6 +720,7 @@ export class CanEatCheckHandler {
               grade: FoodGradeType;
               description: string;
               grading_by_ai: boolean;
+              scoring_log?: ScoringLog;
             }>;
           } = JSON.parse(foodInfo);
 
@@ -740,6 +763,7 @@ export class CanEatCheckHandler {
               description: food.description,
               meal,
               grading_by_ai: food.grading_by_ai,
+              scoring_log: food.scoring_log,
             });
           }
 

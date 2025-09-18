@@ -23,8 +23,14 @@ export class Food {
   @Column({ type: 'longtext', nullable: true })
   description: string;
 
+  @Column({ type: 'json', nullable: true })
+  scoring_log: ScoringLog;
+
   @Column({ type: 'enum', enum: ['A', 'B', 'C'] })
   grade: FoodGradeType;
+
+  @Column({ type: 'boolean', default: false, nullable: true })
+  grading_by_rule: boolean;
 
   @Column({ type: 'boolean', default: false, nullable: true })
   grading_by_ai: boolean;
@@ -54,3 +60,17 @@ export class Food {
     Object.assign(this, food);
   }
 }
+
+export type ScoringLog = {
+  cooking_method: { method: string; deduction: number }[];
+  meat: number | null;
+  vegetable: number | null;
+  rice: { rice: string; deduction: number }[];
+  noodle: { noodle: string; deduction: number }[];
+  fruit: number | null;
+  sweet: number | null;
+  drink: { drink: string; deduction: number }[];
+  snack: number | null;
+  sauce: number | null;
+  grain: number | null;
+};
