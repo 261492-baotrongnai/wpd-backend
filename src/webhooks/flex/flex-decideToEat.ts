@@ -3,7 +3,7 @@ import * as line from '@line/bot-sdk';
 export const RecordOrNot = (): line.messagingApi.FlexMessage => {
   return {
     type: 'flex',
-    altText: 'บันทึกเมนู',
+    altText: 'ต้องการบันทึกเมนูนี้เลยไหมคะ?',
     contents: {
       type: 'bubble',
       size: 'mega',
@@ -94,7 +94,7 @@ export const canEatCheckSummary = (
 ): line.messagingApi.FlexMessage => {
   return {
     type: 'flex',
-    altText: 'กินได้ก่อ บันทึกเมนู',
+    altText: 'สรุปภาพรวมของเมนู',
     contents: {
       type: 'bubble',
       size: 'mega',
@@ -151,10 +151,12 @@ const ceilIfHalf = (number: number) => {
 };
 
 const scoreToBarProgress = (score: number): string => {
-  if (score <= 1.5) return '100%';
-  else if (score >= 2.5) return '1%';
+  const minScore = 1;
+  const maxScore = 3;
+  if (score <= minScore) return '100%';
+  else if (score >= maxScore) return '1%';
   else {
-    const percentage = (2.5 - score) * 100;
+    const percentage = (maxScore - score) / (maxScore - minScore) * 100;
     const intPercentage = ceilIfHalf(percentage);
 
     return intPercentage.toString() + '%';
