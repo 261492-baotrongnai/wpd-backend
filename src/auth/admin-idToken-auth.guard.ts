@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { Admin } from 'src/admin/entities/admin.entity';
 
 @Injectable()
 export class AdminIdTokenAuthGuard implements CanActivate {
@@ -14,7 +15,7 @@ export class AdminIdTokenAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
-      .getRequest<{ body: { idToken: string }; admin?: any }>();
+      .getRequest<{ body: { idToken: string }; admin?: Admin }>();
     const { idToken } = request.body;
 
     if (!idToken) {
@@ -32,6 +33,7 @@ export class AdminIdTokenAuthGuard implements CanActivate {
     }
 
     request.admin = admin; // Attach admin to request
+
     return true;
   }
 }

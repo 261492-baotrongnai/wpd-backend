@@ -13,23 +13,23 @@ export class AuthService {
   ) {}
   async generateToken(
     internalId: string,
-    role: string,
+    roles: string[],
     expiresIn: string = '1h',
   ): Promise<string> {
     const secretKey = process.env.JWT_SECRET;
     return await this.jwtService.signAsync(
-      { internalId, role },
+      { internalId, roles },
       { secret: secretKey, expiresIn: expiresIn },
     );
   }
 
   async decodeToken(
     token: string,
-  ): Promise<{ internalId: string; role: string }> {
+  ): Promise<{ internalId: string; roles: string[] }> {
     const secretKey = process.env.JWT_SECRET;
     return await this.jwtService.verifyAsync<{
       internalId: string;
-      role: string;
+      roles: string[];
     }>(token, { secret: secretKey });
   }
 
