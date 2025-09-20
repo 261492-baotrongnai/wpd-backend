@@ -27,6 +27,7 @@ export class AdminController {
 
   @Post('line-register')
   async lineRegister(@Body() createAdminLineDto: CreateAdminLineDto) {
+    console.log('Received createAdminLineDto:', createAdminLineDto);
     const job = await this.adminQueue.add(
       'create-admin-line',
       createAdminLineDto,

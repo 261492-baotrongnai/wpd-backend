@@ -21,7 +21,7 @@ export class AdminProcessor extends WorkerHost {
       case 'create-admin-line':
         if ('idToken' in job.data) {
           return await this.adminJobService.handleCreateAdminLineJob(
-            job.data as { idToken: string },
+            job.data as { idToken: string; username?: string },
           );
         }
         break;

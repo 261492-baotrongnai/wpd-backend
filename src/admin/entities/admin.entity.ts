@@ -19,6 +19,9 @@ export class Admin {
   internalId: string;
 
   @Column({ nullable: true })
+  username: string;
+
+  @Column({ nullable: true })
   email: string;
 
   @Column({ nullable: true })
@@ -35,6 +38,18 @@ export class Admin {
     default: false,
   })
   isEditor: boolean;
+
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  isSuperAdmin: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  isManager: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  waitingForApproval: boolean;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

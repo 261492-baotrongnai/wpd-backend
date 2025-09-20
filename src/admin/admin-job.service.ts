@@ -8,10 +8,13 @@ export class AdminJobService {
 
   constructor(private readonly adminService: AdminService) {}
 
-  async handleCreateAdminLineJob(createAdminLineDto: { idToken: string }) {
+  async handleCreateAdminLineJob(createAdminLineDto: {
+    idToken: string;
+    username?: string;
+  }) {
     const iid = await getInternalId(createAdminLineDto.idToken);
 
-    return await this.adminService.createLine(iid);
+    return await this.adminService.createLine(iid, createAdminLineDto.username);
   }
 
   async handleGetAdminInfoJob(jobData: { internalId: string; id: number }) {

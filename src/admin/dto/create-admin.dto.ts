@@ -5,4 +5,5 @@ export class CreateAdminEmailDto {
 
 export class CreateAdminLineDto {
   idToken: string;
+  username?: string;
 }

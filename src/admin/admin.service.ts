@@ -18,7 +18,8 @@ export class AdminService {
     private readonly entityManager: EntityManager,
     private readonly jwtService: JwtService,
   ) {}
-  async createLine(iid: string) {
+
+  async createLine(iid: string, username?: string): Promise<Admin> {
     const existingAdmin = await this.adminRepository.findOne({
       where: { internalId: iid },
     });
@@ -28,6 +29,8 @@ export class AdminService {
     }
     const newAdmin = new Admin();
     newAdmin.internalId = iid;
+    newAdmin.waitingForApproval = true;
+    if (username) newAdmin.username = username;
     const savedAdmin = await this.adminRepository.save(newAdmin);
     this.logger.log(`Admin with internalId ${iid} created successfully.`);
     return savedAdmin;

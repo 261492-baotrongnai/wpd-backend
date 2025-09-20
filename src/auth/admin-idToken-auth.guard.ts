@@ -23,7 +23,7 @@ export class AdminIdTokenAuthGuard implements CanActivate {
 
     const admin = await this.authService.validateAdmin(idToken);
 
-    if (!admin) {
+    if (!admin || admin.waitingForApproval === true) {
       // const userId = await verifyIdToken(idToken);
       // await this.webhookService.handleNonRegisteredUser(userId);
       throw new UnauthorizedException(
