@@ -22,9 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
   // Validate the JWT payload //
-  async validate(payload: { internalId: string; role: string }) {
+  async validate(payload: { internalId: string; roles: string[] }) {
     console.log('JWT payload:', payload);
-    if (payload.role === 'admin') {
+    if (payload.roles.includes('admin')) {
       this.logger.debug('Validating admin role');
       const admin = await this.adminService.findAdminByInternalId(
         payload.internalId,
@@ -35,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       console.log('Admin found:', admin.id);
       return { internalId: payload.internalId, id: admin.id, role: 'admin' };
     }
-    if (payload.role === 'user') {
+    if (payload.roles.includes('user')) {
       this.logger.debug('Validating user role');
       const user = await this.userService.findUserByInternalId(
         payload.internalId,
