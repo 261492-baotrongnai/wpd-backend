@@ -1,5 +1,5 @@
 import * as line from '@line/bot-sdk';
-import { CancleQuickReply } from '../quick-reply';
+// import { CancleQuickReply } from '../quick-reply';
 
 const MealInfo: {
   text: string;
@@ -83,5 +83,5 @@ export const WhatMealFlex: line.messagingApi.FlexMessage = {
       ],
     },
   },
-  quickReply: CancleQuickReply,
+  // quickReply: CancleQuickReply,
 };

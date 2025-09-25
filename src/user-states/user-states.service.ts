@@ -120,7 +120,12 @@ export class UserStatesService {
     return candidates;
   }
 
-  async addDatePosterState(signed_url: string, uid: string, id: number) {
+  async addPosterState(
+    signed_url: string,
+    uid: string,
+    id: number,
+    state_name: string,
+  ) {
     const message: line.messagingApi.ImageMessage = {
       type: 'image',
       originalContentUrl: `${signed_url}`,
@@ -137,20 +142,19 @@ export class UserStatesService {
     const userState = new UserState({
       lineUserId: uid,
       messageToSend: message,
-      state: 'date-poster',
+      state: state_name,
       user: user,
     });
-    this.logger.debug(`Adding date poster state for user ${id}`);
+    this.logger.debug(
+      `Adding poster state for user ${id}, state: ${state_name}`,
+    );
     try {
       const savedState = await this.userStatesRepository.save(userState);
-      this.logger.debug(`Date poster state added successfully for user ${id}`);
-      this.logger.log(`Date poster state added: ${JSON.stringify(savedState)}`);
+      this.logger.debug(`Poster state added successfully for user ${id}`);
+      this.logger.log(`Poster state added: ${JSON.stringify(savedState)}`);
       return savedState;
     } catch (error) {
-      this.logger.error(
-        `Failed to add date poster state for user ${id}`,
-        error,
-      );
+      this.logger.error(`Failed to add poster state for user ${id}`, error);
       throw error;
     }
   }

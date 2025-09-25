@@ -44,6 +44,7 @@ export class UserStatesController {
     @Request() req: { user: { internalId: string; id: number } },
     @UploadedFile() file: Express.Multer.File,
     @Body('uid') uid: string,
+    @Body('state_name') state_name: string,
   ) {
     this.logger.debug(`Uploading export poster for user ${uid}`);
     const { signed_url } = await this.userStatesService.saveToUploadsSpace(
@@ -55,10 +56,11 @@ export class UserStatesController {
       this.logger.error('Failed to save file to uploads directory');
       throw new Error('Failed to save file');
     }
-    const job = await this.userStateQueue.add('save-date-poster', {
+    const job = await this.userStateQueue.add('save-poster', {
       signed_url,
       uid: uid,
       id: req.user.id,
+      state_name: state_name,
     });
     return this.queueEventsRegistryService.waitForJobResult(
       job,

@@ -261,6 +261,7 @@ export class ExternalApiService implements OnModuleInit {
         if (file.uri && file.mimeType) {
           uri = file.uri;
           mimeType = file.mimeType;
+          console.log('file:', file);
         } else {
           throw new Error('Image not found in Gemini files');
         }

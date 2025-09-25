@@ -26,7 +26,6 @@ import { FoodsService } from 'src/foods/foods.service';
 import { GradeFlex } from './flex/flex-grade';
 import { ScoringLog } from 'src/foods/entities/food.entity';
 
-
 @Injectable()
 export class CanEatCheckHandler {
   private readonly client: line.messagingApi.MessagingApiClient;
@@ -88,7 +87,7 @@ export class CanEatCheckHandler {
       const askedTotalScore = askMenuInfo.avgScore * menuLists.length;
       const foodAmount = todaySummary.totalFood + menuLists.length;
       newScore = (todayTotalScore + askedTotalScore) / foodAmount;
-      newGrade = this.foodGrade.scoreToGrade(newScore);
+      newGrade = this.foodGrade.scoreToGradeRulebased(newScore);
     } else {
       newScore = askMenuInfo.avgScore;
       newGrade = askMenuInfo.avgGrade;
@@ -419,7 +418,12 @@ export class CanEatCheckHandler {
 
           console.log('grading info', foodGradingInfo);
 
-          if (!foodGradingInfo.avgGrade || !foodGradingInfo.avgScore) {
+          if (
+            foodGradingInfo.avgGrade === undefined ||
+            foodGradingInfo.avgGrade === null ||
+            foodGradingInfo.avgScore === undefined ||
+            foodGradingInfo.avgScore === null
+          ) {
             await this.client.replyMessage({
               replyToken: event.replyToken,
               messages: [

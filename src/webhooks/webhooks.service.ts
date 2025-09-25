@@ -138,6 +138,20 @@ export class WebhooksService {
                   event.source.userId,
                 );
                 continue;
+              } else if (
+                user_state.state === 'achievement-poster' &&
+                event.message?.type === 'text' &&
+                event.message?.text === 'โปสเตอร์ความสำเร็จ'
+              ) {
+                this.logger.debug(
+                  'User has achievement poster state, sending poster:',
+                  user_state.messageToSend,
+                );
+                result = await this.handleAchievementPoster(
+                  event.replyToken,
+                  event.source.userId,
+                );
+                continue;
               }
               result = await this.handleWaitingState(event, user_state);
             }
@@ -431,6 +445,80 @@ export class WebhooksService {
     );
   }
 
+  async handleAchievementPoster(
+    replyToken: string,
+    uid: string,
+  ): Promise<string> {
+    this.logger.debug(`user ${uid} requested to get achievement poster`);
+    try {
+      const iid = await getInternalId(undefined, uid);
+      const user = await this.userService.findUserByInternalId(iid);
+      if (!user) {
+        this.logger.error('User not found in handleAchievementPoster');
+        throw new Error('User not found');
+      }
+      const posterState = user.states.find(
+        (state) => state.state === 'achievement-poster',
+      );
+      if (!posterState) {
+        this.logger.warn(
+          'No achievement poster state found for user:',
+          user.id,
+        );
+        throw new Error('No achievement poster state found');
+      }
+      try {
+        try {
+          await this.client.replyMessage({
+            replyToken,
+            messages: [posterState.messageToSend],
+          });
+        } catch (error) {
+          this.logger.error(
+            `Error sending achievement poster with reply ${replyToken}:`,
+            error,
+          );
+          await this.client.pushMessage({
+            to: posterState.lineUserId,
+            messages: [posterState.messageToSend],
+          });
+        }
+      } catch (error) {
+        this.logger.error(
+          `Error sending achievement poster with reply ${replyToken}:`,
+          error,
+        );
+
+        const removeJob = await this.userStateQueue.add(
+          'remove-user-state',
+          posterState.id,
+        );
+        await this.queueEventsRegistryService.waitForJobResult(
+          removeJob,
+          this.userStateQueue,
+        );
+        this.logger.debug('Removed user state after sending poster');
+
+        throw new Error('Failed to send achievement poster');
+      }
+      this.logger.debug('Achievement poster sent successfully');
+      const removeJob = await this.userStateQueue.add(
+        'remove-user-state',
+        posterState.id,
+      );
+      await this.queueEventsRegistryService.waitForJobResult(
+        removeJob,
+        this.userStateQueue,
+      );
+      this.logger.debug('Removed user state after sending poster');
+
+      return 'Profile poster sent successfully';
+    } catch (error) {
+      this.logger.error('Error handling profile poster:', error);
+      throw error;
+    }
+  }
+
   async handleMealRecordPoster(
     replyToken: string,
     uid: string,
@@ -514,7 +602,10 @@ export class WebhooksService {
         replyToken,
         messages: [canEatCheckAskForImageFlex],
       });
-      this.logger.debug('canEatCheckAskForImageFlex sent successfully:', response);
+      this.logger.debug(
+        'canEatCheckAskForImageFlex sent successfully:',
+        response,
+      );
     } catch (error) {
       this.logger.error(
         `Error sending canEatCheckAskForImageFlex with reply ${replyToken}:`,

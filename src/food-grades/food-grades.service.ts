@@ -412,10 +412,8 @@ export class FoodGradesService {
       menu.there_is_grain && menu.grains.length > 0 ? 1 : null;
     if (menu.there_is_grain && menu.grains.length > 0) score -= 1;
 
-    let grade: FoodGradeType;
-    if (score >= 6) grade = 'A';
-    else if (score >= 2) grade = 'B';
-    else grade = 'C';
+    const grade = this.scoreToGradeRulebased(score);
+
     return {
       grade,
       score: score >= 0 ? score : 0,
@@ -424,5 +422,11 @@ export class FoodGradesService {
       scoring_log,
       reason_description: menu.reason_description,
     };
+  }
+
+  scoreToGradeRulebased(score: number): FoodGradeType {
+    if (score >= 6) return 'A';
+    else if (score >= 2) return 'B';
+    else return 'C';
   }
 }

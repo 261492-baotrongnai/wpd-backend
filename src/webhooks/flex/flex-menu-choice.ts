@@ -1,7 +1,7 @@
 import * as line from '@line/bot-sdk';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CancleQuickReply } from '../quick-reply';
+// import { CancleQuickReply } from '../quick-reply';
 
 // const BoxColor = ['#F2F8FC', '#E2F4FF', '#C8E9FF', '#D1E5FF'];
 
@@ -64,7 +64,7 @@ export const MenuChoiceConfirmFlex = (
             contents: [
               {
                 type: 'text',
-                text: 'ไม่เจอเมนูที่ใช่',
+                text: 'กดเพื่อพิมพ์ชื่อเมนูเอง',
                 wrap: true,
                 size: '18px',
                 align: 'center',
@@ -73,7 +73,7 @@ export const MenuChoiceConfirmFlex = (
               },
               {
                 type: 'text',
-                text: 'กดพิมพ์เองตรงนี้ได้เลย ✏️',
+                text: 'ตรงนี้ได้เลย ✏️',
                 wrap: true,
                 size: '18px',
                 align: 'center',
@@ -91,7 +91,7 @@ export const MenuChoiceConfirmFlex = (
         position: 'relative',
       },
     },
-    quickReply: CancleQuickReply,
+    // quickReply: CancleQuickReply,
   };
 };
 

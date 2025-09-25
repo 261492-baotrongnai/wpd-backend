@@ -7,6 +7,7 @@ import { Between, EntityManager, Repository } from 'typeorm';
 import moment from 'moment-timezone';
 import { FoodGradesService } from 'src/food-grades/food-grades.service';
 import { User } from 'src/users/entities/user.entity';
+import { Food } from 'src/foods/entities/food.entity';
 
 @Injectable()
 export class MealsService {
@@ -117,7 +118,12 @@ export class MealsService {
     });
 
     stats.avgScore /= meals.length;
-    stats.avgGrade = this.foodGrades.scoreToGrade(stats.avgScore) as string;
+    const is_grading_by_rule = meals.some((meal) =>
+      meal.foods?.some((f: Food) => f.grading_by_rule === true),
+    );
+    stats.avgGrade = is_grading_by_rule
+      ? (this.foodGrades.scoreToGradeRulebased(stats.avgScore) as string)
+      : (this.foodGrades.scoreToGrade(stats.avgScore) as string);
     return stats;
   }
 

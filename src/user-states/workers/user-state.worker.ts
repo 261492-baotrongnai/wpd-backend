@@ -62,17 +62,19 @@ export class UserStateProcessor extends WorkerHost {
         return await this.userStatesService.remove(job.data as number);
       case 'get-candidates':
         return await this.userStatesService.findCandidates(job.data as number);
-      case 'save-date-poster': {
-        const { signed_url, uid, id } = job.data as {
+      case 'save-poster': {
+        const { signed_url, uid, id, state_name } = job.data as {
           signed_url: string;
           uid: string;
           id: number;
+          state_name: string;
         };
         this.logger.debug(`Uploading export poster for user ${uid}`);
-        return await this.userStatesService.addDatePosterState(
+        return await this.userStatesService.addPosterState(
           signed_url,
           uid,
           id,
+          state_name,
         );
       }
       default:

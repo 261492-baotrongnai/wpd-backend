@@ -151,12 +151,12 @@ const ceilIfHalf = (number: number) => {
 };
 
 const scoreToBarProgress = (score: number): string => {
-  const minScore = 1;
-  const maxScore = 3;
-  if (score <= minScore) return '100%';
-  else if (score >= maxScore) return '1%';
+  const minScore = 0;
+  const maxScore = 10;
+  if (score <= minScore) return '1%';
+  else if (score >= maxScore) return '100%';
   else {
-    const percentage = (maxScore - score) / (maxScore - minScore) * 100;
+    const percentage = (score / (maxScore - minScore)) * 100;
     const intPercentage = ceilIfHalf(percentage);
 
     return intPercentage.toString() + '%';
@@ -196,7 +196,6 @@ const summaryBarLabel: line.messagingApi.FlexComponent = {
     },
   ],
 };
-
 
 const summaryGradePart = (
   oldAvgGrade: string,
