@@ -24,7 +24,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   // Validate the JWT payload //
   async validate(payload: { internalId: string; roles: string[] }) {
     console.log('JWT payload:', payload);
-    if (payload.roles.includes('admin')) {
+    if (
+      payload.roles.includes('admin') ||
+      payload.roles.includes('superadmin') ||
+      payload.roles.includes('editor') ||
+      payload.roles.includes('manager')
+    ) {
       this.logger.debug('Validating admin role');
       const admin = await this.adminService.findAdminByInternalId(
         payload.internalId,
