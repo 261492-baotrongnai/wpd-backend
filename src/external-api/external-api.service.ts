@@ -102,7 +102,7 @@ export class ExternalApiService implements OnModuleInit {
       }
 
       const response = await this.gemini.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           this.createUserContent([
             'บอกเมนูรายการอาหารที่มีในภาพนี้มาให้ครบถ้วนทุกองค์ประกอบของเมนู เป็นภาษาไทย ไม่ควรเป็นชื่อที่ความหมายกว้างเกินไป ควรเป็นชื่อที่บ่งบอกถึงวัตถุดิบในนั้นได้ด้วยจะดีมาก',
@@ -200,7 +200,7 @@ export class ExternalApiService implements OnModuleInit {
       }
 
       const response = await this.gemini.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         // merged here
         contents: [this.createUserContent(contentParts)],
         config: {
