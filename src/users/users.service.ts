@@ -207,29 +207,33 @@ export class UsersService {
       relations: ['achievements'],
     });
     if (!user) return;
+    let new_user;
     // If streak resets to 0
     // get biggest achievement threshold of user's achievements
     // and set carryStreak to that if it's bigger than current carryStreak
     if (streaks === 0 && user.achievements.length > 0) {
       const maxStreak = Math.max(
-        ...user.achievements.map((a) => a.streakThereshold || 0),
+        ...user.achievements.map((a) =>
+          a.streakThereshold > 1 ? a.streakThereshold : 0,
+        ),
       );
       this.logger.debug(`Max streak from achievements: ${maxStreak}`);
       const carryStreak = user.carryStreak || 0;
       if (maxStreak > carryStreak) {
-        await this.usersRepository.update(id, {
+        new_user = await this.usersRepository.update(id, {
           streaks,
           carryStreak: maxStreak,
         });
         this.logger.log(
           `User ${id} streaks reset to 0, carryStreak updated to ${maxStreak}`,
         );
-        return;
+        return new_user;
       }
-    } else {
-      await this.usersRepository.update(id, { streaks });
     }
+    new_user = await this.usersRepository.update(id, { streaks });
     this.logger.log(`User ${id} streaks updated to ${streaks}`);
+    this.logger.debug(`Update result: ${JSON.stringify(new_user)}`);
+    return new_user;
   }
 
   async updateUserTotalDays(totalDays: number, id: number) {

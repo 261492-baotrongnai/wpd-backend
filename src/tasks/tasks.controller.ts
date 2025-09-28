@@ -13,15 +13,15 @@ export class TasksController {
   ) {}
 
   // @Get('streaks-alert')
-  async handleStreaksAlert() {
-    await this.tasksService.handleStreaksAlertCron();
-    return { message: 'Streaks alert job triggered' };
-  }
+  // async handleStreaksAlert() {
+  //   await this.tasksService.handleStreaksAlertCron();
+  //   return { message: 'Streaks alert job triggered' };
+  // }
 
   // reset streaks for users who have broken their streaks
-  @Get('streaks-reset')
-  async handleStreaksReset() {
-    await this.tasksService.handleStereaksResetCron();
-    return { message: 'Streaks reset job triggered' };
-  }
+  // @Get('streaks-reset')
+  // async handleStreaksReset() {
+  //   await this.tasksService.handleStereaksResetCron();
+  //   return { message: 'Streaks reset job triggered' };
+  // }
 }

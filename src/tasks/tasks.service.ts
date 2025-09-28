@@ -328,7 +328,6 @@ export class TasksService {
       const result = await this.queueEventsRegistryService.waitForJobResult(
         job,
         this.userQueue,
-        60000, // 1 minute timeout
       );
       type StreaksAlertUser = {
         id: number;
@@ -346,11 +345,23 @@ export class TasksService {
 
       for (const user of users_to_alert) {
         try {
-          const alertJob = await this.taskQueue.add('streaks-alert-user', {
-            id: user.id,
-            lineUserId: user.lineUserId,
-            streaks: user.streaks,
-          });
+          const alertJob = await this.taskQueue.add(
+            'streaks-alert-user',
+            {
+              id: user.id,
+              lineUserId: user.lineUserId,
+              streaks: user.streaks,
+            },
+            {
+              removeOnComplete: 10,
+              removeOnFail: 50,
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 5000,
+              },
+            },
+          );
           const alertResult =
             await this.queueEventsRegistryService.waitForJobResult(
               alertJob,
