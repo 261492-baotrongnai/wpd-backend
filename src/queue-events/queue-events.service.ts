@@ -12,6 +12,17 @@ export class QueueEventsRegistryService implements OnModuleDestroy {
         connection: queue.opts.connection,
       });
 
+      // Avoid MaxListenersExceededWarning under bursty concurrent requests
+      try {
+        // Raise or remove the default listener limit on both Queue and QueueEvents
+        queue.setMaxListeners?.(50);
+        queueEvents.setMaxListeners?.(50);
+      } catch (err) {
+        this.logger.warn(
+          `Could not set max listeners for queue ${queue.name}: ${String(err)}`,
+        );
+      }
+
       // Add error handling for queue events
       queueEvents.on('error', (error) => {
         this.logger.error(`QueueEvents error for ${queue.name}:`, error);

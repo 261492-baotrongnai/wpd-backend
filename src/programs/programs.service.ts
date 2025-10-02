@@ -10,6 +10,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 import { Meal } from 'src/meals/entities/meal.entity';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ProgramsService {
@@ -21,6 +22,8 @@ export class ProgramsService {
 
     @InjectQueue('meal')
     private readonly mealQueue: Queue,
+
+    private readonly userService: UsersService,
 
     private readonly queueEventsRegistryService: QueueEventsRegistryService,
   ) {}
@@ -207,40 +210,88 @@ export class ProgramsService {
     return programTable;
   }
 
-  async getProgramUsers(programId: number) {
-    this.logger.debug(`Fetching users for program ID: ${programId}`);
+  async getProgramUsers(programCode: string) {
+    this.logger.debug(`Fetching users for program code: ${programCode}`);
     const program = await this.programRepository.findOne({
-      where: { id: programId },
+      where: { code: programCode },
       relations: ['users'],
     });
     if (!program) {
-      this.logger.warn(`Program with ID ${programId} not found.`);
+      this.logger.warn(`Program with code ${programCode} not found.`);
       return { users: [] };
     }
     const users_with_last_recorded_at = await Promise.all(
       program.users.map(async (user) => {
-        const latest_meal_job = await this.mealQueue.add('find-latest-meal', {
-          userId: user.id,
+        const latest_meal = await this.entityManager.findOne(Meal, {
+          where: { user: { id: user.id } },
+          order: { createdAt: 'DESC' },
         });
-        const latestMeal =
-          (await this.queueEventsRegistryService.waitForJobResult(
-            latest_meal_job,
-            this.mealQueue,
-          )) as Meal | null;
         return {
           ...user,
-          last_recorded_at: latestMeal?.createdAt || null,
+          last_recorded_at: latest_meal ? latest_meal.createdAt : null,
         };
       }),
     );
+
+    const sorted_users = users_with_last_recorded_at.sort((a, b) => {
+      if (a.last_recorded_at && b.last_recorded_at) {
+        return b.last_recorded_at.getTime() - a.last_recorded_at.getTime();
+      } else if (a.last_recorded_at) {
+        return -1; // a comes first
+      } else if (b.last_recorded_at) {
+        return 1; // b comes first
+      } else {
+        return 0; // maintain original order
+      }
+    });
+
+    const users_with_profile = await Promise.all(
+      sorted_users.map(async (user) => {
+        if (!user.userId) {
+          return { ...user, profile: null };
+        }
+        const profile = await this.userService.getLineProfile(user.userId);
+        return {
+          ...user,
+          profile,
+        };
+      }),
+    );
+
     this.logger.debug(
-      `Program users for program ID ${programId}: ${JSON.stringify(
+      `Program users for program code ${programCode}: ${JSON.stringify(
         users_with_last_recorded_at,
       )}`,
     );
     this.logger.log(`Fetched users for program :`);
     this.logger.log(users_with_last_recorded_at);
 
-    return { users: users_with_last_recorded_at };
+    return { users: users_with_profile };
+  }
+
+  async isPermitToViewUser(userId: number, adminId: number): Promise<boolean> {
+    const rawRows = await this.entityManager
+      .createQueryBuilder(Program, 'program')
+      .leftJoin('program.admins', 'admin')
+      .leftJoin('program.users', 'user')
+      .where('admin.id = :adminId', { adminId })
+      .select('user.id', 'userId')
+      .getRawMany<{ userId: string | number | null }>();
+
+    const userIds_in_admin_programs: number[] = rawRows
+      .map((row) => (row.userId == null ? NaN : Number(row.userId)))
+      .filter((id) => !Number.isNaN(id));
+
+    this.logger.debug(
+      `User IDs in programs managed by admin ${adminId}: ${JSON.stringify(
+        userIds_in_admin_programs,
+      )}`,
+    );
+
+    const is_permit = userIds_in_admin_programs.includes(Number(userId));
+    this.logger.debug(
+      `Admin with ID ${adminId} has permission to view user with ID ${userId}: ${is_permit}`,
+    );
+    return is_permit;
   }
 }

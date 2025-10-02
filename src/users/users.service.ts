@@ -72,6 +72,35 @@ export class UsersService {
     }
   }
 
+  async getLineProfile(
+    userId: string,
+  ): Promise<line.messagingApi.UserProfileResponse | null> {
+    try {
+      this.logger.debug(`Fetching LINE profile for userId: ${userId}`);
+      const profile = await this.client.getProfile(userId);
+      this.logger.debug(`Fetched LINE profile: ${JSON.stringify(profile)}`);
+      return profile;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error fetching LINE profile: ${message}`, error);
+      return null;
+    }
+  }
+
+  async getUserWithLineProfile(userId: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    if (!user.userId) {
+      return { user, profile: null };
+    }
+    const profile = await this.getLineProfile(user.userId);
+    return { user, profile };
+  }
+
   async create(@Body() registerDto: RegisterDto) {
     try {
       this.logger.log('Creating user with ID token:', registerDto);
@@ -200,14 +229,14 @@ export class UsersService {
     }
   }
 
-  async updateUserStreaks(streaks: number, id: number) {
+  async updateUserStreaks(streaks: number, id: number): Promise<User> {
     // If streak resets to 0 we keep previous streak value in carryStreak
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['achievements'],
     });
-    if (!user) return;
-    let new_user;
+    if (!user) return Promise.reject(new Error('User not found'));
+    let new_user = user;
     // If streak resets to 0
     // get biggest achievement threshold of user's achievements
     // and set carryStreak to that if it's bigger than current carryStreak
@@ -218,19 +247,27 @@ export class UsersService {
         ),
       );
       this.logger.debug(`Max streak from achievements: ${maxStreak}`);
+
       const carryStreak = user.carryStreak || 0;
       if (maxStreak > carryStreak) {
-        new_user = await this.usersRepository.update(id, {
+        await this.usersRepository.update(id, {
           streaks,
           carryStreak: maxStreak,
         });
+        new_user = (await this.usersRepository.findOne({
+          where: { id },
+        })) as User;
         this.logger.log(
-          `User ${id} streaks reset to 0, carryStreak updated to ${maxStreak}`,
+          `User ${id} streaks reset to 0, carryStreak updated to ${new_user?.carryStreak}`,
+          new_user,
         );
         return new_user;
       }
     }
-    new_user = await this.usersRepository.update(id, { streaks });
+    await this.usersRepository.update(id, { streaks });
+    new_user = (await this.usersRepository.findOne({
+      where: { id },
+    })) as User;
     this.logger.log(`User ${id} streaks updated to ${streaks}`);
     this.logger.debug(`Update result: ${JSON.stringify(new_user)}`);
     return new_user;

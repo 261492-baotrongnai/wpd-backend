@@ -23,6 +23,8 @@ export class MealsController {
     private readonly mealsService: MealsService,
     @InjectQueue('meal') private mealsQueue: Queue,
 
+    @InjectQueue('program') private programsQueue: Queue,
+
     private readonly queueEvents: QueueEventsRegistryService,
   ) {}
 
@@ -114,32 +116,5 @@ export class MealsController {
   ) {
     console.log('[/food-grades/month-summary] for user: ', req.user.id);
     return this.mealsService.getMonthSummary(req.user.id);
-  }
-
-  @Get('streaks')
-  async getUserStreaks() {
-    this.logger.log('[/meals/streaks] for user: ', 14);
-    const job = await this.mealsQueue.add('count-user-streaks', {
-      userId: 14,
-    });
-
-    const result = await this.queueEvents.waitForJobResult(
-      job,
-      this.mealsQueue,
-    );
-    return result;
-  }
-
-  @Get('totalDays')
-  async getTotalDays() {
-    const job = await this.mealsQueue.add('count-total-days', {
-      userId: 14,
-    });
-
-    const result = await this.queueEvents.waitForJobResult(
-      job,
-      this.mealsQueue,
-    );
-    return result;
   }
 }

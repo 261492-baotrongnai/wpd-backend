@@ -25,6 +25,6 @@ export class AdminJobService {
       );
       return null;
     }
-    return await this.adminService.adminInfo(jobData.id);
+    return admin;
   }
 }

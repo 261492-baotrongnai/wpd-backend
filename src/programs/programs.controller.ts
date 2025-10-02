@@ -189,15 +189,15 @@ export class ProgramsController {
     return result;
   }
 
-  @Get('/:id/users')
+  @Get('/:code/users')
   @UseGuards(JwtAuthGuard)
   async getProgramUsers(
     @Request() req: { user: { internalId: string; id: number } },
-    @Param('id') programId: number,
+    @Param('code') programCode: string,
   ) {
-    this.logger.debug(`Fetching users for program ID: ${programId}`);
+    this.logger.debug(`Fetching users for program code: ${programCode}`);
     const job = await this.programQueue.add('get-program-users', {
-      programId: programId,
+      programCode: programCode,
     });
     const result: unknown =
       await this.queueEventsRegistryService.waitForJobResult(

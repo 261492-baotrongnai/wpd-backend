@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
 import { TasksService } from './tasks.service';

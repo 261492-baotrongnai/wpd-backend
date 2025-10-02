@@ -7,9 +7,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { JwtService } from '@nestjs/jwt';
 import { ProgramsJobService } from './programs.job';
 import { ProgramProcessor } from './programs.worker';
-import { Admin } from 'src/admin/entities/admin.entity';
 import { TokenService } from 'src/auth/token.service';
 import { QueueEventsRegistryService } from 'src/queue-events/queue-events.service';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -20,7 +20,7 @@ import { QueueEventsRegistryService } from 'src/queue-events/queue-events.servic
       },
       { name: 'meal' },
     ),
-    Admin,
+    UsersModule,
   ],
   controllers: [ProgramsController],
   providers: [

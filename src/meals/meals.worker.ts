@@ -33,6 +33,9 @@ export class MealsProcessor extends WorkerHost {
     } else if (job.name === 'count-total-days') {
       const { userId } = job.data as { userId: number };
       return await this.mealsService.countTotalDays(userId);
+    } else if (job.name === 'get-user-all-meal') {
+      const { userId } = job.data as { userId: number };
+      return await this.mealsService.getUserAllMeal(userId);
     }
   }
 

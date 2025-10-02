@@ -334,4 +334,16 @@ export class MealsService {
     this.logger.debug(`Total days result:`, result);
     return result[0]?.totalDays || 0;
   }
+
+  async getUserAllMeal(userId: number) {
+    this.logger.debug(`Fetching all meals for userId: ${userId}`);
+    const meals = await this.mealsRepository.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      relations: ['foods'],
+    });
+    this.logger.debug(`Found ${meals.length} meals for userId: ${userId}`);
+
+    return meals;
+  }
 }

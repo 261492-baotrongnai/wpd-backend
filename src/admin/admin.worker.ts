@@ -5,7 +5,7 @@ import { AdminJobService } from './admin-job.service';
 import { AdminService } from './admin.service';
 
 @Processor('admin', {
-  concurrency: 10,
+  concurrency: 500,
 })
 export class AdminProcessor extends WorkerHost {
   private logger = new Logger(AdminProcessor.name);

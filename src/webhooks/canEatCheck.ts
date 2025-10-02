@@ -571,6 +571,10 @@ export class CanEatCheckHandler {
               ],
             });
           } catch (error) {
+            this.logger.error('Error replying to user:', error);
+            this.logger.warn(
+              `Sending push message to ${lineUserId} instead of replyMessage`,
+            );
             await this.client.pushMessage({
               to: lineUserId,
               messages: [
@@ -807,6 +811,9 @@ export class CanEatCheckHandler {
             this.logger.error(
               'Error replying to user at [record-case.ts/MenuChoicesConfirm]:',
               error,
+            );
+            this.logger.warn(
+              `Sending push message to ${lineUserId} instead of replyMessage`,
             );
             await this.client.pushMessage({
               to: lineUserId,

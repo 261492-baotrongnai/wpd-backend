@@ -50,7 +50,10 @@ export class AdminService {
   }
 
   async adminInfo(id: number) {
-    const admin = await this.entityManager.findOne(Admin, { where: { id } });
+    const admin = await this.entityManager.findOne(Admin, {
+      where: { id },
+      relations: ['organizations', 'programs'],
+    });
     if (!admin) {
       this.logger.warn(`Admin with id ${id} not found.`);
       return null;

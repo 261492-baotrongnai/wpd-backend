@@ -57,8 +57,14 @@ export class ProgramProcessor extends WorkerHost {
       const { adminId } = job.data as { adminId: number };
       return await this.programService.getProgramTable(adminId);
     } else if (job.name === 'get-program-users') {
-      const { programId } = job.data as { programId: number };
-      return await this.programService.getProgramUsers(programId);
+      const { programCode } = job.data as { programCode: string };
+      return await this.programService.getProgramUsers(programCode);
+    } else if (job.name === 'check-user-permit') {
+      const { userId, adminId } = job.data as {
+        userId: number;
+        adminId: number;
+      };
+      return await this.programService.isPermitToViewUser(userId, adminId);
     }
   }
   // @OnWorkerEvent('progress')
