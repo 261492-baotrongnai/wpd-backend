@@ -435,7 +435,7 @@ export class WebhooksService {
   async loading(userId: string): Promise<void> {
     await axios.post(
       'https://api.line.me/v2/bot/chat/loading/start',
-      { chatId: userId },
+      { chatId: userId, loadingSeconds: 60 },
       {
         headers: {
           'Content-Type': 'application/json',
