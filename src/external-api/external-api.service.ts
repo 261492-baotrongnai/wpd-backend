@@ -133,6 +133,8 @@ export class ExternalApiService implements OnModuleInit {
                       items: {
                         type: this.Type.STRING,
                       },
+                      description:
+                        'ชื่อของอาหาร โดยที่มีความยาวรวมกันไม่เกิน 40 ตัวอักษร',
                     },
                   },
                 },
@@ -294,7 +296,7 @@ export class ExternalApiService implements OnModuleInit {
                   'there_is_meat',
                   'there_is_rice',
                   'there_is_noodle',
-                  'there_is_fruit',
+                  'there_is_sweet_fruit',
                   'there_is_sweet',
                   'there_is_drink',
                   'there_is_snack',
@@ -387,7 +389,10 @@ export class ExternalApiService implements OnModuleInit {
                     description:
                       'ระบุชนิดของเส้นก๋วยเตี๋ยวหรือบะหมี่ หากไม่มีเส้นในเมนูให้เว้นว่างไว้',
                   },
-                  there_is_fruit: { type: this.Type.BOOLEAN },
+                  there_is_sweet_fruit: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีผลไม้หวานในเมนูหรือไม่',
+                  },
                   fruits: {
                     type: this.Type.ARRAY,
                     items: {
@@ -485,7 +490,7 @@ export class ExternalApiService implements OnModuleInit {
         there_is_meat: parsed.foodData.there_is_meat,
         there_is_rice: parsed.foodData.there_is_rice,
         there_is_noodle: parsed.foodData.there_is_noodle,
-        there_is_fruit: parsed.foodData.there_is_fruit,
+        there_is_sweet_fruit: parsed.foodData.there_is_sweet_fruit,
         there_is_sweet: parsed.foodData.there_is_sweet,
         there_is_drink: parsed.foodData.there_is_drink,
         there_is_snack: parsed.foodData.there_is_snack,

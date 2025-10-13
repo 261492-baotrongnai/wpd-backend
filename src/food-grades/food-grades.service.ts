@@ -365,8 +365,8 @@ export class FoodGradesService {
       }
     }
 
-    scoring_log['fruit'] = menu.there_is_fruit ? 4 : null;
-    if (menu.there_is_fruit) score -= 4;
+    scoring_log['sweet_fruit'] = menu.there_is_sweet_fruit ? 4 : null;
+    if (menu.there_is_sweet_fruit) score -= 4;
 
     scoring_log['sweet'] = menu.there_is_sweet ? 9 : null;
     if (menu.there_is_sweet) score -= 9;
