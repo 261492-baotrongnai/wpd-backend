@@ -326,8 +326,14 @@ export class ExternalApiService implements OnModuleInit {
                     },
                     minItems: 1,
                   },
-                  there_is_vegetable: { type: this.Type.BOOLEAN },
-                  there_is_grain: { type: this.Type.BOOLEAN },
+                  there_is_vegetable: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีผักในเมนูหรือไม่',
+                  },
+                  there_is_grain: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีธัญพืชในเมนูหรือไม่',
+                  },
                   grains: {
                     type: this.Type.ARRAY,
                     items: {
@@ -345,8 +351,14 @@ export class ExternalApiService implements OnModuleInit {
                     description:
                       'ระบุชนิดของธัญพืช หากไม่มีธัญพืชให้เว้นว่างไว้',
                   },
-                  there_is_meat: { type: this.Type.BOOLEAN },
-                  there_is_rice: { type: this.Type.BOOLEAN },
+                  there_is_meat: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีเนื้อสัตว์ในเมนูหรือไม่',
+                  },
+                  there_is_rice: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีข้าวในเมนูหรือไม่',
+                  },
                   rices: {
                     type: this.Type.ARRAY,
                     items: {
@@ -362,7 +374,10 @@ export class ExternalApiService implements OnModuleInit {
                     },
                     description: 'ระบุชนิดของข้าว หากไม่มีข้าวให้เว้นว่างไว้',
                   },
-                  there_is_noodle: { type: this.Type.BOOLEAN },
+                  there_is_noodle: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีคาร์โบไฮเดรตชนิดเส้นในเมนูหรือไม่',
+                  },
                   noodles: {
                     type: this.Type.ARRAY,
                     items: {
@@ -400,8 +415,14 @@ export class ExternalApiService implements OnModuleInit {
                     },
                     description: 'ระบุชนิดของผลไม้ หากไม่มีผลไม้ให้เว้นว่างไว้',
                   },
-                  there_is_sweet: { type: this.Type.BOOLEAN },
-                  there_is_drink: { type: this.Type.BOOLEAN },
+                  there_is_sweet: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีของหวานในเมนูหรือไม่',
+                  },
+                  there_is_drink: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีเครื่องดื่มในเมนูหรือไม่',
+                  },
                   drinks: {
                     type: this.Type.ARRAY,
                     items: {
@@ -420,8 +441,14 @@ export class ExternalApiService implements OnModuleInit {
                     description:
                       'ระบุชนิดของเครื่องดื่ม หากไม่มีเครื่องดื่มให้เว้นว่างไว้',
                   },
-                  there_is_snack: { type: this.Type.BOOLEAN },
-                  there_is_sauce: { type: this.Type.BOOLEAN },
+                  there_is_snack: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีของทานเล่นในเมนูหรือไม่',
+                  },
+                  there_is_sauce: {
+                    type: this.Type.BOOLEAN,
+                    description: 'มีซอสในเมนูหรือไม่',
+                  },
                   sauces: {
                     type: this.Type.ARRAY,
                     items: {
