@@ -29,9 +29,11 @@ export class ProgramsService {
   ) {}
 
   async createProgram(id: number, program: CreateProgramDto): Promise<Program> {
+    this.logger.debug(`Creating program for admin ID: ${id}`);
     const admin = await this.entityManager.findOne(Admin, {
       where: { id },
     });
+    this.logger.debug(`Admin found: ${JSON.stringify(admin)}`);
     if (!admin) {
       this.logger.warn(`Admin with ID ${id} not found.`);
       throw new NotFoundException(`Admin with ID ${id} not found.`);

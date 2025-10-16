@@ -7,7 +7,9 @@ export class ProgramsJobService {
   private readonly logger = new Logger(ProgramsJobService.name);
   constructor(private readonly programsService: ProgramsService) {}
   async handleCreateProgramJob(id: number, body: CreateProgramDto) {
-    this.logger.debug(`Creating program with data: ${JSON.stringify(body)}`);
+    this.logger.debug(
+      `Creating program with data: ${JSON.stringify(body)} by Admin ID: ${id}`,
+    );
     return await this.programsService.createProgram(id, body);
   }
 
