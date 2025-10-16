@@ -6,11 +6,11 @@ import { CreateProgramDto } from './dto/create.dto';
 export class ProgramsJobService {
   private readonly logger = new Logger(ProgramsJobService.name);
   constructor(private readonly programsService: ProgramsService) {}
-  async handleCreateProgramJob(id: number, body: CreateProgramDto) {
+  async handleCreateProgramJob(userId: number, body: CreateProgramDto) {
     this.logger.debug(
-      `Creating program with data: ${JSON.stringify(body)} by Admin ID: ${id}`,
+      `Creating program with data: ${JSON.stringify(body)} by Admin ID: ${userId}`,
     );
-    return await this.programsService.createProgram(id, body);
+    return await this.programsService.createProgram(userId, body);
   }
 
   async handleGetProgramInfoJob(id: number, userId: number) {

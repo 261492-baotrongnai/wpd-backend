@@ -23,8 +23,11 @@ export class ProgramProcessor extends WorkerHost {
       this.logger.debug(
         `Processing create-program job with data: ${JSON.stringify(job.data)}`,
       );
-      const { id, body } = job.data as { id: number; body: CreateProgramDto };
-      return await this.programJobService.handleCreateProgramJob(id, body);
+      const { userId, body } = job.data as {
+        userId: number;
+        body: CreateProgramDto;
+      };
+      return await this.programJobService.handleCreateProgramJob(userId, body);
     } else if (job.name === 'get-program-info') {
       return await this.programJobService.handleGetProgramInfoJob(
         (job.data as { id: number }).id,
