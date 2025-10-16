@@ -55,12 +55,13 @@ export class ProgramsService {
       }
       newProgram.organization = organization;
 
+      // code format: ORGCODE-XX-XXX (e.g., ORG-01-001, ORG-01-002)
       const existingCodes = (
         await this.programRepository.find({
           where: { organization: { id: program.organizationId } },
         })
       )
-        .map((prog) => Number(prog.code?.split('-')[1] ?? 0))
+        .map((prog) => Number(prog.code?.split('-')[2] ?? 0))
         .sort((a, b) => a - b);
       this.logger.debug(
         `Existing program codes for organization ${organization.code_name}: ${JSON.stringify(
