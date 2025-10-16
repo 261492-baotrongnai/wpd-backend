@@ -38,6 +38,7 @@ export class ProgramsService {
     }
     const newProgram = new Program(program);
     newProgram.admins = [admin];
+    this.logger.debug(`Creating program: ${JSON.stringify(newProgram)}`);
     if (program.organizationId) {
       const organization = await this.entityManager.findOne(Organization, {
         where: { id: program.organizationId },
@@ -59,7 +60,11 @@ export class ProgramsService {
       )
         .map((prog) => Number(prog.code?.split('-')[1] ?? 0))
         .sort((a, b) => a - b);
-
+      this.logger.debug(
+        `Existing program codes for organization ${organization.code_name}: ${JSON.stringify(
+          existingCodes,
+        )}`,
+      );
       if (existingCodes.length === 0) {
         // If no existing codes, start with 01
         newProgram.code = `${organization.code_name}-001`;
@@ -79,7 +84,7 @@ export class ProgramsService {
     }
     const savedProgram = await this.programRepository.save(newProgram);
     this.logger.debug(
-      `Program created with ID: ${savedProgram.id}, Name: ${savedProgram.name}`,
+      `Program created with ID: ${savedProgram.id}, Name: ${savedProgram.name} by Admin ID: ${savedProgram.admins[0].id}`,
     );
     return savedProgram;
   }
