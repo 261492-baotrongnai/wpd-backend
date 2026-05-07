@@ -49,12 +49,9 @@ export class ImagesService {
       return { key };
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error(
-          `Error uploading file: ${error.message}`,
-          error.stack,
-        );
+        this.logger.error(`Error uploading file`);
       } else {
-        this.logger.error('Error uploading file: Unknown error', error);
+        this.logger.error('Error uploading file: Unknown error');
       }
       throw error;
     }

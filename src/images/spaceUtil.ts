@@ -1,23 +1,20 @@
 import { S3 } from '@aws-sdk/client-s3';
 
 export const createS3Client = () => {
-  const spacesKey = process.env.SPACES_KEY;
-  const spacesSecret = process.env.SPACES_SECRET;
+  const minioEndpoint = process.env.MINIO_ENDPOINT || 'http://localhost:9000';
+  const minioAccessKey = process.env.MINIO_ACCESS_KEY;
+  const minioSecretKey = process.env.MINIO_SECRET_KEY;
 
-  if (!spacesKey) {
-    throw new Error('SPACES_KEY is not defined');
-  }
-  if (!spacesSecret) {
-    throw new Error('SPACES_SECRET is not defined');
-  }
+  if (!minioAccessKey) throw new Error('MINIO_ACCESS_KEY is not defined');
+  if (!minioSecretKey) throw new Error('MINIO_SECRET_KEY is not defined');
 
   return new S3({
-    forcePathStyle: false, // Configures to use subdomain/virtual calling format.
-    endpoint: 'https://sgp1.digitaloceanspaces.com',
-    region: 'sgp1',
+    forcePathStyle: true,
+    endpoint: minioEndpoint,
+    region: 'us-east-1', // ← Arbitrary but required by the SDK; MinIO ignores it
     credentials: {
-      accessKeyId: spacesKey,
-      secretAccessKey: spacesSecret,
+      accessKeyId: minioAccessKey,
+      secretAccessKey: minioSecretKey,
     },
   });
 };
