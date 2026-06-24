@@ -7,7 +7,6 @@ import axios from 'axios';
 import { createS3Client } from 'src/images/spaceUtil';
 import { ImagesService } from 'src/images/images.service';
 import { Upload } from '@aws-sdk/lib-storage';
-import { ObjectCannedACL } from '@aws-sdk/client-s3';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ExternalApiService } from 'src/external-api/external-api.service';
@@ -70,7 +69,6 @@ export class RecordCaseHandler {
         Bucket: process.env.SPACE_NAME,
         CopySource: `${process.env.SPACE_NAME}/${sourceKey}`,
         Key: destKey,
-        ACL: 'private',
       });
       // Delete original
       await this.s3Client.deleteObject({
@@ -102,6 +100,38 @@ export class RecordCaseHandler {
       to: userId,
       messages: [{ type: 'text', text }],
     });
+  }
+
+  /**
+   * Try replying with `replyMessage` when `replyToken` is available.
+   * If it fails (expired/invalid token or network error), fall back to `pushMessage`.
+   */
+  private async safeReply(
+    replyToken: string | undefined,
+    userId: string,
+    messages: line.messagingApi.Message[],
+  ): Promise<void> {
+    if (replyToken) {
+      try {
+        await this.client.replyMessage({ replyToken, messages });
+        return;
+      } catch (err) {
+        this.logger.warn(
+          'replyMessage failed, falling back to pushMessage',
+          err,
+        );
+      }
+    } else {
+      this.logger.warn('No replyToken provided; using pushMessage fallback');
+    }
+
+    // Fallback to pushMessage
+    try {
+      await this.client.pushMessage({ to: userId, messages });
+    } catch (err) {
+      this.logger.error('pushMessage also failed', err);
+      throw err;
+    }
   }
 
   private async removeUserState(userStateId: number): Promise<void> {
@@ -191,7 +221,6 @@ export class RecordCaseHandler {
         Key: key,
         Body: fs.createReadStream(file_path),
         ContentType: `image/${file_type}`,
-        ACL: 'private' as ObjectCannedACL,
       };
 
       // Upload the image to the cloud bucket
@@ -231,7 +260,6 @@ export class RecordCaseHandler {
         Key: key,
         Body: image_content,
         ContentType: `image/${file_type}`,
-        ACL: 'private' as ObjectCannedACL,
       };
       const parallelUpload = new Upload({
         client: this.s3Client,
@@ -268,16 +296,13 @@ export class RecordCaseHandler {
         });
         this.logger.debug('Menu name: ', response);
         if (!response.isFood) {
-          await this.client.replyMessage({
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text: 'ไม่ใช่รูปอาหาร กรุณาส่งรูปอาหารอีกครั้งค่ะ',
-                quickReply: ImageQuickReply,
-              },
-            ],
-          });
+          await this.safeReply(event.replyToken, user_id, [
+            {
+              type: 'text',
+              text: 'ไม่ใช่รูปอาหาร กรุณาส่งรูปอาหารอีกครั้งค่ะ',
+              quickReply: ImageQuickReply,
+            },
+          ]);
           return 'Waiting Meal Image Not Food';
         }
 
@@ -310,30 +335,13 @@ export class RecordCaseHandler {
           this.userStateQueue,
         );
 
-        try {
-          await this.client.replyMessage({
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
-              },
-              WhatMealFlex,
-            ],
-          });
-        } catch (error) {
-          this.logger.error('Error replying to user:', error);
-          await this.client.pushMessage({
-            to: user_id,
-            messages: [
-              {
-                type: 'text',
-                text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
-              },
-              WhatMealFlex,
-            ],
-          });
-        }
+        await this.safeReply(event.replyToken, user_id, [
+          {
+            type: 'text',
+            text: 'ได้รับรูปเรียบร้อยค่ะ✅ บอกมะลิหน่อยนะคะ ว่าอาหารในรูปเป็นมื้อไหนกดเลือกได้เลยค่ะ',
+          },
+          WhatMealFlex,
+        ]);
         return 'Waiting Meal Image Completed';
       } else if (
         event.message.type === 'text' &&
@@ -342,30 +350,24 @@ export class RecordCaseHandler {
         await this.handleCancel(event, user_state.id);
         return 'Waiting Meal Image Cancelled';
       } else {
-        await this.client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: 'text',
-              text: 'กรุณาส่งรูปอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
-              quickReply: ImageQuickReply,
-            },
-          ],
-        });
+        await this.safeReply(event.replyToken, user_id, [
+          {
+            type: 'text',
+            text: 'กรุณาส่งรูปอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
+            quickReply: ImageQuickReply,
+          },
+        ]);
         return 'Waiting Meal Image Failed';
       }
     } catch (error) {
       this.logger.error('Error at [waitingMealImage]:', error);
-      await this.client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
-            quickReply: ImageQuickReply,
-          },
-        ],
-      });
+      await this.safeReply(event.replyToken, user_id, [
+        {
+          type: 'text',
+          text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+          quickReply: ImageQuickReply,
+        },
+      ]);
       throw new Error(
         `Error at [waitingMealImage]: ${
           error instanceof Error ? error.message : String(error)
@@ -436,46 +438,21 @@ export class RecordCaseHandler {
           }
           this.logger.debug('Menu name: ', candidates);
           // Send the corresponding reply
-          try {
-            await this.client.replyMessage({
-              replyToken: event.replyToken,
-              messages: [
-                {
-                  type: 'text',
-                  text:
-                    mealResponses[response as keyof typeof mealResponses]
-                      .resp || 'Unknown meal response',
-                },
-                MenuChoiceConfirmFlex(
-                  CandidateContents(
-                    candidates.map((candidate) => ({
-                      name: candidate.name.join(', '),
-                    })),
-                  ),
-                ),
-              ],
-            });
-          } catch (error) {
-            this.logger.error('Error at [waitingWhatMeal]:', error);
-            await this.client.pushMessage({
-              to: user_id,
-              messages: [
-                {
-                  type: 'text',
-                  text:
-                    mealResponses[response as keyof typeof mealResponses]
-                      .resp || 'Unknown meal response',
-                },
-                MenuChoiceConfirmFlex(
-                  CandidateContents(
-                    candidates.map((candidate) => ({
-                      name: candidate.name.join(', '),
-                    })),
-                  ),
-                ),
-              ],
-            });
-          }
+          await this.safeReply(event.replyToken, user_id, [
+            {
+              type: 'text',
+              text:
+                mealResponses[response as keyof typeof mealResponses].resp ||
+                'Unknown meal response',
+            },
+            MenuChoiceConfirmFlex(
+              CandidateContents(
+                candidates.map((candidate) => ({
+                  name: candidate.name.join(', '),
+                })),
+              ),
+            ),
+          ]);
 
           const updateJob = await this.userStateQueue.add('update-user-state', {
             id: user_state.id,
@@ -504,29 +481,23 @@ export class RecordCaseHandler {
         }
       }
       // Handle other message types (e.g., stickers, images)
-      await this.client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
-            quickReply: CancleQuickReply,
-          },
-        ],
-      });
+      await this.safeReply(event.replyToken, user_id, [
+        {
+          type: 'text',
+          text: 'กรุณาเลือกมื้ออาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
+          quickReply: CancleQuickReply,
+        },
+      ]);
       return 'Waiting What Meal Failed';
     } catch (error) {
       this.logger.error('Error at [waitingWhatMeal]:', error);
-      await this.client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
-            quickReply: CancleQuickReply,
-          },
-        ],
-      });
+      await this.safeReply(event.replyToken, user_id, [
+        {
+          type: 'text',
+          text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+          quickReply: CancleQuickReply,
+        },
+      ]);
       throw new Error(
         `Error at [waitingWhatMeal]: ${
           error instanceof Error ? error.message : String(error)
@@ -617,18 +588,14 @@ export class RecordCaseHandler {
 
         // non-food case
         if (!grade) {
-          await this.client.replyMessage({
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text: 'ชื่อที่ส่งมาอาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
-              },
-            ],
-          });
+          await this.safeReply(event.replyToken, user_id, [
+            {
+              type: 'text',
+              text: 'ชื่อที่ส่งมาอาจจะไม่ใช่ชื่ออาหาร หรือไม่สามารถประมวลผลได้ค่ะ กรุณาลองใหม่อีกครั้งนะคะ',
+            },
+          ]);
           return 'MenuChoicesConfirm Not Food';
         }
-        let GradeResult: line.messagingApi.FlexMessage;
 
         const fileName = user_state.pendingFile?.fileName;
         if (!fileName) {
@@ -699,60 +666,34 @@ export class RecordCaseHandler {
 
         this.logger.debug(`User state removed: ${user_state.id}`);
 
-        try {
-          await this.client.replyMessage({
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
-              },
+        await this.safeReply(event.replyToken, user_id, [
+          {
+            type: 'text',
+            text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
+          },
 
-              GradeFlex(grade, messageText),
-            ],
-          });
-        } catch (error) {
-          this.logger.error(
-            'Error replying to user at [record-case.ts/MenuChoicesConfirm]:',
-            error,
-          );
-          await this.client.pushMessage({
-            to: user_id,
-            messages: [
-              {
-                type: 'text',
-                text: `โอเคค่ะ มื้อนี้มะลิบันทึกให้เรียบร้อยค่า มาดูเกรดของจานนี้กันดีกว่าค่ะว่าได้เกรดอะไร ⬇️ `,
-              },
-              GradeFlex(grade, messageText),
-            ],
-          });
-        }
+          GradeFlex(grade, messageText),
+        ]);
 
         return 'MenuChoicesConfirm Completed';
       }
-      await this.client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: 'กรุณาเลือกหรือพิมพ์เมนูอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
-            quickReply: CancleQuickReply,
-          },
-        ],
-      });
+      await this.safeReply(event.replyToken, user_id, [
+        {
+          type: 'text',
+          text: 'กรุณาเลือกหรือพิมพ์เมนูอาหารที่ต้องการบันทึก หรือกด "ยกเลิกการบันทึก"',
+          quickReply: CancleQuickReply,
+        },
+      ]);
       return 'MenuChoicesConfirm Failed';
     } catch (error) {
       this.logger.error('Error at [MenuChoicesConfirm]:', error);
-      await this.client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
-            quickReply: CancleQuickReply,
-          },
-        ],
-      });
+      await this.safeReply(event.replyToken, user_id, [
+        {
+          type: 'text',
+          text: 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้งนะคะ',
+          quickReply: CancleQuickReply,
+        },
+      ]);
       throw new Error(
         `Error at [MenuChoicesConfirm]: ${
           error instanceof Error ? error.message : String(error)
