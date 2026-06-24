@@ -6,7 +6,7 @@ import { Image } from './entities/image.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createS3Client } from './spaceUtil';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { GetObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 
 @Injectable()
@@ -34,7 +34,6 @@ export class ImagesService {
         Bucket: process.env.SPACE_NAME,
         Key: key,
         Body: file.buffer,
-        ACL: 'private' as ObjectCannedACL, // Keep files private
       };
 
       const parallelUpload = new Upload({
