@@ -354,7 +354,34 @@ export class CanEatCheckHandler {
         return 'canEatCheck: Waiting Meal Image Failed';
       }
     } catch (error) {
-      this.logger.error('Error at [canEatCheck: waitingMealImage]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'canEatCheck: waitingMealImage',
+        userId: lineUserId,
+        userStateId: userState?.id,
+        messageType: event.message?.type,
+        geminiImageName: userState?.geminiImageName,
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error(
+        'Error at [canEatCheck: waitingMealImage] - Full Context:',
+        {
+          ...errorContext,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : null,
+        },
+      );
+
+      if (error instanceof Error) {
+        this.logger.debug(
+          'canEatCheck: waitingMealImage Error Stack Trace:',
+          error.stack,
+        );
+      }
+
       await this.handleErrorReplyMessage(
         event,
         'กรุณาส่งรูปอาหารที่ต้องการถาม หรือกด "ยกเลิก"',
@@ -530,7 +557,36 @@ export class CanEatCheckHandler {
         return 'canEatCheck: confirmMenuName Failed';
       }
     } catch (error) {
-      this.logger.error('Error at [canEatCheck: confirmMenuName]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'canEatCheck: confirmMenuName',
+        userId: lineUserId,
+        userStateId: userState?.id,
+        messageText:
+          event.message?.type === 'text' ? event.message.text : 'non-text',
+        geminiImageName: userState?.geminiImageName,
+        userStateCandidates: userState?.menuName,
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error(
+        'Error at [canEatCheck: confirmMenuName] - Full Context:',
+        {
+          ...errorContext,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : null,
+        },
+      );
+
+      if (error instanceof Error) {
+        this.logger.debug(
+          'canEatCheck: confirmMenuName Error Stack Trace:',
+          error.stack,
+        );
+      }
+
       await this.handleErrorReplyMessage(
         event,
         'กรุณาเลือกหรือพิมพ์เมนูอาหารที่ต้องการถาม หรือกด "ยกเลิก"',
@@ -644,7 +700,35 @@ export class CanEatCheckHandler {
         return 'canEatCheck: confirm to record failed';
       }
     } catch (error) {
-      this.logger.error('Error at [canEatCheck: confirmToRecordMenu]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'canEatCheck: confirmToRecordMenu',
+        userId: lineUserId,
+        userStateId: userState?.id,
+        messageText:
+          event.message?.type === 'text' ? event.message.text : 'non-text',
+        geminiImageName: userState?.geminiImageName,
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error(
+        'Error at [canEatCheck: confirmToRecordMenu] - Full Context:',
+        {
+          ...errorContext,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : null,
+        },
+      );
+
+      if (error instanceof Error) {
+        this.logger.debug(
+          'canEatCheck: confirmToRecordMenu Error Stack Trace:',
+          error.stack,
+        );
+      }
+
       await this.handleErrorReplyMessage(
         event,
         `เกิดข้อผิดพลาดกรุณาเลือก บันทึกอาหาร หรือ ไม่บันทึกอาหาร อีกครั้งค่ะ`,
@@ -838,7 +922,36 @@ export class CanEatCheckHandler {
 
       return 'canEatCheck: confirmMealToRecord failed';
     } catch (error) {
-      this.logger.error('Error at [canEatCheck: confirmMealToRecord]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'canEatCheck: confirmMealToRecord',
+        userId: lineUserId,
+        userStateId: userState?.id,
+        messageText:
+          event.message?.type === 'text' ? event.message.text : 'non-text',
+        geminiImageName: userState?.geminiImageName,
+        foodGradingInfo: userState?.foodGradingInfo ? 'present' : 'missing',
+        pendingFile: userState?.pendingFile ? 'present' : 'missing',
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error(
+        'Error at [canEatCheck: confirmMealToRecord] - Full Context:',
+        {
+          ...errorContext,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : null,
+        },
+      );
+
+      if (error instanceof Error) {
+        this.logger.debug(
+          'canEatCheck: confirmMealToRecord Error Stack Trace:',
+          error.stack,
+        );
+      }
 
       await this.handleErrorReplyMessage(
         event,

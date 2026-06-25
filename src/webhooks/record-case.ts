@@ -360,7 +360,28 @@ export class RecordCaseHandler {
         return 'Waiting Meal Image Failed';
       }
     } catch (error) {
-      this.logger.error('Error at [waitingMealImage]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'waitingMealImage',
+        userId: user_id,
+        userStateId: user_state?.id,
+        messageType: event.message?.type,
+        geminiImageName: user_state?.geminiImageName,
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error('Error at [waitingMealImage] - Full Context:', {
+        ...errorContext,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : null,
+      });
+
+      if (error instanceof Error) {
+        this.logger.debug('waitingMealImage Error Stack Trace:', error.stack);
+      }
+
       await this.safeReply(event.replyToken, user_id, [
         {
           type: 'text',
@@ -490,7 +511,31 @@ export class RecordCaseHandler {
       ]);
       return 'Waiting What Meal Failed';
     } catch (error) {
-      this.logger.error('Error at [waitingWhatMeal]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'waitingWhatMeal',
+        userId: user_id,
+        userStateId: user_state?.id,
+        messageText:
+          event.message?.type === 'text' ? event.message.text : 'non-text',
+        geminiImageName: user_state?.geminiImageName,
+        userStateCandidates: user_state?.menuName,
+        pendingFile: user_state?.pendingFile,
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error('Error at [waitingWhatMeal] - Full Context:', {
+        ...errorContext,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : null,
+      });
+
+      if (error instanceof Error) {
+        this.logger.debug('waitingWhatMeal Error Stack Trace:', error.stack);
+      }
+
       await this.safeReply(event.replyToken, user_id, [
         {
           type: 'text',
@@ -686,7 +731,31 @@ export class RecordCaseHandler {
       ]);
       return 'MenuChoicesConfirm Failed';
     } catch (error) {
-      this.logger.error('Error at [MenuChoicesConfirm]:', error);
+      // Enhanced error logging with full context
+      const errorContext = {
+        method: 'MenuChoicesConfirm',
+        userId: user_id,
+        userStateId: user_state?.id,
+        messageText:
+          event.message?.type === 'text' ? event.message.text : 'non-text',
+        geminiImageName: user_state?.geminiImageName,
+        userStateCandidates: user_state?.menuName,
+        eventType: event.type,
+        sourceUserId: event.source.userId,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.logger.error('Error at [MenuChoicesConfirm] - Full Context:', {
+        ...errorContext,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : null,
+      });
+
+      // Also log sensitive error details separately for detailed tracking
+      if (error instanceof Error) {
+        this.logger.debug('MenuChoicesConfirm Error Stack Trace:', error.stack);
+      }
+
       await this.safeReply(event.replyToken, user_id, [
         {
           type: 'text',
