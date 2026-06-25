@@ -54,7 +54,9 @@ export class WebhooksController {
     res.status(200).json({ message: 'Webhook received' });
 
     // // Process the events asynchronously after sending the response
-    const events_job = await this.webhooksQueue.add('process-event', events);
+    const events_job = await this.webhooksQueue.add('process-event', events, {
+      attempts: 1,
+    });
 
     try {
       const result: unknown =
