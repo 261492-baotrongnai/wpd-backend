@@ -5,11 +5,15 @@ import * as moment from 'moment-timezone';
 import { ConfigService } from '@nestjs/config'; // Import the 'ConfigService' from '@nestjs/config'
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as path from 'path';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
+  const logger = new Logger();
+
   moment.tz.setDefault('Asia/Bangkok'); // Set the default timezone to 'Asia/Bangkok'
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
+
   app.enableCors({
     origin: [
       configService.get<string>('FRONTEND_URL') ?? '',
@@ -28,8 +32,8 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 8000, '0.0.0.0');
-  console.log(`Application is running on: ${await app.getUrl()}`);
-  console.log(`Environment: ${process.env.GEMINI_API_KEY}`);
+  logger.log(`Server is running on port ${process.env.PORT ?? 8000}`);
+  logger.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY}`);
 }
 void (async () => {
   try {
