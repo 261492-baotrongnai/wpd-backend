@@ -273,7 +273,7 @@ export class ExternalApiService implements OnModuleInit {
       console.log('Extracting food data for menu:', user_menu_name);
       console.log('Using image content:', content);
       const response = await this.gemini.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           this.createUserContent([
             `แยกข้อมูลอาหารสำหรับเมนู: ${user_menu_name} จากรูปนี้ โดยใช้ภาษาไทย`,
