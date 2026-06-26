@@ -320,7 +320,7 @@ export class TasksService {
   // ทุกวันตอนทุ่มนึง
   // ถ้า user มี streaks > 0
   // จะส่งข้อความไปแจ้งเตือน
-  @Cron('0 19 * * *')
+  // @Cron('0 19 * * *')
   async handleStreaksAlertCron() {
     this.logger.log('Starting streaks alert cron job');
     try {
