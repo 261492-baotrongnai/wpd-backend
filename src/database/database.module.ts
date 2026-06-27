@@ -22,26 +22,24 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         synchronize: true,
         migrationsRun: configService.get('NODE_ENV') !== 'development',
         timezone: '+07:00',
-        ssl: {
-          rejectUnauthorized: false,
-        },
 
         // Connection timeout settings
         connectTimeout: 60000, // 60 seconds for initial connection
-        acquireTimeout: 60000, // 60 seconds to acquire connection from pool
         timeout: 60000, // 60 seconds for query execution
 
         // Connection pool settings for remote MySQL
         extra: {
           connectionLimit: 10, // Max connections in pool
           connectTimeout: 60000, // MySQL driver connection timeout (milliseconds)
-          acquireTimeout: 60000, // Time to wait for connection from pool
           waitForConnections: true, // Queue requests when pool exhausted
           queueLimit: 0, // Unlimited queue
           enableKeepAlive: true, // Keep TCP connection alive (important for remote connections)
           keepAliveInitialDelay: 10000, // Start keep-alive after 10 seconds
           // TCP settings for remote connections
           socketPath: undefined, // Ensure TCP is used, not Unix socket
+          ssl: {
+            rejectUnauthorized: false,
+          },
         },
 
         // Retry logic for connection failures
