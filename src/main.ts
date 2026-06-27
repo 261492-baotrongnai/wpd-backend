@@ -33,7 +33,6 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 8000, '0.0.0.0');
   logger.log(`Server is running on port ${process.env.PORT ?? 8000}`);
-  // logger.log(`GEMINI_API_KEY: ${process.env.GEMINI_API_KEY}`);
 }
 void (async () => {
   try {
